@@ -1,0 +1,614 @@
+{
+  "demo_timestamp": "2025-10-18T18:39:29.390796",
+  "fhir_bundle": {
+    "resourceType": "Bundle",
+    "id": "d1cdb7f5-b017-4050-9b0e-94a11b2b5bf5",
+    "type": "collection",
+    "timestamp": "2025-10-18T18:39:29.390686",
+    "total": 14,
+    "entry": [
+      {
+        "resource": {
+          "resourceType": "Patient",
+          "id": "P001_ENHANCED",
+          "active": true,
+          "name": [
+            {
+              "use": "official",
+              "family": "Johnson",
+              "given": [
+                "Sarah"
+              ]
+            }
+          ],
+          "gender": "female",
+          "birthDate": "1985-06-15",
+          "address": [],
+          "telecom": [],
+          "contact": [],
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/us/reproductive-health/StructureDefinition/fertility-intent",
+              "valueString": "actively_trying"
+            }
+          ]
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "DiagnosticReport",
+          "id": "b513702d-c935-4429-bedd-f4a4288d27f8",
+          "status": "final",
+          "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/v2-0074",
+                  "code": "LAB",
+                  "display": "Laboratory"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "33747-0",
+                "display": "Reproductive hormone panel"
+              }
+            ]
+          },
+          "subject": {
+            "reference": "Patient/P001_ENHANCED"
+          },
+          "effectiveDateTime": "2025-10-11",
+          "issued": "2025-10-18T18:39:29.390617",
+          "result": [
+            {
+              "reference": "Observation/0b420bbe-2fb0-4354-ac74-6d1a7be9b0a4"
+            },
+            {
+              "reference": "Observation/9dd82e8d-bb2e-4d0a-9f17-8d67f53a2d28"
+            },
+            {
+              "reference": "Observation/e00730b0-f657-4041-9661-8c15bc12ffed"
+            },
+            {
+              "reference": "Observation/cc043ab3-ed56-48be-ac01-7dffbbddb3f7"
+            }
+          ],
+          "conclusion": "AMH 0.8 ng/mL indicates diminished ovarian reserve; Elevated FSH 12.5 mIU/mL consistent with decreased ovarian function"
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "Observation",
+          "id": "0b420bbe-2fb0-4354-ac74-6d1a7be9b0a4",
+          "status": "final",
+          "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "laboratory",
+                  "display": "Laboratory"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "33746-9",
+                "display": "Anti-Mullerian hormone [Mass/volume] in Serum"
+              }
+            ]
+          },
+          "subject": {
+            "reference": "Patient/P001_ENHANCED"
+          },
+          "effectiveDateTime": "2025-10-11",
+          "valueQuantity": {
+            "value": 0.8,
+            "unit": "ng/mL",
+            "system": "http://unitsofmeasure.org"
+          },
+          "valueString": null,
+          "extension": []
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "Observation",
+          "id": "9dd82e8d-bb2e-4d0a-9f17-8d67f53a2d28",
+          "status": "final",
+          "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "laboratory",
+                  "display": "Laboratory"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "15067-2",
+                "display": "Follitropin [Units/volume] in Serum"
+              }
+            ]
+          },
+          "subject": {
+            "reference": "Patient/P001_ENHANCED"
+          },
+          "effectiveDateTime": "2025-10-11",
+          "valueQuantity": {
+            "value": 12.5,
+            "unit": "mIU/mL",
+            "system": "http://unitsofmeasure.org"
+          },
+          "valueString": null,
+          "extension": []
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "Observation",
+          "id": "e00730b0-f657-4041-9661-8c15bc12ffed",
+          "status": "final",
+          "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "laboratory",
+                  "display": "Laboratory"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "10501-5",
+                "display": "Lutropin [Units/volume] in Serum"
+              }
+            ]
+          },
+          "subject": {
+            "reference": "Patient/P001_ENHANCED"
+          },
+          "effectiveDateTime": "2025-10-11",
+          "valueQuantity": {
+            "value": 8.2,
+            "unit": "mIU/mL",
+            "system": "http://unitsofmeasure.org"
+          },
+          "valueString": null,
+          "extension": []
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "Observation",
+          "id": "cc043ab3-ed56-48be-ac01-7dffbbddb3f7",
+          "status": "final",
+          "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "laboratory",
+                  "display": "Laboratory"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "2243-4",
+                "display": "Estradiol [Mass/volume] in Serum"
+              }
+            ]
+          },
+          "subject": {
+            "reference": "Patient/P001_ENHANCED"
+          },
+          "effectiveDateTime": "2025-10-11",
+          "valueQuantity": {
+            "value": 45.0,
+            "unit": "pg/mL",
+            "system": "http://unitsofmeasure.org"
+          },
+          "valueString": null,
+          "extension": []
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "Observation",
+          "id": "7e5b946a-c1d7-4d85-92d5-b63e0eef44b7",
+          "status": "final",
+          "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "reproductive-health",
+                  "display": "Reproductive Health"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "33747-0",
+                "display": "General reproductive health observation"
+              }
+            ]
+          },
+          "subject": {
+            "reference": "Patient/P001_ENHANCED"
+          },
+          "effectiveDateTime": "2025-09-20",
+          "valueQuantity": {
+            "value": 36.2,
+            "unit": "Cel",
+            "system": "http://unitsofmeasure.org"
+          },
+          "valueString": null,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/us/reproductive-health/StructureDefinition/cycle-day",
+              "valueInteger": 1
+            }
+          ]
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "Observation",
+          "id": "999af4fd-2ad8-49f0-80de-c786f140c522",
+          "status": "final",
+          "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "reproductive-health",
+                  "display": "Reproductive Health"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "33747-0",
+                "display": "General reproductive health observation"
+              }
+            ]
+          },
+          "subject": {
+            "reference": "Patient/P001_ENHANCED"
+          },
+          "effectiveDateTime": "2025-09-20",
+          "valueQuantity": {
+            "value": 36.3,
+            "unit": "Cel",
+            "system": "http://unitsofmeasure.org"
+          },
+          "valueString": null,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/us/reproductive-health/StructureDefinition/cycle-day",
+              "valueInteger": 2
+            }
+          ]
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "Observation",
+          "id": "c2fe15bd-95d7-4f0f-9fa6-7b93693f8e10",
+          "status": "final",
+          "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "reproductive-health",
+                  "display": "Reproductive Health"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "33747-0",
+                "display": "General reproductive health observation"
+              }
+            ]
+          },
+          "subject": {
+            "reference": "Patient/P001_ENHANCED"
+          },
+          "effectiveDateTime": "2025-09-20",
+          "valueQuantity": {
+            "value": 36.1,
+            "unit": "Cel",
+            "system": "http://unitsofmeasure.org"
+          },
+          "valueString": null,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/us/reproductive-health/StructureDefinition/cycle-day",
+              "valueInteger": 3
+            }
+          ]
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "Observation",
+          "id": "756a6308-3db7-4f80-9778-0a4e3d73bd81",
+          "status": "final",
+          "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "reproductive-health",
+                  "display": "Reproductive Health"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "33747-0",
+                "display": "General reproductive health observation"
+              }
+            ]
+          },
+          "subject": {
+            "reference": "Patient/P001_ENHANCED"
+          },
+          "effectiveDateTime": "2025-09-20",
+          "valueQuantity": {
+            "value": 36.4,
+            "unit": "Cel",
+            "system": "http://unitsofmeasure.org"
+          },
+          "valueString": null,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/us/reproductive-health/StructureDefinition/cycle-day",
+              "valueInteger": 4
+            }
+          ]
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "Observation",
+          "id": "43ff59bd-02a7-4cf7-9e12-33534389e0a5",
+          "status": "final",
+          "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "reproductive-health",
+                  "display": "Reproductive Health"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "33747-0",
+                "display": "General reproductive health observation"
+              }
+            ]
+          },
+          "subject": {
+            "reference": "Patient/P001_ENHANCED"
+          },
+          "effectiveDateTime": "2025-09-20",
+          "valueQuantity": {
+            "value": 36.8,
+            "unit": "Cel",
+            "system": "http://unitsofmeasure.org"
+          },
+          "valueString": null,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/us/reproductive-health/StructureDefinition/cycle-day",
+              "valueInteger": 5
+            }
+          ]
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "Observation",
+          "id": "e3089b15-0f7e-483b-9ef1-48ccb5e2015d",
+          "status": "final",
+          "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "reproductive-health",
+                  "display": "Reproductive Health"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "33747-0",
+                "display": "General reproductive health observation"
+              }
+            ]
+          },
+          "subject": {
+            "reference": "Patient/P001_ENHANCED"
+          },
+          "effectiveDateTime": "2025-09-20",
+          "valueQuantity": {
+            "value": 36.7,
+            "unit": "Cel",
+            "system": "http://unitsofmeasure.org"
+          },
+          "valueString": null,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/us/reproductive-health/StructureDefinition/cycle-day",
+              "valueInteger": 6
+            }
+          ]
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "Observation",
+          "id": "d28da25d-7e15-472a-886d-d918f459d21b",
+          "status": "final",
+          "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "reproductive-health",
+                  "display": "Reproductive Health"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "33747-0",
+                "display": "General reproductive health observation"
+              }
+            ]
+          },
+          "subject": {
+            "reference": "Patient/P001_ENHANCED"
+          },
+          "effectiveDateTime": "2025-09-20",
+          "valueQuantity": {
+            "value": 36.9,
+            "unit": "Cel",
+            "system": "http://unitsofmeasure.org"
+          },
+          "valueString": null,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/us/reproductive-health/StructureDefinition/cycle-day",
+              "valueInteger": 7
+            }
+          ]
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "Observation",
+          "id": "282af888-34a6-413d-9a1c-c23768cb5905",
+          "status": "final",
+          "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "reproductive-health"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "33747-0",
+                "display": "Ovulation test"
+              }
+            ]
+          },
+          "subject": {
+            "reference": "Patient/P001_ENHANCED"
+          },
+          "effectiveDate": "2025-10-04",
+          "valueString": "positive",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/us/reproductive-health/StructureDefinition/ovulation-method",
+              "valueString": "urine_lh"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "clinical_recommendation": {
+    "primary_recommendation": "URGENT RECOMMENDATION: Begin IVF consultation immediately. Your age (38) and AMH level (0.8 ng/mL) indicate time-sensitive fertility concerns. SART data shows 23.1% success rate for your profile, but success rates decline rapidly with age.",
+    "evidence_points": [
+      "Ovarian reserve assessment: low (30th percentile for age)",
+      "IVF success prediction: 23.1% live birth rate (SART 2023 data, n=54321)",
+      "Menopause timing: Predicted at 52.2 years (SWAN study validation)",
+      "Cycle health: 0.82 regularity score from 5 days of tracking",
+      "Research evidence: 0 recent systematic reviews support AMH-guided treatment timing"
+    ],
+    "action_items": [
+      "Schedule comprehensive fertility evaluation within 2 weeks",
+      "Begin folic acid supplementation (400-800 mcg daily)",
+      "Optimize lifestyle factors: maintain BMI 18.5-24.9, regular exercise, stress management",
+      "Continue cycle tracking for treatment planning",
+      "Discuss treatment timeline and expectations with reproductive endocrinologist",
+      "Consider genetic counseling given age-related risks",
+      "Plan financial considerations for potential fertility treatments"
+    ],
+    "risk_factors": [
+      "Age-related decline: 84 months until age 45 (sharp decline threshold)",
+      "Ovarian reserve: low status limits time window",
+      "Each month delay may reduce success rates by 1-2%",
+      "Higher miscarriage risk with advanced maternal age"
+    ],
+    "urgency_score": 6,
+    "confidence_level": 0.89
+  },
+  "privacy_compliance": {
+    "active_consents": 2,
+    "total_data_access_events": 3,
+    "last_data_access": "2025-10-18T18:39:29.389228",
+    "data_types_accessed": [
+      "reproductive_labs",
+      "cycle_tracking",
+      "consent_record",
+      "research_data"
+    ]
+  }
+}

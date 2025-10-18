@@ -1,0 +1,138 @@
+{
+  "patient_data": {
+    "patient_id": "P001",
+    "timestamp": "2025-10-18T17:56:19.890403",
+    "demographics": {
+      "age": 38,
+      "years_trying_to_conceive": 1.5
+    },
+    "reproductive_labs": {
+      "amh": 0.8,
+      "fsh": 12,
+      "lh": 8,
+      "estradiol": 45
+    },
+    "ovarian_reserve_status": "very_low",
+    "clinical_context": {
+      "cycle_history": "regular, 28 days",
+      "prior_ivf": "none",
+      "attempts_to_conceive_months": 18
+    }
+  },
+  "routing": {
+    "query_type": "fertility_query",
+    "patient_id": "P001",
+    "routing": {
+      "data_sources": [
+        "biomini_patient_context",
+        "huggingface_research",
+        "sart_database"
+      ],
+      "agents": [
+        "data_retrieval_agent",
+        "clinical_advisor_agent"
+      ],
+      "priority": "high"
+    },
+    "execution_plan": {
+      "step_1": "Retrieve data from: biomini_patient_context, huggingface_research, sart_database",
+      "step_2": "Activate agents: data_retrieval_agent, clinical_advisor_agent",
+      "step_3": "Synthesize recommendations"
+    },
+    "status": "ready"
+  },
+  "data_retrieval": {
+    "agent": "data_retrieval_agent",
+    "patient_summary": {
+      "age": 38,
+      "amh_level": 0.8,
+      "ovarian_reserve_category": "very_low",
+      "infertility_duration_years": 1.5,
+      "prior_treatments": "none",
+      "key_concern": "Low ovarian reserve"
+    },
+    "research_summary": {
+      "papers_found": 3,
+      "papers": [
+        {
+          "title": "IVF success in low AMH: what we learned",
+          "year": 2023,
+          "findings": "Low AMH alone should not exclude patients from IVF; personalized protocols improve outcomes",
+          "relevance_score": 1.0
+        },
+        {
+          "title": "Optimizing IVF protocols for diminished ovarian reserve",
+          "year": 2023,
+          "findings": "Modified stimulation protocols can improve outcomes in low AMH patients",
+          "relevance_score": 1.0
+        },
+        {
+          "title": "AMH levels and reproductive outcomes: systematic review",
+          "year": 2024,
+          "findings": "AMH is a reliable marker for ovarian reserve but age remains the strongest predictor",
+          "relevance_score": 0.8
+        }
+      ],
+      "consensus": "Low AMH indicates reduced ovarian reserve but does not preclude IVF success",
+      "recent_findings": "2024 studies emphasize age over AMH as primary success predictor"
+    },
+    "data_sources_accessed": [
+      "biomini_patient_context",
+      "research_database"
+    ]
+  },
+  "clinical_advisor": {
+    "agent": "clinical_advisor_agent",
+    "clinical_question": "I have AMH 0.8, should I do IVF now?",
+    "patient_profile": {
+      "age": 38,
+      "amh_level": 0.8,
+      "ovarian_reserve_category": "very_low",
+      "infertility_duration_years": 1.5,
+      "prior_treatments": "none",
+      "key_concern": "Low ovarian reserve"
+    },
+    "relevant_guideline": "ASRM recommends expedited fertility evaluation for AMH <1.0 ng/mL",
+    "success_data": {
+      "rate": 18,
+      "confidence_interval": "14-22%",
+      "age_group": "38 years",
+      "amh_category": "very low"
+    },
+    "recommendation": "Your AMH level (0.8 ng/mL) indicates diminished ovarian reserve. We recommend scheduling a fertility consultation within 1-2 months. SART data shows 18% success rate for your profile. Recent research shows that with optimized protocols, low AMH patients can achieve good outcomes.",
+    "urgency": "expedited",
+    "reasoning": [
+      "Patient age (38) and AMH (0.8) analyzed",
+      "Ovarian reserve classified as: very_low",
+      "ASRM guideline applied: ASRM recommends expedited fertility evaluation for AMH <1.0 ng/mL",
+      "SART success rate calculated: 18% (CI: 14-22%)",
+      "Research consensus: Low AMH indicates reduced ovarian reserve but does not preclude IVF success",
+      "Urgency level determined: expedited"
+    ],
+    "evidence_base": {
+      "guidelines": "ASRM 2024",
+      "success_rates": "SART 2023 National Summary",
+      "research_papers": 3
+    }
+  },
+  "ranked_research": [
+    {
+      "title": "IVF success in low AMH: what we learned",
+      "year": 2023,
+      "findings": "Low AMH alone should not exclude patients from IVF; personalized protocols improve outcomes",
+      "relevance_score": 1.0
+    },
+    {
+      "title": "Optimizing IVF protocols for diminished ovarian reserve",
+      "year": 2023,
+      "findings": "Modified stimulation protocols can improve outcomes in low AMH patients",
+      "relevance_score": 1.0
+    },
+    {
+      "title": "AMH levels and reproductive outcomes: systematic review",
+      "year": 2024,
+      "findings": "AMH is a reliable marker for ovarian reserve but age remains the strongest predictor",
+      "relevance_score": 0.8
+    }
+  ]
+}
