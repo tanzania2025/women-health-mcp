@@ -4,7 +4,7 @@ Implements FHIR R4 standards with reproductive health extensions
 """
 
 import json
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import Dict, List, Any, Optional, Union
 from dataclasses import dataclass, asdict
 from enum import Enum
