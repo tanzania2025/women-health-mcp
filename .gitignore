@@ -1,4 +1,7 @@
 # Raw data files and datasets
+raw_Data/
+raw_Data/*
+**/raw_Data/
 raw_data/
 raw_data/*
 **/raw_data/
@@ -130,7 +133,10 @@ node_modules/
 
 # Research datasets
 ICPSR*/
+ICPSR_*
 *.vcf.gz
+*.vcf
+bbj-a-137.vcf.gz
 *.zip
 
 # Medical/clinical data
