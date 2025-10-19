@@ -156,6 +156,10 @@ api_keys.txt
 pipeline_output.json
 enhanced_mcp_demo_output.json
 
+# TypeScript build output
+mcp_servers/nhs_api/build/
+*.tsbuildinfo
+
 # Temporary files
 tmp/
 temp/

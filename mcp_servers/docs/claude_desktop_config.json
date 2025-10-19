@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "nhs-data": {
+      "command": "node",
+      "args": [
+        "/Users/dgordon/womens_health_mcp/build/index.js"
+      ]
+    }
+  }
+}

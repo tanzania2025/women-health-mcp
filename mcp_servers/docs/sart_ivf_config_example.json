@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "sart-ivf": {
+      "command": "python",
+      "args": [
+        "/Users/dgordon/womens_health_mcp/sart_ivf_server.py"
+      ]
+    }
+  }
+}
