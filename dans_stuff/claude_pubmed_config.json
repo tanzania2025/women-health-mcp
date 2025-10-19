@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "pubmed": {
+      "command": "python",
+      "args": ["/Users/dgordon/womens_health_mcp/pubmed_server.py"],
+      "env": {
+        "NCBI_API_KEY": ""
+      }
+    }
+  }
+}
