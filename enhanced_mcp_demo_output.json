@@ -1,10 +1,10 @@
 {
-  "demo_timestamp": "2025-10-18T18:39:29.390796",
+  "demo_timestamp": "2025-10-19T12:28:56.175072",
   "fhir_bundle": {
     "resourceType": "Bundle",
-    "id": "d1cdb7f5-b017-4050-9b0e-94a11b2b5bf5",
+    "id": "1d3fe8d4-7020-4378-b455-61210b3ee4f3",
     "type": "collection",
-    "timestamp": "2025-10-18T18:39:29.390686",
+    "timestamp": "2025-10-19T12:28:50.022287",
     "total": 14,
     "entry": [
       {
@@ -37,7 +37,7 @@
       {
         "resource": {
           "resourceType": "DiagnosticReport",
-          "id": "b513702d-c935-4429-bedd-f4a4288d27f8",
+          "id": "2755b83c-de95-4a74-bc69-ace5d25c0851",
           "status": "final",
           "category": [
             {
@@ -62,20 +62,20 @@
           "subject": {
             "reference": "Patient/P001_ENHANCED"
           },
-          "effectiveDateTime": "2025-10-11",
-          "issued": "2025-10-18T18:39:29.390617",
+          "effectiveDateTime": "2025-10-12",
+          "issued": "2025-10-19T12:28:50.022192",
           "result": [
             {
-              "reference": "Observation/0b420bbe-2fb0-4354-ac74-6d1a7be9b0a4"
+              "reference": "Observation/da5b5a3e-875f-45f4-a363-907b861c3289"
             },
             {
-              "reference": "Observation/9dd82e8d-bb2e-4d0a-9f17-8d67f53a2d28"
+              "reference": "Observation/60afe974-8a81-4a64-b2ba-2806440d1553"
             },
             {
-              "reference": "Observation/e00730b0-f657-4041-9661-8c15bc12ffed"
+              "reference": "Observation/a9f16e07-c4b6-48ed-96de-6abad6677f05"
             },
             {
-              "reference": "Observation/cc043ab3-ed56-48be-ac01-7dffbbddb3f7"
+              "reference": "Observation/adc8b702-63fe-4af4-b3a2-9f982e31b648"
             }
           ],
           "conclusion": "AMH 0.8 ng/mL indicates diminished ovarian reserve; Elevated FSH 12.5 mIU/mL consistent with decreased ovarian function"
@@ -84,7 +84,7 @@
       {
         "resource": {
           "resourceType": "Observation",
-          "id": "0b420bbe-2fb0-4354-ac74-6d1a7be9b0a4",
+          "id": "da5b5a3e-875f-45f4-a363-907b861c3289",
           "status": "final",
           "category": [
             {
@@ -109,7 +109,7 @@
           "subject": {
             "reference": "Patient/P001_ENHANCED"
           },
-          "effectiveDateTime": "2025-10-11",
+          "effectiveDateTime": "2025-10-12",
           "valueQuantity": {
             "value": 0.8,
             "unit": "ng/mL",
@@ -122,7 +122,7 @@
       {
         "resource": {
           "resourceType": "Observation",
-          "id": "9dd82e8d-bb2e-4d0a-9f17-8d67f53a2d28",
+          "id": "60afe974-8a81-4a64-b2ba-2806440d1553",
           "status": "final",
           "category": [
             {
@@ -147,7 +147,7 @@
           "subject": {
             "reference": "Patient/P001_ENHANCED"
           },
-          "effectiveDateTime": "2025-10-11",
+          "effectiveDateTime": "2025-10-12",
           "valueQuantity": {
             "value": 12.5,
             "unit": "mIU/mL",
@@ -160,7 +160,7 @@
       {
         "resource": {
           "resourceType": "Observation",
-          "id": "e00730b0-f657-4041-9661-8c15bc12ffed",
+          "id": "a9f16e07-c4b6-48ed-96de-6abad6677f05",
           "status": "final",
           "category": [
             {
@@ -185,7 +185,7 @@
           "subject": {
             "reference": "Patient/P001_ENHANCED"
           },
-          "effectiveDateTime": "2025-10-11",
+          "effectiveDateTime": "2025-10-12",
           "valueQuantity": {
             "value": 8.2,
             "unit": "mIU/mL",
@@ -198,7 +198,7 @@
       {
         "resource": {
           "resourceType": "Observation",
-          "id": "cc043ab3-ed56-48be-ac01-7dffbbddb3f7",
+          "id": "adc8b702-63fe-4af4-b3a2-9f982e31b648",
           "status": "final",
           "category": [
             {
@@ -223,7 +223,7 @@
           "subject": {
             "reference": "Patient/P001_ENHANCED"
           },
-          "effectiveDateTime": "2025-10-11",
+          "effectiveDateTime": "2025-10-12",
           "valueQuantity": {
             "value": 45.0,
             "unit": "pg/mL",
@@ -236,7 +236,7 @@
       {
         "resource": {
           "resourceType": "Observation",
-          "id": "7e5b946a-c1d7-4d85-92d5-b63e0eef44b7",
+          "id": "c00fdbee-372d-4c66-9432-1bc560817a78",
           "status": "final",
           "category": [
             {
@@ -261,7 +261,7 @@
           "subject": {
             "reference": "Patient/P001_ENHANCED"
           },
-          "effectiveDateTime": "2025-09-20",
+          "effectiveDateTime": "2025-09-21",
           "valueQuantity": {
             "value": 36.2,
             "unit": "Cel",
@@ -279,7 +279,7 @@
       {
         "resource": {
           "resourceType": "Observation",
-          "id": "999af4fd-2ad8-49f0-80de-c786f140c522",
+          "id": "7dd348d3-234d-4d47-9b01-71a041e12a32",
           "status": "final",
           "category": [
             {
@@ -304,7 +304,7 @@
           "subject": {
             "reference": "Patient/P001_ENHANCED"
           },
-          "effectiveDateTime": "2025-09-20",
+          "effectiveDateTime": "2025-09-22",
           "valueQuantity": {
             "value": 36.3,
             "unit": "Cel",
@@ -322,7 +322,7 @@
       {
         "resource": {
           "resourceType": "Observation",
-          "id": "c2fe15bd-95d7-4f0f-9fa6-7b93693f8e10",
+          "id": "ec424c74-7f7c-47ae-adb5-0447d403336f",
           "status": "final",
           "category": [
             {
@@ -347,7 +347,7 @@
           "subject": {
             "reference": "Patient/P001_ENHANCED"
           },
-          "effectiveDateTime": "2025-09-20",
+          "effectiveDateTime": "2025-09-23",
           "valueQuantity": {
             "value": 36.1,
             "unit": "Cel",
@@ -365,7 +365,7 @@
       {
         "resource": {
           "resourceType": "Observation",
-          "id": "756a6308-3db7-4f80-9778-0a4e3d73bd81",
+          "id": "79754851-033e-4990-a2c8-597b0145b26f",
           "status": "final",
           "category": [
             {
@@ -390,7 +390,7 @@
           "subject": {
             "reference": "Patient/P001_ENHANCED"
           },
-          "effectiveDateTime": "2025-09-20",
+          "effectiveDateTime": "2025-09-24",
           "valueQuantity": {
             "value": 36.4,
             "unit": "Cel",
@@ -408,7 +408,7 @@
       {
         "resource": {
           "resourceType": "Observation",
-          "id": "43ff59bd-02a7-4cf7-9e12-33534389e0a5",
+          "id": "df64fae3-e7d1-415f-9982-9700cfe5c7c4",
           "status": "final",
           "category": [
             {
@@ -433,7 +433,7 @@
           "subject": {
             "reference": "Patient/P001_ENHANCED"
           },
-          "effectiveDateTime": "2025-09-20",
+          "effectiveDateTime": "2025-09-25",
           "valueQuantity": {
             "value": 36.8,
             "unit": "Cel",
@@ -451,7 +451,7 @@
       {
         "resource": {
           "resourceType": "Observation",
-          "id": "e3089b15-0f7e-483b-9ef1-48ccb5e2015d",
+          "id": "1d5d07ad-afd3-4e98-913b-3318a62257fb",
           "status": "final",
           "category": [
             {
@@ -476,7 +476,7 @@
           "subject": {
             "reference": "Patient/P001_ENHANCED"
           },
-          "effectiveDateTime": "2025-09-20",
+          "effectiveDateTime": "2025-09-26",
           "valueQuantity": {
             "value": 36.7,
             "unit": "Cel",
@@ -494,7 +494,7 @@
       {
         "resource": {
           "resourceType": "Observation",
-          "id": "d28da25d-7e15-472a-886d-d918f459d21b",
+          "id": "86a67036-4a2c-42f6-83b9-6a47e71ae2d9",
           "status": "final",
           "category": [
             {
@@ -519,7 +519,7 @@
           "subject": {
             "reference": "Patient/P001_ENHANCED"
           },
-          "effectiveDateTime": "2025-09-20",
+          "effectiveDateTime": "2025-09-27",
           "valueQuantity": {
             "value": 36.9,
             "unit": "Cel",
@@ -537,7 +537,7 @@
       {
         "resource": {
           "resourceType": "Observation",
-          "id": "282af888-34a6-413d-9a1c-c23768cb5905",
+          "id": "3556a3ac-d7f8-4400-b02b-e460f48f049d",
           "status": "final",
           "category": [
             {
@@ -561,7 +561,7 @@
           "subject": {
             "reference": "Patient/P001_ENHANCED"
           },
-          "effectiveDate": "2025-10-04",
+          "effectiveDate": "2025-10-05",
           "valueString": "positive",
           "extension": [
             {
@@ -603,12 +603,12 @@
   "privacy_compliance": {
     "active_consents": 2,
     "total_data_access_events": 3,
-    "last_data_access": "2025-10-18T18:39:29.389228",
+    "last_data_access": "2025-10-19T12:28:50.020753",
     "data_types_accessed": [
-      "reproductive_labs",
-      "cycle_tracking",
       "consent_record",
-      "research_data"
+      "research_data",
+      "cycle_tracking",
+      "reproductive_labs"
     ]
   }
 }

@@ -61,6 +61,11 @@ ipython_config.py
 .env.test.local
 .env.production.local
 
+# MCP Server data
+data/uploads/
+data/exports/
+data/cache/
+
 # Logs
 logs
 *.log
