@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "asrm-practice-guidance": {
+      "command": "python",
+      "args": [
+        "/Users/dgordon/womens_health_mcp/asrm_server.py"
+      ]
+    }
+  }
+}
