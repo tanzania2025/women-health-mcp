@@ -242,65 +242,56 @@ def main():
     # Initialize components
     components = initialize_all_components()
 
-    # Sidebar navigation
-    st.sidebar.title("🏆 Demo")
-    demo_section = st.sidebar.selectbox(
-        "Demo Section:",
-        [
-            "🎯 Overview & Achievement",
-            "🌊 1. Real SWAN Research Data",
-            "🧮 2. Clinical Calculators (ASRM/ESHRE)",
-            "🏥 3. FHIR EHR Integration",
-            "📱 4. Patient-Generated Data",
-            "🔒 5. Privacy & Security (HIPAA)",
-            "📚 6. Research Database Access",
-            "🌸 7. Enhanced Clinical Tools",
-            "📖 8. Evidence Library Access",
-            "🤖 9. AI Agent Integration",
-            "🖥️ 10. Production MCP Server",
-            "🎬 Complete Live Demo"
-        ]
-    )
-
-    # Achievement status
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### ✅ Implementation Status")
-    achievements = {
-        "Clinical Data (FHIR)": "✅ 100%",
-        "Research Databases": "✅ 100%",
-        "Clinical Calculators": "✅ 100%",
-        "Patient Data Integration": "✅ 100%",
-        "Privacy & Security": "✅ 100%",
-        "MCP Protocol": "✅ 100%",
-        "AI Integration": "✅ 100%",
-        "Working Demo": "✅ 100%"
-    }
-
-    for component, status in achievements.items():
-        st.sidebar.write(f"{status} {component}")
+    # Sidebar navigation with individual page buttons
+    st.sidebar.title("🏆 Women's Health MCP Demo")
+    st.sidebar.markdown("Navigate through our complete solution:")
+    
+    # Initialize session state for page selection
+    if 'selected_page' not in st.session_state:
+        st.session_state.selected_page = "🎯 Overview & Achievement"
+    
+    # Page navigation buttons
+    pages = [
+        "🎯 Overview & Achievement",
+        "🧮 Clinical Calculators",
+        "🏥 FHIR EHR Integration",
+        "📱 Patient-Generated Data",
+        "🔒 Privacy & Security",
+        "📚 Research Database Access",
+        "🌸 Enhanced Clinical Tools",
+        "📖 Evidence Library Access", 
+        "🤖 AI Agent Integration",
+        "🖥️ Production MCP Server",
+        "🎬 Complete Live Demo"
+    ]
+    
+    for page in pages:
+        if st.sidebar.button(page, key=f"btn_{page}", use_container_width=True):
+            st.session_state.selected_page = page
+    
+    # Get the selected page
+    demo_section = st.session_state.selected_page
 
     # Route to appropriate demo section
     if demo_section == "🎯 Overview & Achievement":
         show_challenge_overview()
-    elif demo_section == "🌊 1. Real SWAN Research Data":
-        show_swan_integration()
-    elif demo_section == "🧮 2. Clinical Calculators (ASRM/ESHRE)":
+    elif demo_section == "🧮 Clinical Calculators":
         show_clinical_calculators(components)
-    elif demo_section == "🏥 3. FHIR EHR Integration":
+    elif demo_section == "🏥 FHIR EHR Integration":
         show_fhir_integration(components)
-    elif demo_section == "📱 4. Patient-Generated Data":
+    elif demo_section == "📱 Patient-Generated Data":
         show_patient_data_integration(components)
-    elif demo_section == "🔒 5. Privacy & Security (HIPAA)":
+    elif demo_section == "🔒 Privacy & Security":
         show_privacy_security(components)
-    elif demo_section == "📚 6. Research Database Access":
+    elif demo_section == "📚 Research Database Access":
         show_research_databases(components)
-    elif demo_section == "🌸 7. Enhanced Clinical Tools":
+    elif demo_section == "🌸 Enhanced Clinical Tools":
         show_enhanced_clinical_tools()
-    elif demo_section == "📖 8. Evidence Library Access":
+    elif demo_section == "📖 Evidence Library Access":
         show_evidence_library_access()
-    elif demo_section == "🤖 9. AI Agent Integration":
+    elif demo_section == "🤖 AI Agent Integration":
         show_ai_integration(components)
-    elif demo_section == "🖥️ 10. Production MCP Server":
+    elif demo_section == "🖥️ Production MCP Server":
         show_mcp_server(components)
     elif demo_section == "🎬 Complete Live Demo":
         show_complete_live_demo(components)
@@ -718,26 +709,41 @@ def show_fhir_integration(components):
 
             try:
                 # Create patient resource
-                patient_resource = fhir.create_patient_resource(
+                patient_data = {
+                    "patient_id": patient_id,
+                    "birth_date": birth_date.isoformat(),
+                    "gender": gender,
+                    "given_name": "Jane",
+                    "family_name": "Doe"
+                }
+                patient_resource = fhir.create_patient_resource(patient_data)
+
+                # Create reproductive observations using individual parameters
+                amh_obs = fhir.create_reproductive_observation(
                     patient_id=patient_id,
-                    birth_date=birth_date.isoformat(),
-                    gender=gender,
-                    name_given="Jane",
-                    name_family="Doe"
+                    observation_type="amh",  # This maps to the reproductive_health_codes
+                    value=amh_value,
+                    unit="ng/mL",
+                    date=test_date.isoformat()
                 )
 
-                # Create hormone observations
-                amh_obs = fhir.create_hormone_observation(
-                    patient_id, "AMH", amh_value, "ng/mL", test_date.isoformat()
+                fsh_obs = fhir.create_reproductive_observation(
+                    patient_id=patient_id,
+                    observation_type="fsh",  # This maps to the reproductive_health_codes
+                    value=fsh_value,
+                    unit="mIU/mL",
+                    date=test_date.isoformat()
                 )
 
-                fsh_obs = fhir.create_hormone_observation(
-                    patient_id, "FSH", fsh_value, "mIU/mL", test_date.isoformat()
-                )
-
-                # Create diagnostic report
-                diagnostic_report = fhir.create_reproductive_health_panel(
-                    patient_id, [amh_obs, fsh_obs], test_date.isoformat()
+                # Create hormonal lab report using individual parameters
+                lab_results = {
+                    "amh": amh_value,
+                    "fsh": fsh_value
+                }
+                diagnostic_report = fhir.create_hormonal_lab_report(
+                    patient_id=patient_id,
+                    lab_results=lab_results,
+                    test_date=test_date.isoformat()
                 )
 
                 # Display results
@@ -1037,18 +1043,51 @@ def show_research_databases(components):
     tab1, tab2, tab3 = st.tabs(["SWAN Population Data", "SART IVF Outcomes", "PubMed Literature"])
 
     with tab1:
-        st.markdown("**SWAN Population Statistics:**")
+        st.markdown("**SWAN Study - Real Longitudinal Research Data:**")
+        st.info("🌊 Study of Women's Health Across the Nation - 7,370+ participants across multiple visits")
+        
+        # SWAN Dataset overview
+        st.subheader("📊 SWAN Dataset Overview")
+        try:
+            overview = multi_dataset_integration.get_datasets_overview()
+            
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("📚 SWAN Visits", f"{overview['loaded_datasets']}/6")
+            with col2:
+                st.metric("👥 Participants", f"{overview.get('total_participants', 0):,}")
+            with col3:
+                st.metric("📊 Variables", f"{overview.get('total_variables', 0):,}")
+            with col4:
+                st.metric("📅 Study Period", overview.get('date_range', 'Multiple years'))
+                
+        except Exception as e:
+            st.warning("SWAN dataset overview not available - using mock data for demo")
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("📚 SWAN Visits", "3/6")
+            with col2:
+                st.metric("👥 Participants", "7,370")
+            with col3:
+                st.metric("📊 Variables", "2,746")
+            with col4:
+                st.metric("📅 Study Period", "1996-2006")
 
+        st.subheader("🔍 SWAN Population Analysis")
+        
         col1, col2 = st.columns(2)
 
         with col1:
-            condition = st.selectbox("Condition:", ["menopause timing", "hormone trajectories", "population demographics"])
+            condition = st.selectbox("Analysis Focus:", ["menopause timing", "hormone trajectories", "population demographics"])
             age_min = st.number_input("Min Age:", 40, 70, 45)
             age_max = st.number_input("Max Age:", 40, 70, 55)
 
         with col2:
             ethnicity = st.multiselect("Ethnicity Filter:",
                                      ["african_american", "caucasian", "chinese", "hispanic", "japanese"])
+            
+            # Variable search option
+            search_term = st.text_input("Search SWAN Variables:", placeholder="e.g., ESTR, AMH, FSH")
 
         if st.button("📊 Query SWAN Database"):
             with st.spinner("Querying SWAN longitudinal data..."):
@@ -1076,6 +1115,34 @@ def show_research_databases(components):
 
                 except Exception as e:
                     st.error(f"SWAN query error: {e}")
+        
+        # Variable search functionality
+        if search_term and st.button("🔍 Search SWAN Variables"):
+            with st.spinner(f"Searching for {search_term} variables..."):
+                try:
+                    # Try to search using multi_dataset_integration
+                    search_results = multi_dataset_integration.search_variables_across_datasets(search_term)
+                    
+                    if search_results:
+                        st.success(f"Found {search_term} variables in {len(search_results)} visits")
+                        
+                        for dataset_id, data in search_results.items():
+                            with st.expander(f"📊 {data['visit']} ({data['period']}) - {data['count']} variables"):
+                                st.write("**Variables found:**")
+                                for var in data['variables'][:10]:  # Show first 10
+                                    st.write(f"• {var}")
+                                if len(data['variables']) > 10:
+                                    st.write(f"... and {len(data['variables']) - 10} more")
+                    else:
+                        st.warning(f"No {search_term} variables found in loaded datasets")
+                        
+                except Exception as e:
+                    st.info(f"Variable search using demo data for: {search_term}")
+                    # Mock search results
+                    mock_variables = [f"{search_term}_baseline", f"{search_term}_followup", f"{search_term}_change"]
+                    st.write("**Sample variables:**")
+                    for var in mock_variables:
+                        st.write(f"• {var}")
 
     with tab2:
         st.markdown("**SART IVF Success Rates:**")
@@ -1522,12 +1589,25 @@ def show_complete_live_demo(components):
             time.sleep(2)
 
             try:
-                patient_resource = components['fhir'].create_patient_resource(
-                    "sarah-001", "1985-03-15", "female", "Sarah", "Johnson"
+                # Create patient resource with correct data format
+                patient_data = {
+                    "patient_id": "sarah-001",
+                    "birth_date": "1985-03-15",
+                    "gender": "female",
+                    "given_name": "Sarah",
+                    "family_name": "Johnson"
+                }
+                patient_resource = components['fhir'].create_patient_resource(patient_data)
+                
+                # Create hormone observation with correct parameters
+                amh_obs = components['fhir'].create_reproductive_observation(
+                    patient_id="sarah-001",
+                    observation_type="amh",
+                    value=0.8,
+                    unit="ng/mL",
+                    date="2024-01-15"
                 )
-                amh_obs = components['fhir'].create_hormone_observation(
-                    "sarah-001", "AMH", 0.8, "ng/mL", "2024-01-15"
-                )
+                
                 step_results['fhir'] = True
                 status_text.text("✅ 2/8 FHIR resources created successfully")
             except:
