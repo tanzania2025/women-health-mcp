@@ -282,7 +282,7 @@ async def global_exception_handler(request, exc):
 def start_server(host: str = "0.0.0.0", port: int = 8000, reload: bool = False):
     """Start the MCP server."""
     uvicorn.run(
-        "mcp_server.server:app",
+        "demos.mcp_server.server:app",
         host=host,
         port=port,
         reload=reload,

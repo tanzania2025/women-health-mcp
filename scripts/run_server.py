@@ -10,7 +10,7 @@ import asyncio
 from pathlib import Path
 
 # Add the project root to Python path
-project_root = Path(__file__).parent
+project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 def check_dependencies():
@@ -50,7 +50,7 @@ def main():
     setup_environment()
     
     # Import after path setup
-    from mcp_server.server import start_server
+    from demos.mcp_server.server import start_server
     
     print("\n📡 MCP Server Configuration:")
     print(f"  Host: {os.getenv('HOST', '0.0.0.0')}")
@@ -65,8 +65,8 @@ def main():
     print("  WebSocket: ws://localhost:8000/mcp/ws")
     
     print("\n🧪 To test the server:")
-    print("  python demo/mcp_client_demo.py")
-    print("  python demo/mcp_client_demo.py simple")
+    print("  python -m demos.mcp_client_demo.mcp_client_demo")
+    print("  python -m demos.mcp_client_demo.mcp_client_demo simple")
     
     print("\n⭐ Features Available:")
     print("  ✓ Model Context Protocol (MCP) compliance")
