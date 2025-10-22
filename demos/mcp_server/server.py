@@ -248,7 +248,7 @@ async def get_prompt(
     return response.get("result", {})
 
 
-# Anthropic/OpenAI Integration Endpoints
+# Anthropic Integration Endpoint
 @app.post("/ai/anthropic/complete")
 async def anthropic_completion(
     request: Dict[str, Any],
@@ -263,24 +263,6 @@ async def anthropic_completion(
     return {
         "completion": "Anthropic integration coming soon...",
         "model": "claude-3-sonnet",
-        "mcp_context_injected": True
-    }
-
-
-@app.post("/ai/openai/complete")
-async def openai_completion(
-    request: Dict[str, Any],
-    api_key: str = Depends(verify_api_key)
-):
-    """
-    Proxy endpoint for OpenAI API with MCP context.
-    Automatically injects relevant MCP resources and tools into the conversation.
-    """
-    # This would integrate with OpenAI's API
-    # For now, return a placeholder response
-    return {
-        "completion": "OpenAI integration coming soon...",
-        "model": "gpt-4",
         "mcp_context_injected": True
     }
 

@@ -1225,7 +1225,6 @@ def show_ai_integration(components):
         st.markdown('<div class="component-card">', unsafe_allow_html=True)
         st.markdown("**Supported AI Platforms:**")
         st.write("• **Anthropic Claude** - Production endpoints ready")
-        st.write("• **OpenAI GPT-4** - API integration framework")
         st.write("• **Hugging Face Models** - Biomedical model support")
         st.write("• **Custom AI Agents** - MCP protocol compliance")
         st.markdown('</div>', unsafe_allow_html=True)

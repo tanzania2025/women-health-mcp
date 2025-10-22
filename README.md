@@ -291,18 +291,6 @@ curl -X POST http://localhost:8000/ai/anthropic/complete \
   -d '{"message": "38-year-old with AMH 0.8, should I do IVF?", "include_mcp_context": true}'
 ```
 
-### OpenAI Integration
-```bash
-# Add to .env file
-OPENAI_API_KEY=your-openai-api-key
-
-# Use MCP with GPT-4
-curl -X POST http://localhost:8000/ai/openai/complete \
-  -H "Authorization: Bearer your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Analyze fertility options for 38-year-old", "include_mcp_context": true}'
-```
-
 ### Custom AI Agent Example
 ```python
 from demos.mcp_client_demo import WomensHealthMCPClient

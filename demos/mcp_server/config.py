@@ -25,7 +25,6 @@ class Settings(BaseSettings):
     
     # External API keys
     anthropic_api_key: Optional[str] = None
-    openai_api_key: Optional[str] = None
     
     # Database configuration
     database_url: str = "sqlite:///./womens_health_mcp.db"

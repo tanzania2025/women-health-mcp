@@ -30,7 +30,6 @@ cp .env.example .env
 
 # Edit .env with your API keys
 # ANTHROPIC_API_KEY=your-key
-# OPENAI_API_KEY=your-key
 ```
 
 ### 2. Start MCP Server

@@ -69,9 +69,8 @@ def main():
     print("1. Update .env file with your API keys")
     print("2. Start the server: python run_server.py")
     print("3. Test with demo: python demo/mcp_client_demo.py")
-    print("\nFor Anthropic/OpenAI integration:")
+    print("\nFor Anthropic integration:")
     print("- Add ANTHROPIC_API_KEY to .env file")
-    print("- Add OPENAI_API_KEY to .env file")
 
 if __name__ == "__main__":
     main()
