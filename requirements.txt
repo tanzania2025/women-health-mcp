@@ -44,7 +44,7 @@ beautifulsoup4>=4.12.0
 lxml>=4.9.0
 
 # MCP (Model Context Protocol) support
-mcp>=1.18.0
+mcp>=1.1.0
 
 # Encryption and security
 cryptography>=41.0.0
