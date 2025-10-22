@@ -10,7 +10,7 @@ This script tests the functionality of the ESHRE server by:
 
 import asyncio
 import sys
-from eshre_server import (
+from servers.eshre_server import (
     parse_guidelines_list,
     search_guidelines,
     get_guideline_content

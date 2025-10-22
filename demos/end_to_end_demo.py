@@ -4,10 +4,10 @@ End-to-End Demo - Orchestrates the full women's health MCP pipeline
 import json
 from typing import Dict, Any
 
-from biomini_intake import ingest_patient
-from netmind_router import orchestrate_query, display_routing_info
-from manus_agents import data_retrieval_agent, clinical_advisor_agent
-from huggingface_integration import rank_papers_by_relevance, display_ranked_papers
+from core.biomini_intake import ingest_patient
+from core.netmind_router import orchestrate_query, display_routing_info
+from core.manus_agents import data_retrieval_agent, clinical_advisor_agent
+from core.huggingface_integration import rank_papers_by_relevance, display_ranked_papers
 
 
 def print_section(title: str, icon: str = "═"):

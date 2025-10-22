@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 
 from mcp_server.mcp_protocol import MCPServer
-from multi_dataset_integration import multi_dataset_integration
+from core.multi_dataset_integration import multi_dataset_integration
 
 async def test_enhanced_demo():
     """Test all enhanced multi-dataset demo components."""

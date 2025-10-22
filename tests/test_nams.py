@@ -7,7 +7,7 @@ This script tests the NAMS position statements MCP server functionality.
 
 import asyncio
 import sys
-from nams_server import (
+from servers.nams_server import (
     parse_position_statements,
     search_protocols,
     get_protocol_content,

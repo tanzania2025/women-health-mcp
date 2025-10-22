@@ -19,50 +19,50 @@ from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
 
 # Add project root to path
-sys.path.append(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).parent.parent))
 
-from mcp_server.mcp_protocol import MCPServer
-from mcp_server.swan_data_integration import swan_integration
+from demos.mcp_server.mcp_protocol import MCPServer
+from demos.mcp_server.swan_data_integration import swan_integration
 
 # Initialize external services
 @st.cache_resource
 def get_external_services():
     """Initialize external MCP services."""
     try:
-        # Import Dan's MCP servers - using local copies
+        # Import MCP servers using proper imports
         sart_calc = None
         asrm_guides = None
         nams_protocols = None
         pubmed_search = None
-        
+
         # Try to import and initialize services
         try:
-            exec(open('/Users/sunaina/code/women-health-mcp/sart_ivf_server.py').read(), globals())
+            from servers.sart_ivf_server import SARTIVFCalculator
             sart_calc = SARTIVFCalculator()
-        except:
-            pass
-            
+        except Exception as e:
+            st.warning(f"Could not load SART calculator: {e}")
+
         try:
-            exec(open('/Users/sunaina/code/women-health-mcp/asrm_server.py').read(), globals())
+            from servers.asrm_server import ASRMGuidelines
             asrm_guides = ASRMGuidelines()
-        except:
-            pass
-            
+        except Exception as e:
+            st.warning(f"Could not load ASRM guidelines: {e}")
+
         try:
-            exec(open('/Users/sunaina/code/women-health-mcp/nams_server.py').read(), globals())
+            from servers.nams_server import NAMSProtocols
             nams_protocols = NAMSProtocols()
-        except:
-            pass
-            
+        except Exception as e:
+            st.warning(f"Could not load NAMS protocols: {e}")
+
         try:
-            exec(open('/Users/sunaina/code/women-health-mcp/pubmed_server.py').read(), globals())
+            from servers.pubmed_server import PubMedSearch
             pubmed_search = PubMedSearch()
-        except:
-            pass
-            
+        except Exception as e:
+            st.warning(f"Could not load PubMed search: {e}")
+
         return {
             'sart': sart_calc,
-            'asrm': asrm_guides, 
+            'asrm': asrm_guides,
             'nams': nams_protocols,
             'pubmed': pubmed_search
         }

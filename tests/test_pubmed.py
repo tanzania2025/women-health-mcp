@@ -10,7 +10,7 @@ import os
 # Add the current directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from pubmed_server import search_pubmed, get_article_summaries, fetch_article_abstract
+from servers.pubmed_server import search_pubmed, get_article_summaries, fetch_article_abstract
 
 
 async def test_search():

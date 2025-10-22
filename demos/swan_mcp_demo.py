@@ -10,10 +10,10 @@ import sys
 from pathlib import Path
 
 # Add project root to path
-sys.path.append(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).parent.parent))
 
-from mcp_server.mcp_protocol import MCPServer
-from mcp_server.swan_data_integration import swan_integration
+from demos.mcp_server.mcp_protocol import MCPServer
+from demos.mcp_server.swan_data_integration import swan_integration
 
 async def main():
     """

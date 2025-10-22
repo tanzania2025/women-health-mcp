@@ -4,11 +4,11 @@ Women's Health MCP - Main Demo Entry Point
 Demonstrates clinical decision support for fertility questions
 """
 
-from biomini_intake import ingest_patient, SAMPLE_PATIENT_1, SAMPLE_PATIENT_2
-from netmind_router import orchestrate_query
-from manus_agents import data_retrieval_agent, clinical_advisor_agent
-from huggingface_integration import rank_papers_by_relevance, load_biomedical_model
-from end_to_end_demo import run_full_pipeline
+from core.biomini_intake import ingest_patient, SAMPLE_PATIENT_1, SAMPLE_PATIENT_2
+from core.netmind_router import orchestrate_query
+from core.manus_agents import data_retrieval_agent, clinical_advisor_agent
+from core.huggingface_integration import rank_papers_by_relevance, load_biomedical_model
+from demos.end_to_end_demo import run_full_pipeline
 
 
 def main():

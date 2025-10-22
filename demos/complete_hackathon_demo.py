@@ -21,15 +21,15 @@ from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
 
 # Add project root to path
-sys.path.append(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).parent.parent))
 
-from mcp_server.mcp_protocol import MCPServer
-from multi_dataset_integration import multi_dataset_integration
-from clinical_calculators import ClinicalCalculators
-from patient_data_integration import PatientDataIntegration
-from privacy_security import ReproductiveHealthSecurity
-from research_database_integration import ResearchDatabaseIntegration
-from fhir_integration import ReproductiveHealthFHIR
+from demos.mcp_server.mcp_protocol import MCPServer
+from core.multi_dataset_integration import multi_dataset_integration
+from core.clinical_calculators import ClinicalCalculators
+from core.patient_data_integration import PatientDataIntegration
+from core.privacy_security import ReproductiveHealthSecurity
+from core.research_database_integration import ResearchDatabaseIntegration
+from core.fhir_integration import ReproductiveHealthFHIR
 
 # Dan's MCP integrations - now with MCP package installed
 try:

@@ -58,27 +58,78 @@ graph TD
     end
 ```
 
-## 📁 Enhanced File Structure
+## 📁 Project Structure
 
-### 🚀 Enhanced MCP Components (Challenge Solution)
-- **`womens_health_mcp.py`** - Core MCP protocol with standardized data source access
-- **`clinical_calculators.py`** - ASRM/ESHRE validated calculators (ovarian reserve, IVF success, menopause)
-- **`patient_data_integration.py`** - Unified interface for cycle tracking apps and wearables
-- **`privacy_security.py`** - HIPAA-compliant security layer with encryption and audit trails
-- **`research_database_integration.py`** - Real-time access to SWAN, SART, PubMed databases
-- **`fhir_integration.py`** - FHIR R4 compliant data exchange for EHR interoperability
-- **`enhanced_mcp_demo.py`** - Comprehensive demonstration of all enhanced capabilities
-
-### 📊 Original Components (Baseline)
-- **`main.py`** - Original demo entry point
-- **`end_to_end_demo.py`** - Basic pipeline orchestration
-- **`biomini_intake.py`** - Patient data ingestion and ASRM classification
-- **`netmind_router.py`** - Query routing logic
-- **`manus_agents.py`** - Multi-agent clinical reasoning system
-- **`huggingface_integration.py`** - Research paper relevance ranking
-
-### 🧪 Testing & Utilities
-- **`test_demo.py`** - Non-interactive automated testing
+```
+women-health-mcp/
+├── servers/          # MCP server implementations
+│   ├── asrm_server.py         # ASRM guidelines server
+│   ├── nams_server.py         # NAMS menopause protocols
+│   ├── pubmed_server.py       # PubMed research integration
+│   ├── sart_ivf_server.py     # SART IVF success calculator
+│   ├── eshre_server.py        # ESHRE guidelines
+│   ├── elsa_server.py         # ELSA data integration
+│   └── menopause_server.py    # Menopause prediction server
+│
+├── clients/          # Client implementations
+│   ├── asrm_client.py         # ASRM client
+│   ├── nams_client.py         # NAMS client
+│   ├── pubmed_client.py       # PubMed client
+│   └── nhs-typescript/        # NHS TypeScript client
+│
+├── core/             # Core MCP components
+│   ├── womens_health_mcp.py   # Core MCP protocol
+│   ├── clinical_calculators.py # Clinical calculation engines
+│   ├── patient_data_integration.py # Multi-platform data sync
+│   ├── privacy_security.py    # HIPAA compliance layer
+│   ├── research_database_integration.py # Research DB access
+│   ├── fhir_integration.py    # FHIR R4 interoperability
+│   ├── biomini_intake.py      # Patient data ingestion
+│   ├── netmind_router.py      # Query routing
+│   ├── manus_agents.py        # Multi-agent reasoning
+│   └── huggingface_integration.py # ML model integration
+│
+├── demos/            # Demo applications
+│   ├── main.py                # Original demo entry point
+│   ├── streamlit_demo.py      # Web interface demo
+│   ├── enhanced_streamlit_demo.py # Enhanced web demo
+│   ├── enhanced_mcp_demo.py   # Comprehensive MCP demo
+│   ├── end_to_end_demo.py     # Pipeline orchestration
+│   ├── complete_hackathon_demo.py # Full hackathon demo
+│   ├── swan_mcp_demo.py       # SWAN data demo
+│   ├── mcp_server/            # MCP server utilities
+│   └── mcp_client_demo/       # MCP client examples
+│
+├── tests/            # Test suite
+│   ├── test_asrm.py           # ASRM server tests
+│   ├── test_nams.py           # NAMS server tests
+│   ├── test_pubmed.py         # PubMed tests
+│   ├── test_eshre.py          # ESHRE tests
+│   ├── test_demo.py           # Demo tests
+│   └── test_enhanced_demo.py  # Enhanced demo tests
+│
+├── scripts/          # Utility scripts
+│   ├── setup_mcp.py           # MCP setup script
+│   ├── run_server.py          # Server runner
+│   ├── activate_claude_integration.py # Claude integration
+│   └── fix_imports.py         # Import fixing utility
+│
+├── docs/             # Documentation
+│   ├── HOW_TO_RUN_DEMO.md     # Demo instructions
+│   ├── STREAMLIT_DEMO_GUIDE.md # Streamlit guide
+│   ├── MCP_SERVER_GUIDE.md    # Server documentation
+│   ├── DEMO_SUMMARY.md        # Demo overview
+│   └── [additional guides]
+│
+├── config/           # Configuration files
+│   ├── claude_*.json          # Claude MCP configs
+│   ├── dans_env.example       # Environment template
+│   └── [additional configs]
+│
+└── data/             # Data files
+    ├── pipeline_output.json   # Pipeline results
+    └── enhanced_mcp_demo_output.json # Demo outputs
+```
 
 ## 🔄 Enhanced Data Flow
 
@@ -92,16 +143,31 @@ graph TD
 
 ## 🚀 Quick Start
 
+### Prerequisites
+```bash
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### 🌐 Web Interface (Recommended)
+```bash
+# Start Streamlit demo - opens in browser
+streamlit run demos/streamlit_demo.py
+
+# Or the enhanced version
+streamlit run demos/enhanced_streamlit_demo.py
+```
+
 ### 🆕 MCP Server (Production-Ready)
 ```bash
 # Setup (first time only)
-python setup_mcp.py
+python scripts/setup_mcp.py
 
 # Start MCP server
-python run_server.py
+python scripts/run_server.py
 
 # Test with AI agent client
-python demo/mcp_client_demo.py
+python -m demos.mcp_client_demo
 ```
 
 **MCP Server Features:**
@@ -113,30 +179,33 @@ python demo/mcp_client_demo.py
 - ✅ **AI Prompt Templates** for fertility consultation
 - ✅ **Security Layer** with API key authentication
 
-### Enhanced MCP Demonstration
+### 📋 Command Line Demos
 ```bash
-python enhanced_mcp_demo.py
+# Enhanced MCP Demonstration
+python -m demos.enhanced_mcp_demo
+
+# Original Demo (Baseline)
+python -m demos.main
+
+# SWAN data integration demo
+python -m demos.swan_mcp_demo
 ```
 
-### Original Demo (Baseline)
+### 🧪 Individual Component Testing
 ```bash
-python main.py
-```
+# Test core components
+python -m core.womens_health_mcp
+python -m core.clinical_calculators
+python -m core.patient_data_integration
+python -m core.privacy_security
 
-### Individual Component Testing
-```bash
-# Test enhanced components
-python womens_health_mcp.py
-python clinical_calculators.py
-python patient_data_integration.py
-python privacy_security.py
-python research_database_integration.py
-python fhir_integration.py
+# Test servers
+python -m servers.asrm_server
+python -m servers.nams_server
+python -m servers.pubmed_server
 
-# Test original components
-python biomini_intake.py
-python netmind_router.py
-python manus_agents.py
+# Run test suite
+python -m pytest tests/
 ```
 
 ## 📊 Enhanced Capabilities
@@ -237,7 +306,7 @@ curl -X POST http://localhost:8000/ai/openai/complete \
 
 ### Custom AI Agent Example
 ```python
-from demo.mcp_client_demo import WomensHealthMCPClient
+from demos.mcp_client_demo import WomensHealthMCPClient
 
 async def ai_fertility_consultation(patient_age, amh_level, question):
     client = WomensHealthMCPClient()

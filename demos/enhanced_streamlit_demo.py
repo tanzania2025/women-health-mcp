@@ -17,10 +17,10 @@ from typing import Dict, Any
 import time
 
 # Add project root to path
-sys.path.append(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).parent.parent))
 
-from mcp_server.mcp_protocol import MCPServer
-from multi_dataset_integration import multi_dataset_integration
+from demos.mcp_server.mcp_protocol import MCPServer
+from core.multi_dataset_integration import multi_dataset_integration
 
 # Page configuration
 st.set_page_config(

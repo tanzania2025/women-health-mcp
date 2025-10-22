@@ -8,7 +8,7 @@ requiring the full MCP protocol setup.
 
 import asyncio
 import sys
-from asrm_server import (
+from servers.asrm_server import (
     parse_practice_documents,
     parse_ethics_opinions,
     search_guidelines,

@@ -3,8 +3,8 @@
 Simple test runner for the Women's Health MCP demo (non-interactive)
 """
 
-from biomini_intake import SAMPLE_PATIENT_1, SAMPLE_PATIENT_2
-from end_to_end_demo import run_full_pipeline
+from core.biomini_intake import SAMPLE_PATIENT_1, SAMPLE_PATIENT_2
+from demos.end_to_end_demo import run_full_pipeline
 
 
 def test_scenario_1():

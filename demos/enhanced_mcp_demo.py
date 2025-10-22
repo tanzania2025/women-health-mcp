@@ -9,12 +9,12 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List
 
 # Import all enhanced MCP components
-from womens_health_mcp import WomensHealthMCP, create_fertility_consultation_request
-from clinical_calculators import ClinicalCalculators, OvarianReserveCategory
-from patient_data_integration import PatientDataIntegration, DataSourcePlatform
-from privacy_security import ReproductiveHealthSecurity, ConsentType, AccessLevel
-from research_database_integration import ResearchDatabaseIntegration, DatabaseType
-from fhir_integration import ReproductiveHealthFHIR
+from core.womens_health_mcp import WomensHealthMCP, create_fertility_consultation_request
+from core.clinical_calculators import ClinicalCalculators, OvarianReserveCategory
+from core.patient_data_integration import PatientDataIntegration, DataSourcePlatform
+from core.privacy_security import ReproductiveHealthSecurity, ConsentType, AccessLevel
+from core.research_database_integration import ResearchDatabaseIntegration, DatabaseType
+from core.fhir_integration import ReproductiveHealthFHIR
 
 
 def print_section(title: str, icon: str = "🔬"):
