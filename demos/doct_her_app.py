@@ -439,7 +439,7 @@ For now, here's what I can tell you based on the MCP servers:
 
         # Call Claude API
         message = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-3-5-haiku-20241022",
             max_tokens=2048,
             system=system_prompt,
             messages=[
