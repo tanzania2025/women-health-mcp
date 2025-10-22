@@ -7,7 +7,6 @@ A modern chat interface powered by Claude and local MCP servers
 import streamlit as st
 import sys
 from pathlib import Path
-import json
 
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -20,105 +19,124 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS - Claude-inspired design
+# Custom CSS - Clinical & Professional design with feminine touches
 st.markdown("""
 <style>
-    /* Hide Streamlit branding */
+    /* Import softer, professional font */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+    /* Hide Streamlit branding and default labels */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+    .stTextInput > label {display: none !important;}
 
-    /* Main container */
+    /* Global font and colors */
+    * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* Main container - soft clinical colors with feminine touch */
     .main {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        background: linear-gradient(135deg, #faf5f9 0%, #f0f4f8 100%);
         padding: 0;
+    }
+
+    .block-container {
+        padding-top: 3rem;
+        max-width: 900px;
     }
 
     /* Landing page container */
     .landing-container {
         max-width: 800px;
         margin: 0 auto;
-        padding: 4rem 2rem;
+        padding: 3rem 2rem 1.5rem 2rem;
         text-align: center;
     }
 
-    /* Logo styling */
+    /* Logo styling - soft professional lavender */
     .logo {
-        font-size: 4rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-size: 3.2rem;
+        font-weight: 500;
+        background: linear-gradient(135deg, #a78bfa 0%, #c084fc 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin-bottom: 1rem;
-        letter-spacing: -2px;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.5px;
     }
 
-    /* Tagline */
+    /* Tagline - softer, more clinical */
     .tagline {
-        font-size: 2rem;
-        color: #4a5568;
-        margin-bottom: 3rem;
-        font-weight: 300;
+        font-size: 1.35rem;
+        color: #64748b;
+        margin-bottom: 2rem;
+        font-weight: 400;
     }
 
-    /* Chat container */
-    .chat-container {
-        max-width: 900px;
-        margin: 2rem auto;
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        padding: 2rem;
+    /* Input container */
+    .input-container {
+        max-width: 700px;
+        margin: 0 auto 1.5rem auto;
     }
 
-    /* Chat input area */
+    /* Chat input area - softer borders, clinical feel */
     .stTextInput > div > div > input {
-        border-radius: 25px;
-        border: 2px solid #e2e8f0;
-        padding: 1rem 1.5rem;
-        font-size: 1rem;
-        transition: all 0.3s ease;
+        border-radius: 16px !important;
+        border: 1.5px solid #e9d5ff !important;
+        padding: 0.9rem 1.3rem !important;
+        font-size: 0.95rem !important;
+        transition: all 0.3s ease !important;
+        background: #fefeff !important;
+        box-shadow: 0 2px 8px rgba(167, 139, 250, 0.04) !important;
     }
 
     .stTextInput > div > div > input:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-color: #c084fc !important;
+        box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.1) !important;
+        outline: none !important;
+    }
+
+    .stTextInput > div > div > input::placeholder {
+        color: #a0aec0;
+        font-weight: 300;
     }
 
     /* Capabilities hint text */
     .capabilities-hint {
         text-align: center;
         margin-top: 1rem;
-        color: #718096;
-        font-size: 0.9rem;
+        color: #94a3b8;
+        font-size: 0.85rem;
         cursor: pointer;
         position: relative;
         display: inline-block;
         padding: 0.5rem;
+        font-weight: 400;
     }
 
     .capabilities-hint:hover {
-        color: #667eea;
+        color: #a78bfa;
     }
 
-    /* Calculator list tooltip */
+    /* Calculator list tooltip - softer colors */
     .calculator-tooltip {
         position: absolute;
         bottom: 100%;
         left: 50%;
         transform: translateX(-50%);
         background: white;
-        color: #2d3748;
+        color: #475569;
         padding: 1rem 1.5rem;
         border-radius: 12px;
-        font-size: 0.9rem;
+        font-size: 0.875rem;
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.3s ease;
         margin-bottom: 0.75rem;
         z-index: 1000;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-        border: 2px solid #667eea;
+        box-shadow: 0 10px 40px rgba(167, 139, 250, 0.15);
+        border: 1.5px solid #e9d5ff;
         white-space: nowrap;
     }
 
@@ -128,56 +146,87 @@ st.markdown("""
 
     .calculator-list {
         text-align: left;
-        line-height: 1.8;
+        line-height: 1.9;
     }
 
     .calculator-item {
         display: block;
-        color: #2d3748;
-        font-weight: 500;
+        color: #475569;
+        font-weight: 400;
     }
 
     /* Chat messages */
     .chat-message {
-        padding: 1rem;
+        padding: 1rem 1.25rem;
         margin: 1rem 0;
         border-radius: 12px;
+        font-size: 0.95rem;
+        line-height: 1.6;
     }
 
     .user-message {
-        background: #f7fafc;
-        border-left: 4px solid #667eea;
+        background: #faf5f9;
+        border-left: 3px solid #c084fc;
     }
 
     .assistant-message {
-        background: #fff;
-        border-left: 4px solid #48bb78;
+        background: #ffffff;
+        border-left: 3px solid #a78bfa;
+        box-shadow: 0 2px 8px rgba(167, 139, 250, 0.04);
     }
 
+    /* Chat history container */
+    .chat-history {
+        max-width: 700px;
+        margin: 2rem auto;
+    }
 
-    /* Button styling */
+    /* Privacy link - subtle footer */
+    .privacy-link {
+        text-align: center;
+        margin-top: 3rem;
+        padding: 1rem;
+    }
+
+    .privacy-link a {
+        color: #94a3b8;
+        font-size: 0.8rem;
+        text-decoration: none;
+        font-weight: 400;
+        transition: color 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .privacy-link a:hover {
+        color: #a78bfa;
+    }
+
+    .privacy-icon {
+        font-size: 0.75rem;
+    }
+
+    /* Button styling - softer clinical colors */
     .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #a78bfa 0%, #c084fc 100%);
         color: white;
         border: none;
-        border-radius: 25px;
-        padding: 0.75rem 2rem;
-        font-weight: 600;
+        border-radius: 20px;
+        padding: 0.7rem 1.8rem;
+        font-weight: 500;
         transition: all 0.3s ease;
+        font-size: 0.9rem;
     }
 
     .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(167, 139, 250, 0.3);
     }
 
-    /* Info cards */
-    .info-card {
-        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        border-left: 4px solid #667eea;
+    /* Hide form submit button but keep Enter key functionality */
+    .stForm button[kind="formSubmit"] {
+        display: none;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -213,7 +262,7 @@ def render_landing_page():
     st.markdown("""
         <div class="landing-container">
             <div class="logo">Doct-Her</div>
-            <div class="tagline">How can I help you today?</div>
+            <div class="tagline">How can I help?</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -236,22 +285,35 @@ def render_capabilities_hint():
         </div>
     """, unsafe_allow_html=True)
 
-def render_chat_interface():
-    """Render the chat interface."""
-    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+def render_privacy_link():
+    """Render subtle privacy information link."""
+    st.markdown("""
+        <div class="privacy-link">
+            <a href="#" onclick="return false;">
+                <span class="privacy-icon">🔒</span>
+                <span>Your data is processed securely and never stored</span>
+            </a>
+        </div>
+    """, unsafe_allow_html=True)
 
-    # Display chat history
-    for message in st.session_state.messages:
-        message_class = "user-message" if message["role"] == "user" else "assistant-message"
-        role_icon = "👤" if message["role"] == "user" else "🩺"
-        st.markdown(f"""
-            <div class="chat-message {message_class}">
-                <strong>{role_icon} {message["role"].title()}:</strong><br>
-                {message["content"]}
-            </div>
-        """, unsafe_allow_html=True)
+def render_chat_history():
+    """Render the chat history."""
+    if st.session_state.messages:
+        st.markdown('<div class="chat-history">', unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+        for message in st.session_state.messages:
+            message_class = "user-message" if message["role"] == "user" else "assistant-message"
+            role_icon = "👤" if message["role"] == "user" else "🩺"
+            role_label = "You" if message["role"] == "user" else "Doct-Her"
+
+            st.markdown(f"""
+                <div class="chat-message {message_class}">
+                    <strong>{role_icon} {role_label}</strong><br>
+                    {message["content"]}
+                </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def handle_user_input(user_input: str):
     """Process user input and get response from Claude via MCP."""
@@ -263,21 +325,17 @@ def handle_user_input(user_input: str):
 
     # TODO: Integrate with Anthropic API and local MCP servers
     # For now, provide a placeholder response
-    calculator_names = "\n    - ".join(AVAILABLE_CALCULATORS.keys())
+    calculator_names = ", ".join(AVAILABLE_CALCULATORS.keys())
 
-    assistant_response = f"""
-    Thank you for your question. I'm Doct-Her, your AI women's health assistant.
+    assistant_response = f"""Thank you for your question. I'm Doct-Her, your AI women's health assistant.
 
-    I have access to several specialized calculators:
-    - {calculator_names}
+I have access to specialized calculators including {calculator_names}.
 
-    To provide you with the most accurate information, I'll connect to the
-    local MCP servers and use the appropriate calculator for your question.
+To provide you with the most accurate information, I'll connect to the local MCP servers and use the appropriate calculator for your question.
 
-    Your question: "{user_input}"
+Your question: "{user_input}"
 
-    (Integration with Anthropic Claude API and local MCP servers is currently being configured)
-    """
+(Integration with Anthropic Claude API and local MCP servers is currently being configured)"""
 
     st.session_state.messages.append({
         "role": "assistant",
@@ -294,37 +352,35 @@ def main():
     render_landing_page()
 
     # Chat input centered
-    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-    user_input = st.text_input(
-        "Ask me anything about women's health...",
-        placeholder="e.g., I'm 38 with AMH 0.8, should I consider IVF?",
-        key="user_input",
-        label_visibility="collapsed"
-    )
+    st.markdown('<div class="input-container">', unsafe_allow_html=True)
+
+    # Use a form to handle Enter key submission (Claude-style)
+    with st.form(key='chat_form', clear_on_submit=True):
+        user_input = st.text_input(
+            "Ask your question",
+            placeholder="e.g., I'm 38 with AMH 0.8, should I consider IVF?",
+            key="user_input",
+            label_visibility="collapsed"
+        )
+        # Submit button is hidden via CSS but enables Enter key submission
+        submitted = st.form_submit_button("Send")
+
+        if submitted and user_input and user_input.strip():
+            handle_user_input(user_input)
+            st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Render capabilities hint below input
     render_capabilities_hint()
 
-    if user_input and user_input.strip():
-        handle_user_input(user_input)
-        st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
     # Display chat history if exists
-    if st.session_state.show_chat and st.session_state.messages:
-        st.markdown("---")
-        render_chat_interface()
+    if st.session_state.show_chat:
+        render_chat_history()
 
-    # Footer info
+    # Privacy link at bottom
     if not st.session_state.show_chat:
-        st.markdown("""
-            <div class="info-card">
-                <strong>🔒 Privacy First</strong><br>
-                Your health data is processed securely using local MCP servers
-                and HIPAA-compliant encryption. No data is stored permanently.
-            </div>
-        """, unsafe_allow_html=True)
+        render_privacy_link()
 
 if __name__ == "__main__":
     main()
