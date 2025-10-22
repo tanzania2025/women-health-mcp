@@ -332,31 +332,8 @@ def render_chat_history():
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-def extract_patient_data(user_input: str) -> Dict[str, Any]:
-    """Extract patient data from user input using regex patterns."""
-    patient_data = {}
-
-    # Extract age
-    age_match = re.search(r'\b(\d{2})\s*(?:years?\s*old|y/?o)\b', user_input, re.IGNORECASE)
-    if age_match:
-        patient_data['age'] = int(age_match.group(1))
-
-    # Extract AMH level
-    amh_match = re.search(r'AMH\s*(?:is\s*|of\s*)?(\d+\.?\d*)\s*(?:ng/ml)?', user_input, re.IGNORECASE)
-    if amh_match:
-        patient_data['amh'] = float(amh_match.group(1))
-
-    # Extract FSH level
-    fsh_match = re.search(r'FSH\s*(?:is\s*|of\s*)?(\d+\.?\d*)', user_input, re.IGNORECASE)
-    if fsh_match:
-        patient_data['fsh'] = float(fsh_match.group(1))
-
-    return patient_data
-
-
-async def gather_mcp_context(patient_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Gather clinical context from MCP server tools."""
-    context = {}
+async def get_mcp_tools() -> list:
+    """Get available tools from MCP server."""
     headers = {
         "Authorization": f"Bearer {MCP_API_KEY}",
         "Content-Type": "application/json"
@@ -364,96 +341,175 @@ async def gather_mcp_context(patient_data: Dict[str, Any]) -> Dict[str, Any]:
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            # Check if MCP server is available
-            try:
-                health = await client.get(f"{MCP_SERVER_URL}/health")
-                if health.status_code != 200:
-                    return {"error": "MCP server not available"}
-            except:
-                return {"error": "MCP server not running. Please start it with: python scripts/run_server.py"}
+            response = await client.get(
+                f"{MCP_SERVER_URL}/mcp/tools",
+                headers=headers
+            )
+            if response.status_code == 200:
+                result = response.json()
+                return result.get("tools", [])
+    except:
+        pass
 
-            # Get ovarian reserve assessment if we have age and AMH
-            if 'age' in patient_data and 'amh' in patient_data:
-                try:
-                    response = await client.post(
-                        f"{MCP_SERVER_URL}/mcp/tools/assess-ovarian-reserve",
-                        json={
-                            "age": patient_data['age'],
-                            "amh": patient_data['amh'],
-                            "fsh": patient_data.get('fsh')
-                        },
-                        headers=headers
-                    )
-                    if response.status_code == 200:
-                        result = response.json()
-                        if "content" in result:
-                            import json
-                            context['ovarian_reserve'] = json.loads(result["content"][0]["text"])
-                except Exception as e:
-                    context['ovarian_reserve_error'] = str(e)
+    return []
 
-            # Get IVF success prediction if we have age and AMH
-            if 'age' in patient_data and 'amh' in patient_data:
-                try:
-                    response = await client.post(
-                        f"{MCP_SERVER_URL}/mcp/tools/predict-ivf-success",
-                        json={
-                            "age": patient_data['age'],
-                            "amh": patient_data['amh'],
-                            "cycle_type": "fresh"
-                        },
-                        headers=headers
-                    )
-                    if response.status_code == 200:
-                        result = response.json()
-                        if "content" in result:
-                            import json
-                            context['ivf_prediction'] = json.loads(result["content"][0]["text"])
-                except Exception as e:
-                    context['ivf_prediction_error'] = str(e)
 
+def convert_mcp_tool_to_claude_format(mcp_tool: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert MCP tool definition to Claude tool format."""
+    return {
+        "name": mcp_tool["name"],
+        "description": mcp_tool["description"],
+        "input_schema": mcp_tool.get("inputSchema", {
+            "type": "object",
+            "properties": {},
+            "required": []
+        })
+    }
+
+
+async def call_mcp_tool(tool_name: str, tool_input: Dict[str, Any]) -> Dict[str, Any]:
+    """Call an MCP tool and return the result."""
+    headers = {
+        "Authorization": f"Bearer {MCP_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{MCP_SERVER_URL}/mcp/tools/{tool_name}",
+                json=tool_input,
+                headers=headers
+            )
+            if response.status_code == 200:
+                return response.json()
     except Exception as e:
-        context['error'] = f"Error connecting to MCP server: {str(e)}"
+        return {"error": str(e)}
 
-    return context
+    return {"error": "Tool call failed"}
 
 
-def call_claude_with_context(user_input: str, mcp_context: Dict[str, Any]) -> str:
-    """Call Claude API with MCP context."""
+async def call_claude_with_mcp_tools(user_input: str) -> str:
+    """Call Claude API with MCP tools - Claude can use tools directly."""
 
     if not ANTHROPIC_API_KEY:
         return """⚠️ **Anthropic API key not configured**
 
 To enable AI-powered consultations, please:
 1. Add your ANTHROPIC_API_KEY to the `.env` file
-2. Restart the application
-
-For now, here's what I can tell you based on the MCP servers:
-""" + format_mcp_context(mcp_context)
+2. Restart the application"""
 
     try:
+        # Check MCP server availability
+        async with httpx.AsyncClient(timeout=10.0) as http_client:
+            try:
+                health = await http_client.get(f"{MCP_SERVER_URL}/health")
+                if health.status_code != 200:
+                    return "❌ MCP server not available. Please start it with: python scripts/run_server.py"
+            except:
+                return "❌ MCP server not running. Please start it with: python scripts/run_server.py"
+
+        # Get MCP tools
+        mcp_tools = await get_mcp_tools()
+        if not mcp_tools:
+            return "❌ No MCP tools available"
+
+        # Convert to Claude format
+        claude_tools = [convert_mcp_tool_to_claude_format(tool) for tool in mcp_tools]
+
+        # Initialize Claude client
         client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
-        # Build system prompt with MCP context
-        system_prompt = build_system_prompt_with_context(mcp_context)
+        # System prompt
+        system_prompt = """You are Doct-Her, an AI-powered women's health assistant specializing in reproductive health and fertility.
 
-        # Call Claude API
-        message = client.messages.create(
-            model="claude-3-5-haiku-20241022",
-            max_tokens=2048,
-            system=system_prompt,
-            messages=[
-                {
+You have access to clinical calculator tools from MCP (Model Context Protocol) servers. Use these tools to provide evidence-based guidance.
+
+**Your Role:**
+- Provide evidence-based fertility and reproductive health guidance
+- Use the available tools to calculate ovarian reserve, IVF success rates, etc.
+- Explain clinical assessments in clear, compassionate language
+- Help patients understand their options and next steps
+- Always clarify that you're an AI assistant and recommend consulting healthcare providers
+
+**Guidelines:**
+1. When you receive a question with age and AMH data, USE THE TOOLS to get clinical assessments
+2. Be compassionate and supportive
+3. Explain medical terms clearly
+4. Always recommend consulting with healthcare providers for medical decisions
+5. If age and AMH indicate time-sensitive concerns, gently emphasize urgency
+6. Provide clear next steps
+
+Remember: You're providing educational information, not medical advice."""
+
+        # Initial message to Claude with tools
+        messages = [{"role": "user", "content": user_input}]
+
+        # Agentic loop - let Claude use tools
+        max_iterations = 5
+        for iteration in range(max_iterations):
+            response = client.messages.create(
+                model="claude-3-5-haiku-20241022",
+                max_tokens=2048,
+                system=system_prompt,
+                tools=claude_tools,
+                messages=messages
+            )
+
+            # Check if Claude wants to use tools
+            if response.stop_reason == "end_turn":
+                # Claude is done, return final response
+                for block in response.content:
+                    if hasattr(block, 'text'):
+                        return block.text
+                return "No response generated"
+
+            elif response.stop_reason == "tool_use":
+                # Claude wants to use tools
+                # Add assistant's response to messages
+                messages.append({
+                    "role": "assistant",
+                    "content": response.content
+                })
+
+                # Process tool calls
+                tool_results = []
+                for block in response.content:
+                    if block.type == "tool_use":
+                        # Execute the tool via MCP
+                        tool_result = await call_mcp_tool(block.name, block.input)
+
+                        # Format result for Claude
+                        if "content" in tool_result:
+                            # MCP returns content array
+                            result_text = tool_result["content"][0]["text"]
+                        elif "error" in tool_result:
+                            result_text = f"Error: {tool_result['error']}"
+                        else:
+                            result_text = str(tool_result)
+
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": result_text
+                        })
+
+                # Add tool results to messages
+                messages.append({
                     "role": "user",
-                    "content": user_input
-                }
-            ]
-        )
+                    "content": tool_results
+                })
 
-        return message.content[0].text
+                # Continue loop to get Claude's next response
+
+            else:
+                # Unexpected stop reason
+                return f"Unexpected response from Claude: {response.stop_reason}"
+
+        return "Maximum tool use iterations reached"
 
     except Exception as e:
-        return f"❌ Error calling Claude API: {str(e)}\n\nMCP Context:\n{format_mcp_context(mcp_context)}"
+        return f"❌ Error calling Claude API: {str(e)}"
 
 
 def build_system_prompt_with_context(mcp_context: Dict[str, Any]) -> str:
@@ -536,15 +592,9 @@ def handle_user_input(user_input: str):
     })
 
     # Show thinking indicator
-    with st.spinner("🧠 Doct-Her is thinking..."):
-        # Extract patient data from input
-        patient_data = extract_patient_data(user_input)
-
-        # Gather MCP context
-        mcp_context = asyncio.run(gather_mcp_context(patient_data))
-
-        # Call Claude API with context
-        assistant_response = call_claude_with_context(user_input, mcp_context)
+    with st.spinner("🧠 Doct-Her is thinking and using MCP tools..."):
+        # Call Claude API with MCP tools - Claude decides which tools to use
+        assistant_response = asyncio.run(call_claude_with_mcp_tools(user_input))
 
     # Add assistant response to chat
     st.session_state.messages.append({
