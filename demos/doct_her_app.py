@@ -389,7 +389,7 @@ async def call_mcp_tool(tool_name: str, tool_input: Dict[str, Any]) -> Dict[str,
     return {"error": "Tool call failed"}
 
 
-async def call_claude_with_mcp_tools(user_input: str) -> str:
+async def call_claude_with_mcp_tools(user_input: str, status_container=None) -> str:
     """Call Claude API with MCP tools - Claude can use tools directly."""
 
     if not ANTHROPIC_API_KEY:
@@ -399,8 +399,13 @@ To enable AI-powered consultations, please:
 1. Add your ANTHROPIC_API_KEY to the `.env` file
 2. Restart the application"""
 
+    tool_usage_log = []
+
     try:
         # Check MCP server availability
+        if status_container:
+            status_container.info("🔍 Checking MCP server availability...")
+
         async with httpx.AsyncClient(timeout=10.0) as http_client:
             try:
                 health = await http_client.get(f"{MCP_SERVER_URL}/health")
@@ -410,9 +415,16 @@ To enable AI-powered consultations, please:
                 return "❌ MCP server not running. Please start it with: python scripts/run_server.py"
 
         # Get MCP tools
+        if status_container:
+            status_container.info("🔧 Loading MCP tools...")
+
         mcp_tools = await get_mcp_tools()
         if not mcp_tools:
             return "❌ No MCP tools available"
+
+        if status_container:
+            tool_names = [tool['name'] for tool in mcp_tools]
+            status_container.success(f"✅ Loaded {len(mcp_tools)} MCP tools: {', '.join(tool_names)}")
 
         # Convert to Claude format
         claude_tools = [convert_mcp_tool_to_claude_format(tool) for tool in mcp_tools]
@@ -448,6 +460,9 @@ Remember: You're providing educational information, not medical advice."""
         # Agentic loop - let Claude use tools
         max_iterations = 5
         for iteration in range(max_iterations):
+            if status_container:
+                status_container.info(f"🤖 Claude thinking... (iteration {iteration + 1}/{max_iterations})")
+
             response = client.messages.create(
                 model="claude-3-5-haiku-20241022",
                 max_tokens=2048,
@@ -458,11 +473,21 @@ Remember: You're providing educational information, not medical advice."""
 
             # Check if Claude wants to use tools
             if response.stop_reason == "end_turn":
-                # Claude is done, return final response
+                # Claude is done, return final response with tool usage log
+                final_response = ""
                 for block in response.content:
                     if hasattr(block, 'text'):
-                        return block.text
-                return "No response generated"
+                        final_response = block.text
+
+                # Prepend tool usage info if any tools were used
+                if tool_usage_log:
+                    tools_used = "\n".join(tool_usage_log)
+                    final_response = f"**🔧 MCP Tools Used:**\n{tools_used}\n\n---\n\n{final_response}"
+
+                if status_container:
+                    status_container.success("✅ Response complete!")
+
+                return final_response if final_response else "No response generated"
 
             elif response.stop_reason == "tool_use":
                 # Claude wants to use tools
@@ -476,6 +501,13 @@ Remember: You're providing educational information, not medical advice."""
                 tool_results = []
                 for block in response.content:
                     if block.type == "tool_use":
+                        # Log tool usage
+                        tool_log = f"• **{block.name}** with inputs: {block.input}"
+                        tool_usage_log.append(tool_log)
+
+                        if status_container:
+                            status_container.warning(f"🔧 Calling MCP tool: **{block.name}**\n```json\n{block.input}\n```")
+
                         # Execute the tool via MCP
                         tool_result = await call_mcp_tool(block.name, block.input)
 
@@ -487,6 +519,9 @@ Remember: You're providing educational information, not medical advice."""
                             result_text = f"Error: {tool_result['error']}"
                         else:
                             result_text = str(tool_result)
+
+                        if status_container:
+                            status_container.success(f"✅ Tool **{block.name}** completed")
 
                         tool_results.append({
                             "type": "tool_result",
@@ -591,10 +626,14 @@ def handle_user_input(user_input: str):
         "content": user_input
     })
 
-    # Show thinking indicator
-    with st.spinner("🧠 Doct-Her is thinking and using MCP tools..."):
-        # Call Claude API with MCP tools - Claude decides which tools to use
-        assistant_response = asyncio.run(call_claude_with_mcp_tools(user_input))
+    # Create a status container to show tool usage
+    status_container = st.empty()
+
+    # Call Claude API with MCP tools - Claude decides which tools to use
+    assistant_response = asyncio.run(call_claude_with_mcp_tools(user_input, status_container))
+
+    # Clear status container
+    status_container.empty()
 
     # Add assistant response to chat
     st.session_state.messages.append({
