@@ -512,11 +512,11 @@ class MCPServer:
     async def _execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a tool with given arguments."""
         # Import actual calculator modules
-        from clinical_calculators import ClinicalCalculators
-        from research_database_integration import ResearchDatabaseIntegration
-        from fhir_integration import ReproductiveHealthFHIR
+        from core.clinical_calculators import ClinicalCalculators
+        from core.research_database_integration import ResearchDatabaseIntegration
+        from core.fhir_integration import ReproductiveHealthFHIR
         from .swan_data_integration import swan_integration
-        
+
         calc = ClinicalCalculators()
         research = ResearchDatabaseIntegration()
         fhir = ReproductiveHealthFHIR()
