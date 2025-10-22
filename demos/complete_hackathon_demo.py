@@ -186,15 +186,6 @@ st.markdown("""
         text-align: center;
         margin-bottom: 1rem;
     }
-    .challenge-badge {
-        background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-weight: bold;
-        text-align: center;
-        margin-bottom: 1rem;
-    }
     .achievement-card {
         background-color: #e8f5e8;
         padding: 1rem;
@@ -234,8 +225,7 @@ def initialize_all_components():
 def main():
     """Main hackathon demo application."""
 
-    # Header with challenge badge
-    st.markdown('<div class="challenge-badge">🏆 LONGEVITY HACKATHON </div>', unsafe_allow_html=True)
+    # Header
     st.markdown('<h1 class="main-header">🌊 Multi-Modal Context Protocol for Women\'s Health AI</h1>', unsafe_allow_html=True)
     st.markdown("**Complete Infrastructure for Women's Health AI Market**")
 
