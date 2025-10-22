@@ -31,7 +31,6 @@ This project contains multiple MCP servers for women's health research:
 - `pubmed_server.py` - PubMed article search and retrieval
 - `asrm_server.py` - ASRM practice guidelines
 - `sart_ivf_server.py` - SART IVF success calculator
-- NHS API integration (TypeScript)
 
 ## Testing MCP Servers
 

@@ -74,8 +74,7 @@ women-health-mcp/
 ├── clients/          # Client implementations
 │   ├── asrm_client.py         # ASRM client
 │   ├── nams_client.py         # NAMS client
-│   ├── pubmed_client.py       # PubMed client
-│   └── nhs-typescript/        # NHS TypeScript client
+│   └── pubmed_client.py       # PubMed client
 │
 ├── core/             # Core MCP components
 │   ├── womens_health_mcp.py   # Core MCP protocol

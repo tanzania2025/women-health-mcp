@@ -187,7 +187,6 @@ This server is particularly useful for:
 This server works well alongside:
 - **PubMed MCP Server**: For searching scientific literature
 - **SART IVF Calculator MCP Server**: For IVF success rate calculations
-- **NHS Login MCP Server**: For UK healthcare integration
 
 ## Contributing
 

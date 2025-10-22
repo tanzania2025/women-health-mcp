@@ -14,7 +14,6 @@ Created 9 new organized folders:
 
 - **`clients/`** - Client implementations
   - asrm_client.py, nams_client.py, pubmed_client.py
-  - nhs-typescript/ (TypeScript NHS client)
 
 - **`core/`** - 12 core MCP components
   - womens_health_mcp.py, clinical_calculators.py, patient_data_integration.py
@@ -53,7 +52,6 @@ Created 9 new organized folders:
 ### 2. Files Moved from `dans_stuff/`
 All 37 files from the dans_stuff/ folder were successfully integrated:
 - 7 MCP servers → `servers/`
-- 4 TypeScript files → `clients/nhs-typescript/`
 - 8 test files → `tests/`
 - 11 documentation files → `docs/`
 - 5 configuration files → `config/`

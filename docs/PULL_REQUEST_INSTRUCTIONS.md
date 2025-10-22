@@ -106,11 +106,9 @@ This PR adds production-ready MCP servers that integrate with Claude Desktop usi
 - ✅ **NAMS Protocols** - North American Menopause Society clinical protocols
 - ✅ **ESHRE Guidelines** - European reproductive health guidelines
 - ✅ **ELSA Data** - English Longitudinal Study of Ageing data access
-- ✅ **NHS API** - UK patient health records (OAuth2 authenticated)
 
 ### Documentation
 - Comprehensive README for each server with setup instructions
-- NHS API guides (OAuth setup, sandbox configuration, troubleshooting)
 - Configuration examples for Claude Desktop
 - Test files for validation
 
@@ -123,7 +121,7 @@ This PR adds production-ready MCP servers that integrate with Claude Desktop usi
 ## Key Features
 
 - **Official Anthropic MCP**: Uses standard MCP protocol for Claude Desktop
-- **Live Data Sources**: Real API integrations (PubMed NCBI, SART, NHS FHIR, ELSA)
+- **Live Data Sources**: Real API integrations (PubMed NCBI, SART, ELSA)
 - **Drop-in Ready**: Simple configuration for immediate use
 - **Comprehensive Testing**: Test files included for validation
 - **Security**: OAuth2 authentication, environment-based secrets, no PHI storage
@@ -159,7 +157,7 @@ None. This is purely additive - all existing framework code remains functional i
 ## Files Changed
 
 - 53 files changed, 7,643 insertions(+), 935 deletions(-)
-- Added 8 MCP servers + NHS API
+- Added 8 MCP servers
 - Added comprehensive documentation
 - Reorganized project structure
 
