@@ -290,8 +290,6 @@ def initialize_session_state():
         st.session_state.messages = []
     if 'show_chat' not in st.session_state:
         st.session_state.show_chat = False
-    if 'mcp_client' not in st.session_state:
-        st.session_state.mcp_client = None
 
 
 def render_landing_page():
@@ -339,19 +337,28 @@ To enable AI-powered consultations, please:
 1. Add your ANTHROPIC_API_KEY to the `.env` file
 2. Restart the application"""
 
+    # Create a new MCP client for each request to avoid event loop issues
+    client = MCPClient()
+
     try:
-        # Initialize MCP client if not already done
-        if st.session_state.mcp_client is None:
-            status_container.info("🔄 Connecting to MCP server...")
-            st.session_state.mcp_client = MCPClient()
-            await st.session_state.mcp_client.connect_to_server(MCP_SERVER_SCRIPT)
-            status_container.success("✅ Connected to MCP server")
+        # Connect to MCP server
+        status_container.info("🔄 Connecting to MCP server...")
+        await client.connect_to_server(MCP_SERVER_SCRIPT)
+        status_container.success("✅ Connected to MCP server")
 
         # Process query
-        response = await st.session_state.mcp_client.process_query(user_input, status_container)
+        response = await client.process_query(user_input, status_container)
+
+        # Clean up
+        await client.cleanup()
+
         return response
 
     except Exception as e:
+        try:
+            await client.cleanup()
+        except:
+            pass
         return f"❌ Error: {str(e)}"
 
 
