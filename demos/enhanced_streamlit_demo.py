@@ -207,7 +207,7 @@ def show_multi_dataset_overview():
         })
     
     datasets_df = pd.DataFrame(datasets_data)
-    st.dataframe(datasets_df, width='stretch')
+    st.dataframe(datasets_df, use_container_width=True)
     
     # Timeline visualization
     st.subheader("📅 SWAN Study Timeline")
@@ -242,7 +242,7 @@ def show_multi_dataset_overview():
         )
         
         fig.update_layout(height=400)
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
     
     # Sample size comparison
     st.subheader("👥 Sample Size Comparison")
@@ -269,7 +269,7 @@ def show_multi_dataset_overview():
                 color='Participants',
                 color_continuous_scale='Blues'
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
         
         with col2:
             fig = px.bar(
@@ -280,7 +280,7 @@ def show_multi_dataset_overview():
                 color='Variables',
                 color_continuous_scale='Greens'
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
 def show_longitudinal_analysis():
     """Show longitudinal analysis across multiple SWAN visits."""
@@ -421,7 +421,7 @@ def show_longitudinal_analysis():
                                 markers=True,
                                 title="Mean Age Across Visits"
                             )
-                            st.plotly_chart(fig, width='stretch')
+                            st.plotly_chart(fig, use_container_width=True)
                         
                         with col2:
                             fig = px.bar(
@@ -430,7 +430,7 @@ def show_longitudinal_analysis():
                                 y='Sample_Size',
                                 title="Sample Size by Visit"
                             )
-                            st.plotly_chart(fig, width='stretch')
+                            st.plotly_chart(fig, use_container_width=True)
             
             else:
                 st.error("Error running longitudinal analysis")
@@ -517,7 +517,7 @@ def show_cross_visit_tracking():
                         title=f"{selected_category} Variable Count Across Visits"
                     )
                     
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
                 
                 # Cross-visit analysis
                 st.subheader("🔍 Detailed Cross-Visit Analysis")
@@ -541,7 +541,7 @@ def show_cross_visit_tracking():
                     
                     if analysis_data:
                         analysis_df = pd.DataFrame(analysis_data)
-                        st.dataframe(analysis_df, width='stretch')
+                        st.dataframe(analysis_df, use_container_width=True)
                         
                         # Create comparison charts
                         if len(analysis_df) > 1:
@@ -556,7 +556,7 @@ def show_cross_visit_tracking():
                                     color='Variable',
                                     title="Sample Size by Visit and Variable"
                                 )
-                                st.plotly_chart(fig, width='stretch')
+                                st.plotly_chart(fig, use_container_width=True)
                             
                             with col2:
                                 fig = px.line(
@@ -567,7 +567,7 @@ def show_cross_visit_tracking():
                                     markers=True,
                                     title="Mean Values Across Visits"
                                 )
-                                st.plotly_chart(fig, width='stretch')
+                                st.plotly_chart(fig, use_container_width=True)
             
             else:
                 st.warning(f"No {selected_category.lower()} variables found in loaded datasets")
@@ -699,7 +699,7 @@ def show_enhanced_clinical_calculator(mcp_server: MCPServer):
                 ))
                 
                 fig.update_layout(height=250)
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
                 
                 st.write(f"**Confidence Interval:** {confidence[0]:.1f}% - {confidence[1]:.1f}%")
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -755,7 +755,7 @@ def show_enhanced_clinical_calculator(mcp_server: MCPServer):
                         height=300
                     )
                     
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
                 
                 st.markdown('</div>', unsafe_allow_html=True)
             
@@ -789,7 +789,7 @@ def show_enhanced_clinical_calculator(mcp_server: MCPServer):
                         color_continuous_scale='Viridis'
                     )
                     
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
                 
                 st.markdown('</div>', unsafe_allow_html=True)
             

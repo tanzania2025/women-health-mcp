@@ -272,7 +272,7 @@ def show_swan_explorer():
                 'Variable Name': dataset_info['sample_columns'][:15],
                 'Index': range(1, 16)
             })
-            st.dataframe(variables_df, width='stretch')
+            st.dataframe(variables_df, use_container_width=True)
         
         # Ethnicities breakdown
         st.subheader("🌍 Population Demographics")
@@ -282,7 +282,7 @@ def show_swan_explorer():
                 'Available': ['✅'] * len(dataset_info['ethnicities'])
             }
             ethnicity_df = pd.DataFrame(ethnicity_data)
-            st.dataframe(ethnicity_df, width='stretch')
+            st.dataframe(ethnicity_df, use_container_width=True)
         
         # Variable search
         st.subheader("🔍 Variable Search")
@@ -300,7 +300,7 @@ def show_swan_explorer():
                         'Variable Name': matching_vars[:10],
                         'Match #': range(1, min(11, len(matching_vars) + 1))
                     })
-                    st.dataframe(vars_df, width="stretch")
+                    st.dataframe(vars_df, use_container_width=True)
                     
                     if len(matching_vars) > 10:
                         st.info(f"Showing first 10 of {len(matching_vars)} matches")
@@ -411,7 +411,7 @@ def show_clinical_calculator(mcp_server: MCPServer):
                     ))
                     
                     fig.update_layout(height=300)
-                    st.plotly_chart(fig, width="stretch")
+                    st.plotly_chart(fig, use_container_width=True)
                     
                     # Additional metrics
                     confidence_interval = result['confidence_interval']
@@ -586,7 +586,7 @@ This recommendation incorporates:
                 colors[highlight_idx] = 'red'
                 fig.update_traces(marker_color=colors)
                 
-                st.plotly_chart(fig, width="stretch")
+                st.plotly_chart(fig, use_container_width=True)
             
             with col2:
                 # AMH percentile visualization
@@ -612,7 +612,7 @@ This recommendation incorporates:
                 fig.add_hline(y=amh, line_dash="dash", line_color="red", 
                             annotation_text=f"Patient AMH: {amh} ng/mL")
                 
-                st.plotly_chart(fig, width="stretch")
+                st.plotly_chart(fig, use_container_width=True)
         
         else:
             st.error("Error generating consultation. Please check patient data and try again.")
@@ -711,7 +711,7 @@ def show_population_analysis(mcp_server: MCPServer):
                         fig.add_vline(x=mean_age, line_dash="dash", line_color="red",
                                     annotation_text=f"Mean: {mean_age:.1f}")
                         
-                        st.plotly_chart(fig, width="stretch")
+                        st.plotly_chart(fig, use_container_width=True)
                 
                 # Ethnicity breakdown
                 if include_demographics and 'ethnicity_breakdown' in data:
@@ -741,7 +741,7 @@ def show_population_analysis(mcp_server: MCPServer):
                                     names=ethnicities,
                                     title="Population by Ethnicity"
                                 )
-                                st.plotly_chart(fig, width="stretch")
+                                st.plotly_chart(fig, use_container_width=True)
                             
                             with col2:
                                 # Mean age by ethnicity
@@ -751,7 +751,7 @@ def show_population_analysis(mcp_server: MCPServer):
                                     title="Mean Age by Ethnicity",
                                     labels={'x': 'Ethnicity', 'y': 'Mean Age (years)'}
                                 )
-                                st.plotly_chart(fig, width="stretch")
+                                st.plotly_chart(fig, use_container_width=True)
                 
                 # Raw data display
                 st.subheader("📋 Raw Analysis Data")
@@ -796,7 +796,7 @@ def show_hormone_analysis():
                     'Index': range(1, len(matching_vars) + 1)
                 }
                 vars_df = pd.DataFrame(vars_data)
-                st.dataframe(vars_df, width="stretch")
+                st.dataframe(vars_df, use_container_width=True)
                 
                 # Variable details
                 st.subheader("🔍 Variable Details")
@@ -868,7 +868,7 @@ def show_hormone_analysis():
                                             labels={'x': 'Value', 'y': 'Count'}
                                         )
                                         
-                                        st.plotly_chart(fig, width="stretch")
+                                        st.plotly_chart(fig, use_container_width=True)
                                 
                                 # Raw summary data
                                 st.subheader("📋 Raw Summary Data")
@@ -1158,7 +1158,7 @@ def show_menopause_assessment():
             for factor, status in risk_factors.items()
         ])
         
-        st.dataframe(risk_df, width="stretch")
+        st.dataframe(risk_df, use_container_width=True)
         
         # Evidence basis
         st.subheader("🔬 Evidence Basis")

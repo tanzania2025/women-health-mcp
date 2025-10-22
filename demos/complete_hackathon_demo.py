@@ -482,7 +482,7 @@ def show_swan_integration():
                     df = pd.DataFrame(timeline_data)
                     fig = px.line(df, x='Period', y='Sample_Size', markers=True,
                                  title=f"{condition.title()} - Sample Sizes Over Time")
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
 
 def show_clinical_calculators(components):
     """Show clinical calculators with ASRM/ESHRE validation."""
@@ -549,7 +549,7 @@ def show_clinical_calculators(components):
                         }
                     ))
                     fig.update_layout(height=250)
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
 
                 st.markdown("**ASRM Recommendations:**")
                 for rec in ovarian_result.recommendations:
@@ -595,7 +595,7 @@ def show_clinical_calculators(components):
                         colors[4] = 'red'
 
                     fig.update_traces(marker_color=colors)
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
 
                 st.markdown("**SART-Based Recommendations:**")
                 for rec in ivf_result.recommendations:
@@ -644,7 +644,7 @@ def show_clinical_calculators(components):
                         height=200
                     )
 
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
 
                 st.markdown("**SWAN Study Recommendations:**")
                 for rec in menopause_result.recommendations:
@@ -843,7 +843,7 @@ def show_patient_data_integration(components):
 
                     fig = px.bar(cycles_df, x='cycle_number', y='length_days',
                                title=f"Recent Cycle Lengths ({platform})")
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
 
                 # Wearable data visualization
                 if platform == "Oura Ring" and 'sleep_data' in data:
@@ -859,7 +859,7 @@ def show_patient_data_integration(components):
                     fig.add_trace(go.Scatter(x=sleep_df['date'], y=sleep_df['hrv'],
                                            name='HRV'), row=2, col=1)
 
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
 
                 # Data quality assessment
                 quality = data.get('data_quality', {})
@@ -991,12 +991,12 @@ def show_privacy_security(components):
         ]
 
         audit_df = pd.DataFrame(audit_entries)
-        st.dataframe(audit_df, width='stretch')
+        st.dataframe(audit_df, use_container_width=True)
 
         if st.button("🔍 Analyze Security Events"):
             # Security analysis
             fig = px.histogram(audit_df, x='action', title="Security Events by Type")
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
             st.info("🛡️ All access events logged with cryptographic signatures")
 
@@ -1111,7 +1111,7 @@ def show_research_databases(components):
 
                         fig = px.bar(x=list(percentiles.keys()), y=list(percentiles.values()),
                                    title=f"{condition.title()} - Population Distribution")
-                        st.plotly_chart(fig, width='stretch')
+                        st.plotly_chart(fig, use_container_width=True)
 
                 except Exception as e:
                     st.error(f"SWAN query error: {e}")
@@ -1179,7 +1179,7 @@ def show_research_databases(components):
 
                         fig = px.line(x=list(trends.keys()), y=list(trends.values()),
                                     title="IVF Success Rate Trends", markers=True)
-                        st.plotly_chart(fig, width='stretch')
+                        st.plotly_chart(fig, use_container_width=True)
 
                 except Exception as e:
                     st.error(f"SART query error: {e}")
@@ -1372,7 +1372,7 @@ Based on comprehensive population data, validated clinical algorithms, and curre
                          title="IVF Success Rate by Age")
             fig.add_vline(x=patient_age, line_dash="dash", line_color="red",
                          annotation_text=f"Patient Age: {patient_age}")
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
         with col2:
             # AMH percentiles
@@ -1383,7 +1383,7 @@ Based on comprehensive population data, validated clinical algorithms, and curre
                         title="AMH Population Percentiles")
             fig.add_hline(y=patient_amh, line_dash="dash", line_color="red",
                          annotation_text=f"Patient AMH: {patient_amh}")
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
         st.success("✅ AI consultation completed using comprehensive MCP context!")
 
@@ -1947,7 +1947,7 @@ def show_enhanced_clinical_tools():
                     color='Risk_Level',
                     color_continuous_scale='RdYlGn_r')
 
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
 
         st.success("✅ Enhanced clinical assessment completed using integrated MCP servers!")
 
