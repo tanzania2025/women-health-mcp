@@ -7,6 +7,12 @@ pydantic-settings>=2.0.0
 # HTTP Client for demos
 httpx>=0.25.0
 
+# AI API Integration
+anthropic>=0.39.0
+
+# Environment variable management
+python-dotenv>=1.0.0
+
 # WebSocket support
 websockets>=12.0
 

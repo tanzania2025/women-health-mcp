@@ -6,10 +6,20 @@ A modern chat interface powered by Claude and local MCP servers
 
 import streamlit as st
 import sys
+import os
+import asyncio
+import httpx
+import re
 from pathlib import Path
+from anthropic import Anthropic
+from typing import Optional, Dict, Any
 
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
+
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
 
 # Page configuration
 st.set_page_config(
@@ -231,6 +241,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# MCP Server Configuration
+MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "http://localhost:8000")
+MCP_API_KEY = os.getenv("API_KEY", "demo-api-key-change-in-production")
+
+# Anthropic Configuration
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+
 # Available calculators (tools)
 AVAILABLE_CALCULATORS = {
     "Menopause Calculator": {
@@ -315,6 +332,201 @@ def render_chat_history():
 
         st.markdown('</div>', unsafe_allow_html=True)
 
+def extract_patient_data(user_input: str) -> Dict[str, Any]:
+    """Extract patient data from user input using regex patterns."""
+    patient_data = {}
+
+    # Extract age
+    age_match = re.search(r'\b(\d{2})\s*(?:years?\s*old|y/?o)\b', user_input, re.IGNORECASE)
+    if age_match:
+        patient_data['age'] = int(age_match.group(1))
+
+    # Extract AMH level
+    amh_match = re.search(r'AMH\s*(?:is\s*|of\s*)?(\d+\.?\d*)\s*(?:ng/ml)?', user_input, re.IGNORECASE)
+    if amh_match:
+        patient_data['amh'] = float(amh_match.group(1))
+
+    # Extract FSH level
+    fsh_match = re.search(r'FSH\s*(?:is\s*|of\s*)?(\d+\.?\d*)', user_input, re.IGNORECASE)
+    if fsh_match:
+        patient_data['fsh'] = float(fsh_match.group(1))
+
+    return patient_data
+
+
+async def gather_mcp_context(patient_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Gather clinical context from MCP server tools."""
+    context = {}
+    headers = {
+        "Authorization": f"Bearer {MCP_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            # Check if MCP server is available
+            try:
+                health = await client.get(f"{MCP_SERVER_URL}/health")
+                if health.status_code != 200:
+                    return {"error": "MCP server not available"}
+            except:
+                return {"error": "MCP server not running. Please start it with: python scripts/run_server.py"}
+
+            # Get ovarian reserve assessment if we have age and AMH
+            if 'age' in patient_data and 'amh' in patient_data:
+                try:
+                    response = await client.post(
+                        f"{MCP_SERVER_URL}/mcp/tools/assess-ovarian-reserve",
+                        json={
+                            "age": patient_data['age'],
+                            "amh": patient_data['amh'],
+                            "fsh": patient_data.get('fsh')
+                        },
+                        headers=headers
+                    )
+                    if response.status_code == 200:
+                        result = response.json()
+                        if "content" in result:
+                            import json
+                            context['ovarian_reserve'] = json.loads(result["content"][0]["text"])
+                except Exception as e:
+                    context['ovarian_reserve_error'] = str(e)
+
+            # Get IVF success prediction if we have age and AMH
+            if 'age' in patient_data and 'amh' in patient_data:
+                try:
+                    response = await client.post(
+                        f"{MCP_SERVER_URL}/mcp/tools/predict-ivf-success",
+                        json={
+                            "age": patient_data['age'],
+                            "amh": patient_data['amh'],
+                            "cycle_type": "fresh"
+                        },
+                        headers=headers
+                    )
+                    if response.status_code == 200:
+                        result = response.json()
+                        if "content" in result:
+                            import json
+                            context['ivf_prediction'] = json.loads(result["content"][0]["text"])
+                except Exception as e:
+                    context['ivf_prediction_error'] = str(e)
+
+    except Exception as e:
+        context['error'] = f"Error connecting to MCP server: {str(e)}"
+
+    return context
+
+
+def call_claude_with_context(user_input: str, mcp_context: Dict[str, Any]) -> str:
+    """Call Claude API with MCP context."""
+
+    if not ANTHROPIC_API_KEY:
+        return """⚠️ **Anthropic API key not configured**
+
+To enable AI-powered consultations, please:
+1. Add your ANTHROPIC_API_KEY to the `.env` file
+2. Restart the application
+
+For now, here's what I can tell you based on the MCP servers:
+""" + format_mcp_context(mcp_context)
+
+    try:
+        client = Anthropic(api_key=ANTHROPIC_API_KEY)
+
+        # Build system prompt with MCP context
+        system_prompt = build_system_prompt_with_context(mcp_context)
+
+        # Call Claude API
+        message = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=2048,
+            system=system_prompt,
+            messages=[
+                {
+                    "role": "user",
+                    "content": user_input
+                }
+            ]
+        )
+
+        return message.content[0].text
+
+    except Exception as e:
+        return f"❌ Error calling Claude API: {str(e)}\n\nMCP Context:\n{format_mcp_context(mcp_context)}"
+
+
+def build_system_prompt_with_context(mcp_context: Dict[str, Any]) -> str:
+    """Build system prompt with MCP clinical context."""
+
+    prompt = """You are Doct-Her, an AI-powered women's health assistant specializing in reproductive health and fertility.
+
+You have access to evidence-based clinical calculators and the latest research data through MCP (Model Context Protocol) servers.
+
+**Your Role:**
+- Provide evidence-based fertility and reproductive health guidance
+- Explain clinical assessments in clear, compassionate language
+- Help patients understand their options and next steps
+- Always clarify that you're an AI assistant and recommend consulting healthcare providers
+
+**Clinical Context from MCP Servers:**
+"""
+
+    if 'error' in mcp_context:
+        prompt += f"\n⚠️ MCP Server Status: {mcp_context['error']}\n"
+    else:
+        if 'ovarian_reserve' in mcp_context:
+            or_data = mcp_context['ovarian_reserve'].get('result', {})
+            prompt += f"""
+**Ovarian Reserve Assessment (ASRM Guidelines):**
+- Category: {or_data.get('category', 'N/A').replace('_', ' ').title()}
+- Percentile: {or_data.get('percentile', 'N/A')}th for age
+- Interpretation: {or_data.get('interpretation', 'N/A')}
+"""
+
+        if 'ivf_prediction' in mcp_context:
+            ivf_data = mcp_context['ivf_prediction'].get('result', {})
+            prompt += f"""
+**IVF Success Prediction (SART Database):**
+- Live Birth Rate: {ivf_data.get('live_birth_rate', 'N/A')}% per fresh cycle
+- Confidence: {ivf_data.get('confidence', {}).get('level', 'N/A')}
+- Data Source: SART database with {ivf_data.get('evidence_basis', {}).get('sample_size', 'N/A')} cycles
+"""
+
+    prompt += """
+**Guidelines:**
+1. Use the clinical context above to inform your response
+2. Be compassionate and supportive
+3. Explain medical terms clearly
+4. Always recommend consulting with healthcare providers for medical decisions
+5. If age and AMH indicate time-sensitive concerns, gently emphasize urgency
+6. Provide clear next steps
+
+Remember: You're providing educational information, not medical advice.
+"""
+
+    return prompt
+
+
+def format_mcp_context(mcp_context: Dict[str, Any]) -> str:
+    """Format MCP context for display."""
+    if 'error' in mcp_context:
+        return f"❌ {mcp_context['error']}"
+
+    output = []
+
+    if 'ovarian_reserve' in mcp_context:
+        or_data = mcp_context['ovarian_reserve'].get('result', {})
+        output.append(f"**Ovarian Reserve:** {or_data.get('category', 'N/A').replace('_', ' ').title()}")
+        output.append(f"**Percentile:** {or_data.get('percentile', 'N/A')}th")
+
+    if 'ivf_prediction' in mcp_context:
+        ivf_data = mcp_context['ivf_prediction'].get('result', {})
+        output.append(f"**IVF Success Rate:** {ivf_data.get('live_birth_rate', 'N/A')}%")
+
+    return "\n".join(output) if output else "No clinical context available"
+
+
 def handle_user_input(user_input: str):
     """Process user input and get response from Claude via MCP."""
     # Add user message to chat
@@ -323,20 +535,18 @@ def handle_user_input(user_input: str):
         "content": user_input
     })
 
-    # TODO: Integrate with Anthropic API and local MCP servers
-    # For now, provide a placeholder response
-    calculator_names = ", ".join(AVAILABLE_CALCULATORS.keys())
+    # Show thinking indicator
+    with st.spinner("🧠 Doct-Her is thinking..."):
+        # Extract patient data from input
+        patient_data = extract_patient_data(user_input)
 
-    assistant_response = f"""Thank you for your question. I'm Doct-Her, your AI women's health assistant.
+        # Gather MCP context
+        mcp_context = asyncio.run(gather_mcp_context(patient_data))
 
-I have access to specialized calculators including {calculator_names}.
+        # Call Claude API with context
+        assistant_response = call_claude_with_context(user_input, mcp_context)
 
-To provide you with the most accurate information, I'll connect to the local MCP servers and use the appropriate calculator for your question.
-
-Your question: "{user_input}"
-
-(Integration with Anthropic Claude API and local MCP servers is currently being configured)"""
-
+    # Add assistant response to chat
     st.session_state.messages.append({
         "role": "assistant",
         "content": assistant_response
