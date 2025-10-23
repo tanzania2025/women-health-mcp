@@ -218,11 +218,17 @@ st.markdown("""
     }
 
     .stFileUploader [data-testid="stFileUploaderDropzone"] {
-        display: none !important;
+        min-height: 50px !important;
+        padding: 0.75rem 1rem !important;
+        background: #f8fafc !important;
+        border: 1px dashed #cbd5e1 !important;
+        border-radius: 8px !important;
+        margin-top: 0.5rem !important;
     }
 
     .stFileUploader [data-testid="stFileUploaderDropzoneInstructions"] {
-        display: none !important;
+        font-size: 0.9rem !important;
+        color: #64748b !important;
     }
 
     .stFileUploader section {
@@ -735,6 +741,7 @@ def main():
             plus_clicked = st.button("➕", key="plus_button", help="Add attachments")
             if plus_clicked:
                 st.session_state.show_upload_menu = not st.session_state.show_upload_menu
+                st.rerun()
 
         with col_rest:
             # Form for input and send button (enables Enter key submission)
@@ -752,8 +759,6 @@ def main():
                 with col_send:
                     send_clicked = st.form_submit_button("↑", type="primary")
 
-        st.markdown('</div>', unsafe_allow_html=True)
-
         # Show compact file uploader if toggled
         if st.session_state.show_upload_menu:
             uploaded_file = st.file_uploader(
@@ -762,6 +767,8 @@ def main():
                 key="file_upload",
                 label_visibility="collapsed"
             )
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
         # Capabilities hint
         render_capabilities_hint()
@@ -797,6 +804,7 @@ def main():
             plus_clicked = st.button("➕", key="plus_button_chat", help="Add attachments")
             if plus_clicked:
                 st.session_state.show_upload_menu = not st.session_state.show_upload_menu
+                st.rerun()
 
         with col_rest:
             # Form for input and send button (enables Enter key submission)
@@ -814,8 +822,6 @@ def main():
                 with col_send:
                     send_clicked = st.form_submit_button("↑", type="primary")
 
-        st.markdown('</div>', unsafe_allow_html=True)
-
         # Show compact file uploader if toggled (for chat mode)
         if st.session_state.show_upload_menu:
             uploaded_file = st.file_uploader(
@@ -824,6 +830,8 @@ def main():
                 key="file_upload_chat",
                 label_visibility="collapsed"
             )
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # Display uploaded file info if present
     if uploaded_file is not None:
