@@ -282,6 +282,15 @@ st.markdown("""
         background: transparent !important;
     }
 
+    /* Hide "Press Enter to submit form" text */
+    .stForm [data-testid="InputInstructions"] {
+        display: none !important;
+    }
+
+    .stForm > div > div > div:last-child {
+        display: none !important;
+    }
+
     /* Form submit button styling (for Enter key support) */
     .stForm button[kind="formSubmit"] {
         background: linear-gradient(135deg, #a78bfa 0%, #c084fc 100%) !important;
@@ -516,6 +525,8 @@ def initialize_session_state():
         st.session_state.tool_logs = []  # Store tool usage logs for each message
     if 'show_upload_menu' not in st.session_state:
         st.session_state.show_upload_menu = False
+    if 'form_counter' not in st.session_state:
+        st.session_state.form_counter = 0  # Counter to reset form
 
 
 def render_landing_page():
@@ -693,7 +704,7 @@ def main():
 
         with col_rest:
             # Form for input and send button (enables Enter key submission)
-            with st.form(key="input_form", clear_on_submit=True):
+            with st.form(key=f"input_form_{st.session_state.form_counter}", clear_on_submit=True):
                 col_input, col_send = st.columns([0.92, 0.08])
 
                 with col_input:
@@ -747,7 +758,7 @@ def main():
 
         with col_rest:
             # Form for input and send button (enables Enter key submission)
-            with st.form(key="input_form_chat", clear_on_submit=True):
+            with st.form(key=f"input_form_chat_{st.session_state.form_counter}", clear_on_submit=True):
                 col_input, col_send = st.columns([0.92, 0.08])
 
                 with col_input:
@@ -791,9 +802,11 @@ def main():
         # Reset upload menu state
         st.session_state.show_upload_menu = False
 
+        # Increment form counter to reset form with new key
+        st.session_state.form_counter += 1
+
         handle_user_input(message_content)
-        # Form will auto-clear due to clear_on_submit=True
-        # Streamlit will automatically rerun after form submission
+        st.rerun()
 
 
 if __name__ == "__main__":
