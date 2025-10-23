@@ -316,8 +316,32 @@ st.markdown("""
         background: transparent !important;
     }
 
+    /* Form styling - remove default borders and padding */
+    .stForm {
+        border: none !important;
+        padding: 0 !important;
+        background: transparent !important;
+    }
+
+    /* Form submit button styling (for Enter key support) */
     .stForm button[kind="formSubmit"] {
-        display: none;
+        background: linear-gradient(135deg, #a78bfa 0%, #c084fc 100%) !important;
+        color: white !important;
+        font-size: 24px !important;
+        font-weight: 700 !important;
+        border: none !important;
+        border-radius: 50% !important;
+        width: 48px !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        padding: 0 !important;
+        line-height: 48px !important;
+        display: block !important;
+    }
+
+    .stForm button[kind="formSubmit"]:hover {
+        transform: scale(1.05) !important;
+        box-shadow: 0 4px 12px rgba(167, 139, 250, 0.4) !important;
     }
 
     .capabilities-hint {
@@ -549,7 +573,7 @@ def render_capabilities_hint():
     """Render capabilities hint."""
     st.markdown("""
         <div class="capabilities-hint">
-            I can search ESHRE & NAMS guidelines, PubMed research, ELSA aging data, and calculate IVF success rates
+            Some of the things I can do: Search ESHRE & NAMS guidelines, PubMed research, ELSA aging data, and calculate IVF success rates
         </div>
     """, unsafe_allow_html=True)
 
@@ -700,24 +724,29 @@ def main():
         # Centered input container
         st.markdown('<div class="input-container centered">', unsafe_allow_html=True)
 
-        # Input with buttons (plus, input, send)
-        col_plus, col_input, col_send = st.columns([0.07, 0.86, 0.07])
+        # Plus button outside form
+        col_plus, col_rest = st.columns([0.07, 0.93])
 
         with col_plus:
             plus_clicked = st.button("➕", key="plus_button", help="Add attachments")
             if plus_clicked:
                 st.session_state.show_upload_menu = not st.session_state.show_upload_menu
 
-        with col_input:
-            user_input = st.text_input(
-                "message",
-                placeholder="e.g., I'm 38 with AMH 0.8, should I consider IVF?",
-                key="user_input",
-                label_visibility="collapsed"
-            )
+        with col_rest:
+            # Form for input and send button (enables Enter key submission)
+            with st.form(key="input_form", clear_on_submit=True):
+                col_input, col_send = st.columns([0.92, 0.08])
 
-        with col_send:
-            send_clicked = st.button("↑", key="send_button", type="primary")
+                with col_input:
+                    user_input = st.text_input(
+                        "message",
+                        placeholder="e.g., I'm 38 with AMH 0.8, should I consider IVF?",
+                        key="user_input",
+                        label_visibility="collapsed"
+                    )
+
+                with col_send:
+                    send_clicked = st.form_submit_button("↑", type="primary")
 
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -760,24 +789,29 @@ def main():
         # Fixed bottom input
         st.markdown('<div class="input-container-bottom">', unsafe_allow_html=True)
 
-        # Input with buttons (plus, input, send)
-        col_plus, col_input, col_send = st.columns([0.07, 0.86, 0.07])
+        # Plus button outside form
+        col_plus, col_rest = st.columns([0.07, 0.93])
 
         with col_plus:
             plus_clicked = st.button("➕", key="plus_button_chat", help="Add attachments")
             if plus_clicked:
                 st.session_state.show_upload_menu = not st.session_state.show_upload_menu
 
-        with col_input:
-            user_input = st.text_input(
-                "message",
-                placeholder="e.g., I'm 38 with AMH 0.8, should I consider IVF?",
-                key="user_input",
-                label_visibility="collapsed"
-            )
+        with col_rest:
+            # Form for input and send button (enables Enter key submission)
+            with st.form(key="input_form_chat", clear_on_submit=True):
+                col_input, col_send = st.columns([0.92, 0.08])
 
-        with col_send:
-            send_clicked = st.button("↑", key="send_button", type="primary")
+                with col_input:
+                    user_input = st.text_input(
+                        "message",
+                        placeholder="e.g., I'm 38 with AMH 0.8, should I consider IVF?",
+                        key="user_input_chat",
+                        label_visibility="collapsed"
+                    )
+
+                with col_send:
+                    send_clicked = st.form_submit_button("↑", type="primary")
 
         st.markdown('</div>', unsafe_allow_html=True)
 
