@@ -343,6 +343,16 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(167, 139, 250, 0.4) !important;
     }
 
+    /* Spinner animation for processing state */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .stForm button[kind="formSubmit"].processing {
+        animation: spin 1s linear infinite !important;
+    }
+
     .capabilities-hint {
         text-align: center;
         margin-top: 1rem;
@@ -586,6 +596,12 @@ def initialize_session_state():
         st.session_state.show_upload_menu = False
     if 'form_counter' not in st.session_state:
         st.session_state.form_counter = 0  # Counter to reset form
+    if 'is_processing' not in st.session_state:
+        st.session_state.is_processing = False
+    if 'pending_input' not in st.session_state:
+        st.session_state.pending_input = ""
+    if 'pending_message' not in st.session_state:
+        st.session_state.pending_message = ""
 
 
 def render_landing_page():
@@ -765,19 +781,24 @@ def main():
 
         with col_rest:
             # Form for input and send button (enables Enter key submission)
-            with st.form(key=f"input_form_{st.session_state.form_counter}", clear_on_submit=True):
+            with st.form(key=f"input_form_{st.session_state.form_counter}", clear_on_submit=False):
                 col_input, col_send = st.columns([0.92, 0.08])
 
                 with col_input:
+                    # Use pending_input if processing, otherwise empty
+                    default_value = st.session_state.pending_input if st.session_state.is_processing else ""
                     user_input = st.text_input(
                         "message",
+                        value=default_value,
                         placeholder="e.g., I'm 38 with AMH 0.8, should I consider IVF?",
                         key=f"user_input_{st.session_state.form_counter}",
-                        label_visibility="collapsed"
+                        label_visibility="collapsed",
+                        disabled=st.session_state.is_processing
                     )
 
                 with col_send:
-                    send_clicked = st.form_submit_button("↑", type="primary")
+                    button_text = "⟳" if st.session_state.is_processing else "↑"
+                    send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing)
 
         # Show compact file uploader if toggled
         if st.session_state.show_upload_menu:
@@ -828,19 +849,24 @@ def main():
 
         with col_rest:
             # Form for input and send button (enables Enter key submission)
-            with st.form(key=f"input_form_chat_{st.session_state.form_counter}", clear_on_submit=True):
+            with st.form(key=f"input_form_chat_{st.session_state.form_counter}", clear_on_submit=False):
                 col_input, col_send = st.columns([0.92, 0.08])
 
                 with col_input:
+                    # Use pending_input if processing, otherwise empty
+                    default_value = st.session_state.pending_input if st.session_state.is_processing else ""
                     user_input = st.text_input(
                         "message",
+                        value=default_value,
                         placeholder="e.g., I'm 38 with AMH 0.8, should I consider IVF?",
                         key=f"user_input_chat_{st.session_state.form_counter}",
-                        label_visibility="collapsed"
+                        label_visibility="collapsed",
+                        disabled=st.session_state.is_processing
                     )
 
                 with col_send:
-                    send_clicked = st.form_submit_button("↑", type="primary")
+                    button_text = "⟳" if st.session_state.is_processing else "↑"
+                    send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing)
 
         # Show compact file uploader if toggled (for chat mode)
         if st.session_state.show_upload_menu:
@@ -863,19 +889,38 @@ def main():
         )
 
     # Handle send button click
-    if send_clicked and user_input and user_input.strip():
+    if send_clicked and user_input and user_input.strip() and not st.session_state.is_processing:
         # Include file info in the message if there's an attachment
         message_content = user_input
         if uploaded_file is not None:
             message_content += f"\n\n[Attachment: {uploaded_file.name}]"
 
+        # Store the input and set processing state
+        st.session_state.pending_input = user_input
+        st.session_state.pending_message = message_content
+        st.session_state.is_processing = True
+
         # Reset upload menu state
         st.session_state.show_upload_menu = False
+
+        # Rerun to show processing state
+        st.rerun()
+
+    # Process the pending input if we're in processing state
+    if st.session_state.is_processing and st.session_state.pending_message:
+        message_to_process = st.session_state.pending_message
+        st.session_state.pending_message = ""  # Clear it immediately
+
+        # Process the input
+        handle_user_input(message_to_process)
+
+        # Clear processing state and input after completion
+        st.session_state.is_processing = False
+        st.session_state.pending_input = ""
 
         # Increment form counter to reset form with new key
         st.session_state.form_counter += 1
 
-        handle_user_input(message_content)
         st.rerun()
 
 
