@@ -191,15 +191,72 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(167, 139, 250, 0.4) !important;
     }
 
-    /* Upload menu styling */
-    .upload-menu {
-        text-align: center;
-        max-width: 400px;
-        margin: 1rem auto;
-        padding: 1rem;
+    /* Upload menu popup styling */
+    .upload-menu-popup {
+        position: fixed;
+        bottom: 80px;
+        left: 2rem;
         background: white;
+        padding: 0.5rem 0;
         border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        z-index: 1001;
+        min-width: 200px;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Clean file uploader styling - hide verbose drag-and-drop */
+    .stFileUploader {
+        position: fixed;
+        bottom: 140px;
+        left: 2rem;
+        background: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        z-index: 1002;
+        border: 1px solid #e2e8f0;
+    }
+
+    .stFileUploader > div {
+        padding: 0 !important;
+    }
+
+    .stFileUploader label {
+        display: none !important;
+    }
+
+    .stFileUploader [data-testid="stFileUploaderDropzone"] {
+        display: none !important;
+    }
+
+    .stFileUploader [data-testid="stFileUploaderDropzoneInstructions"] {
+        display: none !important;
+    }
+
+    .stFileUploader section {
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    .stFileUploader button {
+        background: transparent !important;
+        color: #334155 !important;
+        border: none !important;
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.9rem !important;
+        font-weight: 500 !important;
+        cursor: pointer !important;
+    }
+
+    .stFileUploader button:hover {
+        color: #6366f1 !important;
+        background: #f8fafc !important;
+        border-radius: 6px !important;
+    }
+
+    .stFileUploader small {
+        display: none !important;
     }
 
     .chat-message {
@@ -650,15 +707,15 @@ def main():
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Show upload menu if toggled
+        # Show compact file uploader if toggled
         if st.session_state.show_upload_menu:
-            st.markdown('<div class="upload-menu">', unsafe_allow_html=True)
             uploaded_file = st.file_uploader(
                 "📎 Upload a file",
                 type=["png", "jpg", "jpeg", "pdf", "txt"],
-                key="file_upload"
+                key="file_upload",
+                label_visibility="collapsed",
+                help="Upload images, PDFs, or text files"
             )
-            st.markdown('</div>', unsafe_allow_html=True)
 
         # Capabilities hint
         render_capabilities_hint()
@@ -700,19 +757,15 @@ def main():
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Show upload menu if toggled (for chat mode)
+        # Show compact file uploader if toggled (for chat mode)
         if st.session_state.show_upload_menu:
-            st.markdown("""
-                <div style="position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-                     background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                     z-index: 1001; max-width: 300px;">
-            """, unsafe_allow_html=True)
             uploaded_file = st.file_uploader(
                 "📎 Upload a file",
                 type=["png", "jpg", "jpeg", "pdf", "txt"],
-                key="file_upload_chat"
+                key="file_upload_chat",
+                label_visibility="collapsed",
+                help="Upload images, PDFs, or text files"
             )
-            st.markdown('</div>', unsafe_allow_html=True)
 
     # Display uploaded file info if present
     if uploaded_file is not None:
