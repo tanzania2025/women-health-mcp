@@ -1,8 +1,8 @@
-# Doct-Her: AI-Powered Women's Health Assistant
+# DoctHER: AI-Powered Women's Health Assistant
 
 ## Overview
 
-Doct-Her is a modern chat interface powered by Claude Sonnet 4, connected to an MCP (Model Context Protocol) server via stdio for evidence-based reproductive health consultations.
+DoctHER is a modern chat interface powered by Claude Sonnet 4, connected to an MCP (Model Context Protocol) server via stdio for evidence-based reproductive health consultations.
 
 ## Features
 
@@ -40,9 +40,9 @@ ENABLE_REAL_APIS=true
 3. Navigate to API Keys
 4. Create a new API key
 
-### 3. Start Doct-Her
+### 3. Start DoctHER
 
-The MCP server runs automatically as a subprocess. Simply start Doct-Her:
+The MCP server runs automatically as a subprocess. Simply start DoctHER:
 
 ```bash
 streamlit run demos/doct_her_stdio.py

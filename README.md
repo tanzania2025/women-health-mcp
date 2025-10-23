@@ -89,7 +89,7 @@ women-health-mcp/
 │   └── huggingface_integration.py # ML model integration
 │
 ├── demos/            # Demo applications
-│   ├── doct_her_stdio.py      # Main Doct-Her chat application (MCP-powered)
+│   ├── doct_her_stdio.py      # Main DoctHER chat application (MCP-powered)
 │   └── mcp_server/            # MCP server utilities
 │
 ├── tests/            # Test suite
@@ -141,13 +141,13 @@ women-health-mcp/
 pip install -r requirements.txt
 ```
 
-### 🌐 Doct-Her Chat Application (Recommended)
+### 🌐 DoctHER Chat Application (Recommended)
 ```bash
-# Start the Doct-Her Streamlit chat interface
+# Start the DoctHER Streamlit chat interface
 streamlit run demos/doct_her_stdio.py
 ```
 
-**Doct-Her Features:**
+**DoctHER Features:**
 - ✅ **Model Context Protocol** (MCP) integration with Claude Sonnet 4
 - ✅ **Multiple Research Tools** - PubMed, ESHRE guidelines, NAMS protocols, ELSA data
 - ✅ **Clinical Calculators** - IVF success prediction, ovarian reserve assessment
@@ -157,7 +157,7 @@ streamlit run demos/doct_her_stdio.py
 - ✅ **Real-time Streaming** - Live response generation with tool call visibility
 
 ### 🆕 MCP Stdio Server
-The MCP server runs automatically when you start Doct-Her. For standalone server usage:
+The MCP server runs automatically when you start DoctHER. For standalone server usage:
 
 ```bash
 # Run the MCP server directly (stdio mode)

@@ -1,4 +1,4 @@
-# Doct-Her Agent Skills
+# DoctHER Agent Skills
 
 These are structured workflows that help you provide comprehensive, evidence-based women's health guidance. Use these skills to ensure consistent quality and completeness.
 

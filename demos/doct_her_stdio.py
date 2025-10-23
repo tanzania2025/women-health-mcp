@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Doct-Her: AI-Powered Women's Health Assistant
+DoctHER: AI-Powered Women's Health Assistant
 Modern chat interface using Claude with stdio MCP servers
 """
 
@@ -23,7 +23,7 @@ load_dotenv()
 
 # Page configuration
 st.set_page_config(
-    page_title="Doct-Her - Your AI Women's Health Assistant",
+    page_title="DoctHER - Your AI Women's Health Assistant",
     page_icon="🩺",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -428,7 +428,7 @@ class MCPClient:
             agent_skills = skills_path.read_text()
 
         # System prompt
-        system_prompt = f"""You are Doct-Her, an AI-powered women's health assistant specializing in reproductive health and fertility.
+        system_prompt = f"""You are DoctHER, an AI-powered women's health assistant specializing in reproductive health and fertility.
 
 You have access to clinical calculator tools from MCP (Model Context Protocol) servers. Use these tools to provide evidence-based guidance.
 
@@ -608,7 +608,7 @@ def render_landing_page():
     """Render the landing page with logo and tagline."""
     st.markdown("""
         <div class="landing-container">
-            <div class="logo">Doct-Her</div>
+            <div class="logo">DoctHER</div>
             <div class="tagline">How can I help?</div>
         </div>
     """, unsafe_allow_html=True)
@@ -629,7 +629,7 @@ def render_chat_history():
         for idx, message in enumerate(st.session_state.messages):
             message_class = "user-message" if message["role"] == "user" else "assistant-message"
             role_icon = "👤" if message["role"] == "user" else "🩺"
-            role_label = "You" if message["role"] == "user" else "Doct-Her"
+            role_label = "You" if message["role"] == "user" else "DoctHER"
 
             st.markdown(f"""
                 <div class="chat-message {message_class}">
@@ -824,7 +824,7 @@ def main():
         # Show title at top of chat
         st.markdown("""
             <div style="text-align: center; padding: 0.5rem 0 1rem 0;">
-                <div class="logo" style="font-size: 2rem; margin-bottom: 0.25rem;">Doct-Her</div>
+                <div class="logo" style="font-size: 2rem; margin-bottom: 0.25rem;">DoctHER</div>
                 <div class="powered-by" style="margin-top: 0;">Powered by Claude Sonnet 4</div>
             </div>
         """, unsafe_allow_html=True)
