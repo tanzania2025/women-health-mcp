@@ -330,7 +330,7 @@ class MCPClient:
     async def connect_to_server(self, server_script_path: str):
         """Connect to an MCP server via stdio."""
         server_params = StdioServerParameters(
-            command="python",
+            command=sys.executable,
             args=[server_script_path]
         )
 
