@@ -65,8 +65,7 @@ def main():
     print("  WebSocket: ws://localhost:8000/mcp/ws")
     
     print("\n🧪 To test the server:")
-    print("  python -m demos.mcp_client_demo.mcp_client_demo")
-    print("  python -m demos.mcp_client_demo.mcp_client_demo simple")
+    print("  streamlit run demos/doct_her_stdio.py")
     
     print("\n⭐ Features Available:")
     print("  ✓ Model Context Protocol (MCP) compliance")

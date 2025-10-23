@@ -89,15 +89,8 @@ women-health-mcp/
 │   └── huggingface_integration.py # ML model integration
 │
 ├── demos/            # Demo applications
-│   ├── main.py                # Original demo entry point
-│   ├── streamlit_demo.py      # Web interface demo
-│   ├── enhanced_streamlit_demo.py # Enhanced web demo
-│   ├── enhanced_mcp_demo.py   # Comprehensive MCP demo
-│   ├── end_to_end_demo.py     # Pipeline orchestration
-│   ├── complete_hackathon_demo.py # Full hackathon demo
-│   ├── swan_mcp_demo.py       # SWAN data demo
-│   ├── mcp_server/            # MCP server utilities
-│   └── mcp_client_demo/       # MCP client examples
+│   ├── doct_her_stdio.py      # Main Doct-Her chat application (MCP-powered)
+│   └── mcp_server/            # MCP server utilities
 │
 ├── tests/            # Test suite
 │   ├── test_asrm.py           # ASRM server tests
@@ -148,46 +141,27 @@ women-health-mcp/
 pip install -r requirements.txt
 ```
 
-### 🌐 Web Interface (Recommended)
+### 🌐 Doct-Her Chat Application (Recommended)
 ```bash
-# Start Streamlit demo - opens in browser
-streamlit run demos/streamlit_demo.py
-
-# Or the enhanced version
-streamlit run demos/enhanced_streamlit_demo.py
+# Start the Doct-Her Streamlit chat interface
+streamlit run demos/doct_her_stdio.py
 ```
 
-### 🆕 MCP Server (Production-Ready)
+**Doct-Her Features:**
+- ✅ **Model Context Protocol** (MCP) integration with Claude Sonnet 4
+- ✅ **Multiple Research Tools** - PubMed, ESHRE guidelines, NAMS protocols, ELSA data
+- ✅ **Clinical Calculators** - IVF success prediction, ovarian reserve assessment
+- ✅ **FHIR Resources** - Patient, Observation, DiagnosticReport creation
+- ✅ **Parallel Tool Usage** - Efficient multi-tool queries for comprehensive answers
+- ✅ **Claude-Style UI** - Modern chat interface with tool usage transparency
+- ✅ **Real-time Streaming** - Live response generation with tool call visibility
+
+### 🆕 MCP Stdio Server
+The MCP server runs automatically when you start Doct-Her. For standalone server usage:
+
 ```bash
-# Setup (first time only)
-python scripts/setup_mcp.py
-
-# Start MCP server
-python scripts/run_server.py
-
-# Test with AI agent client
-python -m demos.mcp_client_demo
-```
-
-**MCP Server Features:**
-- ✅ **Model Context Protocol** compliance (latest spec)
-- ✅ **RESTful API** endpoints for AI agents
-- ✅ **WebSocket** real-time communication
-- ✅ **Clinical Tools** (ovarian reserve, IVF prediction, menopause)
-- ✅ **FHIR Resources** (Patient, Observation, DiagnosticReport)
-- ✅ **AI Prompt Templates** for fertility consultation
-- ✅ **Security Layer** with API key authentication
-
-### 📋 Command Line Demos
-```bash
-# Enhanced MCP Demonstration
-python -m demos.enhanced_mcp_demo
-
-# Original Demo (Baseline)
-python -m demos.main
-
-# SWAN data integration demo
-python -m demos.swan_mcp_demo
+# Run the MCP server directly (stdio mode)
+python scripts/mcp_stdio_server.py
 ```
 
 ### 🧪 Individual Component Testing
@@ -293,20 +267,34 @@ curl -X POST http://localhost:8000/ai/anthropic/complete \
 
 ### Custom AI Agent Example
 ```python
-from demos.mcp_client_demo import WomensHealthMCPClient
+# Use the MCP server directly via stdio
+import subprocess
+import json
 
-async def ai_fertility_consultation(patient_age, amh_level, question):
-    client = WomensHealthMCPClient()
+# Start the MCP server
+process = subprocess.Popen(
+    ["python", "scripts/mcp_stdio_server.py"],
+    stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE
+)
 
-    # Get clinical assessment
-    ovarian_result = await client.assess_ovarian_reserve(patient_age, amh_level)
-    ivf_result = await client.predict_ivf_success(patient_age, amh_level)
+# Example: Call the IVF prediction tool
+request = {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+        "name": "predict-ivf-success",
+        "arguments": {
+            "age": 38,
+            "amh": 0.8
+        }
+    }
+}
 
-    # Get AI prompt template
-    prompt = await client.get_fertility_consultation_prompt(
-        patient_age, amh_level, question
-    )
-
-    # Send to your AI model with MCP context
-    # return ai_model.complete(prompt + context)
+# Send request and get response
+process.stdin.write((json.dumps(request) + "\n").encode())
+process.stdin.flush()
+response = json.loads(process.stdout.readline())
 ```

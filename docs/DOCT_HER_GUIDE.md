@@ -2,15 +2,17 @@
 
 ## Overview
 
-Doct-Her is a modern chat interface that acts as a wrapper around Claude AI, connected to local MCP (Model Context Protocol) servers for evidence-based reproductive health consultations.
+Doct-Her is a modern chat interface powered by Claude Sonnet 4, connected to an MCP (Model Context Protocol) server via stdio for evidence-based reproductive health consultations.
 
 ## Features
 
-- 🩺 **Claude AI Integration** - Powered by Anthropic's Claude 3.5 Sonnet
-- 🧮 **Clinical Calculators** - Ovarian Reserve Assessment, IVF Success Prediction, Menopause Timing
-- 📊 **Evidence-Based** - Uses ASRM guidelines and SART database
-- 💬 **Natural Language** - Automatically extracts age, AMH, FSH from your questions
-- 🔒 **Privacy-Focused** - Your data is processed securely and never stored
+- 🩺 **Claude AI Integration** - Powered by Anthropic's Claude Sonnet 4
+- 🧮 **Clinical Calculators** - IVF Success Prediction via SART database
+- 📚 **Research Tools** - PubMed, ESHRE guidelines, NAMS protocols, ELSA data
+- 📊 **Evidence-Based** - Real-time access to research databases and clinical guidelines
+- 💬 **Intelligent Tool Usage** - Claude automatically selects and uses relevant tools
+- 🔄 **Parallel Execution** - Multiple tools used simultaneously for efficient responses
+- 🔒 **Privacy-Focused** - All processing happens locally, no external data storage
 
 ## Setup
 
@@ -28,9 +30,8 @@ Create a `.env` file in the project root:
 # Required for AI-powered consultations
 ANTHROPIC_API_KEY=your-anthropic-api-key-here
 
-# MCP Server Configuration (optional, defaults shown)
-MCP_SERVER_URL=http://localhost:8000
-API_KEY=demo-api-key-change-in-production
+# Optional: Enable real API calls for research tools
+ENABLE_REAL_APIS=true
 ```
 
 **Get your Anthropic API key:**
@@ -39,22 +40,12 @@ API_KEY=demo-api-key-change-in-production
 3. Navigate to API Keys
 4. Create a new API key
 
-### 3. Start the MCP Server
+### 3. Start Doct-Her
 
-In one terminal, start the MCP server:
-
-```bash
-python scripts/run_server.py
-```
-
-This will start the MCP server at `http://localhost:8000` with the clinical calculators.
-
-### 4. Start Doct-Her
-
-In another terminal, start the Doct-Her interface:
+The MCP server runs automatically as a subprocess. Simply start Doct-Her:
 
 ```bash
-streamlit run demos/doct_her_app.py
+streamlit run demos/doct_her_stdio.py
 ```
 
 The app will open in your browser at `http://localhost:8501`
@@ -63,71 +54,84 @@ The app will open in your browser at `http://localhost:8501`
 
 ### Example Questions
 
-The app automatically extracts clinical data from natural language. Try questions like:
+Claude automatically uses relevant tools based on your question:
 
-**Fertility Assessment:**
-- "I'm 38 with AMH 0.8, should I consider IVF?"
-- "38 years old, AMH is 1.2 ng/ml, what are my options?"
-- "I'm 35, AMH 2.5, FSH 8.5, should I freeze my eggs?"
+**IVF Success Prediction:**
+- "I'm 38 with AMH 0.8, what are my chances with IVF?"
+- "Calculate IVF success rates for a 40-year-old with AMH 0.5"
 
-**IVF Success Rates:**
-- "What are my IVF success rates at age 40 with AMH 0.5?"
-- "I'm 33 with AMH 3.2, what are my chances with IVF?"
+**Research Queries:**
+- "What does recent research say about AMH levels and fertility after 35?"
+- "Find PubMed articles about IVF success rates in women over 40"
 
-**General Questions:**
-- "What does a low AMH mean?"
-- "At what age should I consider fertility preservation?"
-- "How does age affect egg quality?"
+**Guidelines:**
+- "What are the ESHRE guidelines for IVF in women over 40?"
+- "Show me NAMS recommendations for hormone replacement therapy"
+
+**Data Analysis:**
+- "What does ELSA data show about menopause timing?"
+- "Search for research on ovarian reserve markers"
 
 ### How It Works
 
-1. **Extract Patient Data** - The app uses regex patterns to extract:
-   - Age (e.g., "38 years old", "38 y/o")
-   - AMH level (e.g., "AMH 0.8", "AMH is 1.2 ng/ml")
-   - FSH level (e.g., "FSH 12.5")
+1. **User Input** - You type your question in the chat interface
 
-2. **Gather MCP Context** - Calls local MCP server tools:
-   - `assess-ovarian-reserve` - ASRM-based ovarian reserve assessment
-   - `predict-ivf-success` - SART database IVF success prediction
+2. **Claude Processing** - Claude Sonnet 4 analyzes your question and determines which tools to use
 
-3. **Build System Prompt** - Creates a comprehensive system prompt with:
-   - Clinical context from MCP tools
-   - Evidence-based guidelines
-   - Your role as an AI assistant
+3. **MCP Tool Calls** - Claude calls relevant tools via the stdio MCP server:
+   - Can use multiple tools in parallel for efficiency
+   - Automatically selects appropriate tools based on context
+   - Tools communicate via JSON-RPC over stdio
 
-4. **Call Claude API** - Sends to Claude 3.5 Sonnet with MCP context
+4. **Tool Execution** - The MCP server executes the requested tools:
+   - Clinical calculators run locally
+   - Research tools query databases and APIs
+   - Results are returned to Claude
 
-5. **Stream Response** - Returns evidence-based, compassionate guidance
+5. **Response Generation** - Claude synthesizes tool results into a comprehensive, evidence-based response
+
+6. **Streaming Display** - Response streams to the UI in real-time with tool usage transparency
 
 ## Available MCP Tools
 
-When you provide age and AMH data, the app automatically calls:
+Claude can automatically use any of these 14 tools:
 
-### 1. Ovarian Reserve Assessment
-- **Based on:** ASRM guidelines
-- **Inputs:** Age, AMH, FSH (optional)
-- **Outputs:** Category, percentile, interpretation
+### Clinical Calculators
+1. **predict-ivf-success** - SART-based IVF success prediction
+   - Inputs: Age, AMH, height, weight, BMI, egg source, cycle number
+   - Outputs: Live birth probability for 1, 2, 3 cycles
 
-### 2. IVF Success Prediction
-- **Based on:** SART database (>50,000 cycles)
-- **Inputs:** Age, AMH, cycle type
-- **Outputs:** Live birth rate, confidence intervals
+### Research Tools
+2. **search_pubmed** - Search PubMed for scientific articles
+3. **get_article** - Retrieve full PubMed article details
+4. **get_multiple_articles** - Batch retrieve multiple articles
 
-### 3. Menopause Prediction
-- **Based on:** SWAN longitudinal study
-- **Inputs:** Age, AMH, lifestyle factors
-- **Outputs:** Predicted menopause timing, current stage
+### Guidelines & Protocols
+5. **list_eshre_guidelines** - List available ESHRE guidelines
+6. **search_eshre_guidelines** - Search ESHRE guidelines by topic
+7. **get_eshre_guideline** - Get specific ESHRE guideline details
+8. **list_nams_position_statements** - List NAMS position statements
+9. **search_nams_protocols** - Search NAMS protocols
+10. **get_nams_protocol** - Get specific NAMS protocol
+
+### Research Data
+11. **list_elsa_waves** - List ELSA study waves
+12. **search_elsa_data** - Search ELSA longitudinal data
+
+### Healthcare Integration
+13. **create-fhir-resource** - Create FHIR-compliant healthcare resources
+14. **query-research-database** - Generic research database queries
 
 ## Troubleshooting
 
 ### "Anthropic API key not configured"
 Add your `ANTHROPIC_API_KEY` to the `.env` file and restart the app.
 
-### "MCP server not running"
-Start the MCP server first:
-```bash
-python scripts/run_server.py
-```
+### "MCP server not responding"
+The MCP server runs automatically as a subprocess. If you see errors:
+1. Check that `scripts/mcp_stdio_server.py` exists
+2. Ensure the `mcp` package is installed: `pip install mcp`
+3. Restart the Streamlit application
 
 ### Import errors
 Run the setup script:
@@ -150,25 +154,38 @@ pkill -f run_server
 ```
 User Input (Streamlit)
     ↓
-Extract Patient Data (Regex)
+Claude Sonnet 4 (Anthropic SDK)
     ↓
-Gather MCP Context (HTTP → MCP Server)
-    ├─ assess-ovarian-reserve
-    └─ predict-ivf-success
+Tool Selection & Execution
     ↓
-Build System Prompt (MCP Context)
+MCP Server (stdio subprocess)
+    ├─ predict-ivf-success
+    ├─ search_pubmed
+    ├─ search_eshre_guidelines
+    ├─ search_nams_protocols
+    └─ [11 other tools]
     ↓
-Call Claude API (Anthropic SDK)
+Tool Results → Claude
     ↓
-Display Response (Streamlit)
+Synthesized Response (streaming)
+    ↓
+Display in Chat UI (Streamlit)
 ```
+
+### MCP Communication
+- **Protocol**: JSON-RPC 2.0
+- **Transport**: stdio (stdin/stdout)
+- **Format**: Newline-delimited JSON
+- **Tool Discovery**: Automatic via MCP spec
+- **Parallel Execution**: Supported when tools are independent
 
 ## Privacy & Security
 
-- ✅ **Local Processing** - MCP servers run locally on your machine
-- ✅ **Secure Communication** - API calls use HTTPS
+- ✅ **Local Processing** - MCP server runs as a local subprocess
+- ✅ **Stdio Communication** - No network exposure for MCP tools
 - ✅ **No Data Storage** - Chat history only in browser session
-- ✅ **HIPAA-Ready** - MCP server supports audit logging and encryption
+- ✅ **API Security** - Only Anthropic API called for Claude access
+- ✅ **Audit Trail** - Tool usage logged and visible to users
 
 ## Next Steps
 
@@ -178,10 +195,10 @@ Display Response (Streamlit)
 3. Share the app with friends who might benefit
 
 ### For Developers
-1. Add new MCP tools (e.g., menopause prediction, PCOS assessment)
-2. Implement streaming responses from Claude
+1. Add new MCP tools to `scripts/mcp_stdio_server.py`
+2. Customize system prompt in `doct_her_stdio.py` (line 298)
 3. Add conversation history persistence
-4. Deploy to production with proper security
+4. Deploy to production with Docker containerization
 
 ## Support
 
