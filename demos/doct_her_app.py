@@ -250,20 +250,35 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 # Available calculators (tools)
 AVAILABLE_CALCULATORS = {
-    "Menopause Calculator": {
-        "description": "Predict menopause timing based on age, AMH, and risk factors",
-        "endpoint": "menopause_prediction",
-        "server": "servers.menopause_server"
-    },
-    "Ovarian Reserve Assessment": {
-        "description": "Assess ovarian reserve using AMH, FSH, and age",
-        "endpoint": "ovarian_reserve",
-        "server": "servers.asrm_server"
-    },
     "IVF Success Calculator": {
-        "description": "Calculate IVF success rates based on age and biomarkers",
-        "endpoint": "ivf_success",
+        "description": "Calculate IVF success rates using real SART data",
+        "endpoint": "predict-ivf-success",
         "server": "servers.sart_ivf_server"
+    },
+    "ESHRE Guidelines": {
+        "description": "European Society of Human Reproduction clinical guidelines",
+        "endpoint": "search_eshre_guidelines",
+        "server": "servers.eshre_server"
+    },
+    "NAMS Protocols": {
+        "description": "North American Menopause Society position statements",
+        "endpoint": "search_nams_protocols",
+        "server": "servers.nams_server"
+    },
+    "PubMed Research": {
+        "description": "Search scientific literature for evidence-based guidance",
+        "endpoint": "search_pubmed",
+        "server": "servers.pubmed_server"
+    },
+    "ELSA Database": {
+        "description": "English Longitudinal Study of Ageing research data",
+        "endpoint": "search_elsa_data",
+        "server": "servers.elsa_server"
+    },
+    "SWAN Database": {
+        "description": "Study of Women's Health Across the Nation data",
+        "endpoint": "swan_data",
+        "server": "servers.swan_integration"
     }
 }
 
@@ -438,30 +453,67 @@ To enable AI-powered consultations, please:
 You have access to clinical calculator tools from MCP (Model Context Protocol) servers. Use these tools to provide evidence-based guidance.
 
 **Your Role:**
+
+You are an agent to give scientific answers to women's health questions.
+
+Use ESHRE, ASRM, NAMS guidelines first if they are relevant, then look in PubMed or ELSA for relevant papers. Use the IVF calculator or other clinical tools if they are relevant.
+
+**IMPORTANT: You have access to comprehensive research tools:**
+
+**Clinical Guidelines:**
+- `list_eshre_guidelines` - List all ESHRE (European Society of Human Reproduction) clinical guidelines
+- `search_eshre_guidelines` - Search ESHRE guidelines by keyword (IVF, PCOS, endometriosis, etc.)
+- `get_eshre_guideline` - Get full ESHRE guideline content
+- `list_nams_position_statements` - List NAMS (Menopause Society) position statements
+- `search_nams_protocols` - Search NAMS protocols (hormone therapy, vasomotor symptoms, etc.)
+- `get_nams_protocol` - Get full NAMS protocol content
+
+**Research Databases:**
+- `search_pubmed` - Search PubMed for scientific articles on any topic
+- `get_article` - Retrieve full abstract for a specific PMID
+- `get_multiple_articles` - Fetch multiple PubMed articles at once
+- `list_elsa_waves` - List ELSA (English Longitudinal Study of Ageing) waves
+- `search_elsa_data` - Search ELSA data on aging, menopause, cognitive health, biomarkers
+
+**Clinical Calculators:**
+- `predict-ivf-success` - Calculate IVF success rates using real SART data
+
+**How to use these tools:**
+1. Start with clinical guidelines (ESHRE for fertility/IVF, NAMS for menopause)
+2. Supplement with PubMed research for latest scientific evidence
+3. Use ELSA database for population health and aging data
+4. Use calculators when patient provides specific clinical data (age, AMH, etc.)
+
+Give a summarised result with references to guidelines and papers.
+
+Oftentimes women feel their symptoms/pain is overlooked and dismissed by doctors. We want to make sure that women feel as though they have someone believing them. We want them empowered in their appointments.
+
 - Provide evidence-based fertility and reproductive health guidance
-- Use the available tools to calculate ovarian reserve, IVF success rates, etc.
-- Explain clinical assessments in clear, compassionate language
+- Use the available tools to search guidelines and scientific evidence
+- Be deeply friendly and supportive, encouraging women to stand up to doctors who may be dismissive
 - Help patients understand their options and next steps
 - Always clarify that you're an AI assistant and recommend consulting healthcare providers
 
 **Guidelines:**
-1. When you receive a question with age and AMH data, USE THE TOOLS to get clinical assessments
-2. Be compassionate and supportive
-3. Explain medical terms clearly
-4. Always recommend consulting with healthcare providers for medical decisions
-5. If age and AMH indicate time-sensitive concerns, gently emphasize urgency
-6. Provide clear next steps
+1. When you receive a question, USE THE TOOLS to search relevant guidelines first
+2. Search PubMed for recent scientific evidence to support your guidance
+3. Use clinical calculators when patient data is available (age, AMH, etc.)
+4. Be compassionate and supportive - validate their concerns
+5. Explain medical terms clearly and avoid jargon
+6. Always recommend consulting with healthcare providers for medical decisions
+7. If age and clinical data indicate time-sensitive concerns, gently emphasize urgency
+8. Provide clear next steps with scientific references and guideline citations
 
-Remember: You're providing educational information, not medical advice."""
+Remember: You're providing educational information, not medical advice. Always cite your sources (ESHRE guidelines, NAMS protocols, PubMed articles, ELSA data)."""
 
         # Initial message to Claude with tools
         messages = [{"role": "user", "content": user_input}]
 
         # Agentic loop - let Claude use tools
-        max_iterations = 5
+        max_iterations = 15
         for iteration in range(max_iterations):
             if status_container:
-                status_container.info(f"🤖 Claude thinking... (iteration {iteration + 1}/{max_iterations})")
+                status_container.info(f"Doct-her thinking... (iteration {iteration + 1}/{max_iterations})")
 
             response = client.messages.create(
                 model="claude-3-5-haiku-20241022",

@@ -1,724 +1,390 @@
 """
 Clinical Calculators for Women's Health MCP
-Evidence-based calculators for ovarian reserve, IVF success, and menopause prediction
+SART IVF Calculator using real API data
 """
 
-import math
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Any, Optional
+import httpx
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from enum import Enum
 
 
-class OvarianReserveCategory(Enum):
-    """ASRM/ESHRE standardized ovarian reserve categories."""
-    VERY_LOW = "very_low"
-    LOW = "low"
-    NORMAL = "normal"
-    HIGH = "high"
-    VERY_HIGH = "very_high"
-
-
-class MenopauseStage(Enum):
-    """STRAW+10 staging for reproductive aging."""
-    REPRODUCTIVE = "reproductive"
-    EARLY_TRANSITION = "early_transition"
-    LATE_TRANSITION = "late_transition"
-    EARLY_POSTMENOPAUSE = "early_postmenopause"
-    LATE_POSTMENOPAUSE = "late_postmenopause"
-
-
-@dataclass
-class OvarianReserveResult:
-    """Results from ovarian reserve assessment."""
-    category: OvarianReserveCategory
-    percentile: int
-    confidence_interval: Tuple[int, int]
-    clinical_interpretation: str
-    recommendations: List[str]
-    evidence_base: Dict[str, str]
+# SART calculator URL
+SART_URL = "https://w3.abdn.ac.uk/clsm/SARTIVF/tool/ivf1"
 
 
 @dataclass
 class IVFSuccessResult:
-    """Results from IVF success prediction."""
-    live_birth_rate: float
-    confidence_interval: Tuple[float, float]
-    cumulative_success_3_cycles: float
-    age_adjusted_rate: float
-    amh_adjusted_rate: float
-    clinical_factors: Dict[str, float]
-    recommendations: List[str]
-    evidence_base: Dict[str, str]
-
-
-@dataclass
-class MenopausePredictionResult:
-    """Results from menopause timing prediction."""
-    predicted_age: float
-    confidence_interval: Tuple[float, float]
-    current_stage: MenopauseStage
-    time_to_menopause_years: float
-    fertility_window_remaining: bool
-    risk_factors: List[str]
-    protective_factors: List[str]
-    recommendations: List[str]
-    evidence_base: Dict[str, str]
+    """Results from SART IVF success calculator."""
+    age: int
+    height_cm: Optional[float]
+    weight_kg: Optional[float]
+    height_ft: Optional[int]
+    height_in: Optional[int]
+    weight_lbs: Optional[float]
+    previous_full_term: bool
+    male_factor: bool
+    polycystic: bool
+    uterine_problems: bool
+    unexplained_infertility: bool
+    low_ovarian_reserve: bool
+    amh_available: bool
+    amh_value: Optional[float]
+    success_rate_1_cycle: Optional[float]
+    success_rate_2_cycles: Optional[float]
+    success_rate_3_cycles: Optional[float]
+    raw_response: dict
 
 
 class ClinicalCalculators:
     """
-    Evidence-based clinical calculators for women's reproductive health.
-    Implements ASRM, ESHRE, and STRAW+10 guidelines.
+    Clinical calculators using the SART IVF Calculator API.
+    Provides evidence-based IVF success rate predictions.
     """
-    
-    def __init__(self):
-        self._load_reference_data()
-    
-    def _load_reference_data(self):
-        """Load reference data for calculations."""
-        # AMH percentiles by age (ng/mL) - based on large population studies
-        self.amh_percentiles = {
-            25: {"5th": 0.9, "25th": 2.3, "50th": 4.1, "75th": 6.8, "95th": 11.2},
-            30: {"5th": 0.7, "25th": 1.8, "50th": 3.2, "75th": 5.4, "95th": 9.1},
-            35: {"5th": 0.5, "25th": 1.2, "50th": 2.1, "75th": 3.6, "95th": 6.2},
-            40: {"5th": 0.3, "25th": 0.7, "50th": 1.2, "75th": 2.1, "95th": 3.8},
-            45: {"5th": 0.1, "25th": 0.3, "50th": 0.6, "75th": 1.0, "95th": 1.8}
-        }
-        
-        # SART IVF success rates by age (2023 data)
-        self.ivf_success_rates = {
-            "under_35": {"fresh": 45.2, "frozen": 48.6},
-            "35_37": {"fresh": 36.8, "frozen": 42.1},
-            "38_40": {"fresh": 25.1, "frozen": 34.2},
-            "41_42": {"fresh": 13.4, "frozen": 23.8},
-            "43_44": {"fresh": 5.8, "frozen": 16.2},
-            "over_44": {"fresh": 2.1, "frozen": 8.4}
-        }
-        
-        # Menopause prediction factors (SWAN study)
-        self.menopause_factors = {
-            "smoking": {"effect": -1.8, "confidence": 0.85},
-            "bmi_over_30": {"effect": 0.6, "confidence": 0.72},
-            "early_menarche": {"effect": -0.4, "confidence": 0.68},
-            "nulliparity": {"effect": -0.8, "confidence": 0.71},
-            "family_history_early": {"effect": -2.1, "confidence": 0.79},
-            "chinese_ethnicity": {"effect": 0.9, "confidence": 0.73},
-            "japanese_ethnicity": {"effect": 1.1, "confidence": 0.76}
-        }
-    
-    def assess_ovarian_reserve(self,
-                             age: int,
-                             amh: float,
-                             fsh: Optional[float] = None,
-                             antral_follicle_count: Optional[int] = None) -> OvarianReserveResult:
+
+    async def calculate_ivf_success(
+        self,
+        age: int,
+        height_cm: float = None,
+        weight_kg: float = None,
+        height_ft: int = None,
+        height_in: int = None,
+        weight_lbs: float = None,
+        previous_full_term: bool = False,
+        male_factor: bool = False,
+        polycystic: bool = False,
+        uterine_problems: bool = False,
+        unexplained_infertility: bool = False,
+        low_ovarian_reserve: bool = False,
+        amh_available: bool = False,
+        amh_value: float = 0.0,
+    ) -> IVFSuccessResult:
         """
-        Assess ovarian reserve using ASRM/ESHRE criteria.
-        
+        Calculate IVF success rates using the SART calculator API.
+
         Args:
-            age: Patient age in years
-            amh: Anti-Müllerian hormone (ng/mL)
-            fsh: Follicle stimulating hormone (mIU/mL), optional
-            antral_follicle_count: AFC from ultrasound, optional
-            
+            age: Patient age (18-45)
+            height_cm: Height in centimeters (if using metric)
+            weight_kg: Weight in kilograms (if using metric)
+            height_ft: Height in feet (if using imperial)
+            height_in: Height in inches (if using imperial)
+            weight_lbs: Weight in pounds (if using imperial)
+            previous_full_term: Has patient had a previous full-term pregnancy (>37 weeks)?
+            male_factor: Does partner have sperm problems?
+            polycystic: Does patient have PCOS?
+            uterine_problems: Does patient have uterine problems (septum, myoma, adhesions, anomalies)?
+            unexplained_infertility: Diagnosed with unexplained infertility?
+            low_ovarian_reserve: Diagnosed with low ovarian reserve?
+            amh_available: Is AMH (Anti-Müllerian Hormone) level known?
+            amh_value: AMH level in ng/ml (if available)
+
         Returns:
-            OvarianReserveResult with comprehensive assessment
+            IVFSuccessResult containing success probability results
         """
-        
-        # Get age-adjusted AMH percentile
-        percentile = self._calculate_amh_percentile(age, amh)
-        
-        # Classify ovarian reserve based on ASRM criteria
-        category = self._classify_ovarian_reserve(amh, percentile, fsh, antral_follicle_count)
-        
-        # Generate clinical interpretation
-        interpretation = self._interpret_ovarian_reserve(category, age, amh, percentile)
-        
-        # Generate recommendations
-        recommendations = self._ovarian_reserve_recommendations(category, age, amh)
-        
-        # Confidence interval for percentile
-        ci_lower = max(1, percentile - 10)
-        ci_upper = min(99, percentile + 10)
-        
-        evidence_base = {
-            "guidelines": "ASRM 2024, ESHRE 2023",
-            "population_data": "Nelson et al. 2023 (n=15,834)",
-            "validation_studies": "Dewailly et al. 2024"
+        # Determine if using metric or imperial
+        is_metric = height_cm is not None and weight_kg is not None
+        is_metric_weight = weight_kg is not None
+
+        # Set defaults for missing values
+        if is_metric:
+            height = height_cm or 165
+            weight = weight_kg or 65
+            feet = 5
+            inches = 5
+            pounds = weight * 2.20462  # Convert kg to lbs
+        else:
+            height = 165  # Default cm
+            weight = 65   # Default kg
+            feet = height_ft or 5
+            inches = height_in or 5
+            pounds = weight_lbs or 143
+            if not is_metric_weight:
+                weight = pounds / 2.20462  # Convert lbs to kg
+
+        # Build form data
+        form_data = {
+            "Age": str(age),
+            "Height": str(int(height)),
+            "Weight": str(int(weight)),
+            "Feet": str(feet),
+            "Inches": str(inches),
+            "Pounds": str(int(pounds)),
+            "PreviousFullTerm": "true" if previous_full_term else "false",
+            "MaleFactor": "true" if male_factor else "false",
+            "Polycystic": "true" if polycystic else "false",
+            "Uterine": "true" if uterine_problems else "false",
+            "Unexplained": "true" if unexplained_infertility else "false",
+            "LowOvarian": "true" if low_ovarian_reserve else "false",
+            "AMH_Available": "true" if amh_available else "false",
+            "AmhValue": str(amh_value),
+            "isMetric": "true" if is_metric else "false",
+            "isMetricWeight": "true" if is_metric_weight else "false",
         }
-        
-        return OvarianReserveResult(
-            category=category,
-            percentile=percentile,
-            confidence_interval=(ci_lower, ci_upper),
-            clinical_interpretation=interpretation,
-            recommendations=recommendations,
-            evidence_base=evidence_base
-        )
-    
-    def _calculate_amh_percentile(self, age: int, amh: float) -> int:
-        """Calculate age-adjusted AMH percentile."""
-        # Find closest age bracket
-        age_brackets = sorted(self.amh_percentiles.keys())
-        closest_age = min(age_brackets, key=lambda x: abs(x - age))
-        
-        # If exact age not available, interpolate
-        if age != closest_age and age < max(age_brackets):
-            # Linear interpolation between age brackets
-            if age < closest_age:
-                lower_age = max([a for a in age_brackets if a < age], default=closest_age)
-                upper_age = closest_age
-            else:
-                lower_age = closest_age
-                upper_age = min([a for a in age_brackets if a > age], default=closest_age)
-            
-            if lower_age != upper_age:
-                # Interpolate 50th percentile values
-                lower_50th = self.amh_percentiles[lower_age]["50th"]
-                upper_50th = self.amh_percentiles[upper_age]["50th"]
-                weight = (age - lower_age) / (upper_age - lower_age)
-                interpolated_50th = lower_50th + weight * (upper_50th - lower_50th)
-            else:
-                interpolated_50th = self.amh_percentiles[closest_age]["50th"]
-        else:
-            interpolated_50th = self.amh_percentiles[closest_age]["50th"]
-        
-        # Estimate percentile based on ratio to 50th percentile
-        percentiles_ref = self.amh_percentiles[closest_age]
-        
-        if amh <= percentiles_ref["5th"]:
-            return 5
-        elif amh <= percentiles_ref["25th"]:
-            # Interpolate between 5th and 25th
-            ratio = (amh - percentiles_ref["5th"]) / (percentiles_ref["25th"] - percentiles_ref["5th"])
-            return int(5 + ratio * 20)
-        elif amh <= percentiles_ref["50th"]:
-            # Interpolate between 25th and 50th
-            ratio = (amh - percentiles_ref["25th"]) / (percentiles_ref["50th"] - percentiles_ref["25th"])
-            return int(25 + ratio * 25)
-        elif amh <= percentiles_ref["75th"]:
-            # Interpolate between 50th and 75th
-            ratio = (amh - percentiles_ref["50th"]) / (percentiles_ref["75th"] - percentiles_ref["50th"])
-            return int(50 + ratio * 25)
-        elif amh <= percentiles_ref["95th"]:
-            # Interpolate between 75th and 95th
-            ratio = (amh - percentiles_ref["75th"]) / (percentiles_ref["95th"] - percentiles_ref["75th"])
-            return int(75 + ratio * 20)
-        else:
-            return 95
-    
-    def _classify_ovarian_reserve(self,
-                                amh: float,
-                                percentile: int,
-                                fsh: Optional[float],
-                                afc: Optional[int]) -> OvarianReserveCategory:
-        """Classify ovarian reserve using ASRM criteria."""
-        
-        # Primary classification based on AMH
-        if amh < 0.5:
-            primary_category = OvarianReserveCategory.VERY_LOW
-        elif amh < 1.0:
-            primary_category = OvarianReserveCategory.LOW
-        elif amh < 4.0:
-            primary_category = OvarianReserveCategory.NORMAL
-        elif amh < 8.0:
-            primary_category = OvarianReserveCategory.HIGH
-        else:
-            primary_category = OvarianReserveCategory.VERY_HIGH
-        
-        # Adjust based on FSH if available
-        if fsh is not None:
-            if fsh > 15 and primary_category not in [OvarianReserveCategory.VERY_LOW]:
-                primary_category = OvarianReserveCategory.LOW
-            elif fsh > 20:
-                primary_category = OvarianReserveCategory.VERY_LOW
-        
-        # Adjust based on AFC if available
-        if afc is not None:
-            if afc < 5 and primary_category not in [OvarianReserveCategory.VERY_LOW]:
-                primary_category = OvarianReserveCategory.LOW
-            elif afc < 3:
-                primary_category = OvarianReserveCategory.VERY_LOW
-            elif afc > 20:
-                primary_category = OvarianReserveCategory.HIGH
-        
-        return primary_category
-    
-    def _interpret_ovarian_reserve(self,
-                                 category: OvarianReserveCategory,
-                                 age: int,
-                                 amh: float,
-                                 percentile: int) -> str:
-        """Generate clinical interpretation."""
-        
-        interpretations = {
-            OvarianReserveCategory.VERY_LOW: f"Very low ovarian reserve (AMH {amh} ng/mL, {percentile}th percentile for age {age}). Significantly reduced egg quantity.",
-            OvarianReserveCategory.LOW: f"Low ovarian reserve (AMH {amh} ng/mL, {percentile}th percentile for age {age}). Below average egg quantity for age.",
-            OvarianReserveCategory.NORMAL: f"Normal ovarian reserve (AMH {amh} ng/mL, {percentile}th percentile for age {age}). Age-appropriate egg quantity.",
-            OvarianReserveCategory.HIGH: f"High ovarian reserve (AMH {amh} ng/mL, {percentile}th percentile for age {age}). Above average egg quantity.",
-            OvarianReserveCategory.VERY_HIGH: f"Very high ovarian reserve (AMH {amh} ng/mL, {percentile}th percentile for age {age}). Risk of OHSS with stimulation."
-        }
-        
-        return interpretations[category]
-    
-    def _ovarian_reserve_recommendations(self,
-                                       category: OvarianReserveCategory,
-                                       age: int,
-                                       amh: float) -> List[str]:
-        """Generate clinical recommendations based on ovarian reserve."""
-        
-        recommendations = []
-        
-        if category == OvarianReserveCategory.VERY_LOW:
-            recommendations.extend([
-                "Urgent fertility consultation recommended",
-                "Consider immediate fertility preservation if pregnancy desired",
-                "IVF with PGT-A may be beneficial",
-                "Donor egg consultation if pregnancy desired",
-                "Repeat AMH in 6 months to confirm trend"
-            ])
-        elif category == OvarianReserveCategory.LOW:
-            recommendations.extend([
-                "Expedited fertility evaluation if pregnancy desired",
-                "Consider fertility preservation options",
-                "IVF may require modified stimulation protocols",
-                "Genetic counseling if family planning",
-                "Lifestyle optimization for fertility"
-            ])
-        elif category == OvarianReserveCategory.NORMAL:
-            recommendations.extend([
-                "Standard fertility evaluation timeline appropriate",
-                "Maintain healthy lifestyle for reproductive health",
-                "Annual reproductive health checkups",
-                "Consider fertility preservation after age 35 if delaying pregnancy"
-            ])
-        elif category in [OvarianReserveCategory.HIGH, OvarianReserveCategory.VERY_HIGH]:
-            recommendations.extend([
-                "Risk of ovarian hyperstimulation syndrome (OHSS) with fertility treatments",
-                "Modified stimulation protocols recommended for IVF",
-                "Consider freeze-all strategy if undergoing IVF",
-                "PCOS screening recommended"
-            ])
-        
-        return recommendations
-    
-    def predict_ivf_success(self,
-                          age: int,
-                          amh: float,
-                          cycle_type: str = "fresh",
-                          prior_pregnancies: int = 0,
-                          bmi: Optional[float] = None,
-                          diagnosis: Optional[str] = None) -> IVFSuccessResult:
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                SART_URL,
+                data=form_data,
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                timeout=30.0,
+                follow_redirects=True,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            # Extract cumulative probabilities (for 1, 2, and 3 cycles)
+            cumulative_probs = data.get("CumulativeProbabilityResult", [])
+
+            return IVFSuccessResult(
+                age=age,
+                height_cm=height if is_metric else None,
+                weight_kg=weight if is_metric_weight else None,
+                height_ft=feet if not is_metric else None,
+                height_in=inches if not is_metric else None,
+                weight_lbs=pounds if not is_metric_weight else None,
+                previous_full_term=previous_full_term,
+                male_factor=male_factor,
+                polycystic=polycystic,
+                uterine_problems=uterine_problems,
+                unexplained_infertility=unexplained_infertility,
+                low_ovarian_reserve=low_ovarian_reserve,
+                amh_available=amh_available,
+                amh_value=amh_value if amh_available else None,
+                success_rate_1_cycle=round(cumulative_probs[0], 2) if len(cumulative_probs) > 0 else None,
+                success_rate_2_cycles=round(cumulative_probs[1], 2) if len(cumulative_probs) > 1 else None,
+                success_rate_3_cycles=round(cumulative_probs[2], 2) if len(cumulative_probs) > 2 else None,
+                raw_response=data,
+            )
+
+    async def predict_ivf_success_async(
+        self,
+        age: int,
+        amh: float,
+        cycle_type: str = "fresh",
+        prior_pregnancies: int = 0,
+        bmi: Optional[float] = None,
+        diagnosis: Optional[str] = None,
+    ) -> dict:
         """
-        Predict IVF success rates using SART data and published models.
-        
+        Async wrapper for IVF success prediction for backwards compatibility.
+
         Args:
             age: Patient age
             amh: AMH level (ng/mL)
-            cycle_type: "fresh" or "frozen"
+            cycle_type: "fresh" or "frozen" (ignored - SART calculator doesn't distinguish)
             prior_pregnancies: Number of prior pregnancies
             bmi: Body mass index, optional
             diagnosis: Primary infertility diagnosis, optional
-            
+
         Returns:
-            IVFSuccessResult with predictions and recommendations
+            Dictionary containing success rate information
         """
-        
-        # Get base success rate by age
-        base_rate = self._get_base_ivf_rate(age, cycle_type)
-        
-        # Adjust for AMH
-        amh_adjusted_rate = self._adjust_for_amh(base_rate, age, amh)
-        
-        # Additional adjustments
-        final_rate = amh_adjusted_rate
-        clinical_factors = {"base_age_rate": base_rate}
-        
-        # Adjust for prior pregnancies
-        if prior_pregnancies > 0:
-            pregnancy_boost = min(15, prior_pregnancies * 8)
-            final_rate *= (1 + pregnancy_boost / 100)
-            clinical_factors["prior_pregnancy_boost"] = pregnancy_boost
-        
-        # Adjust for BMI
-        if bmi is not None:
-            bmi_adjustment = self._adjust_for_bmi(bmi)
-            final_rate *= (1 + bmi_adjustment / 100)
-            clinical_factors["bmi_adjustment"] = bmi_adjustment
-        
-        # Adjust for diagnosis
-        if diagnosis:
-            diagnosis_adjustment = self._adjust_for_diagnosis(diagnosis)
-            final_rate *= (1 + diagnosis_adjustment / 100)
-            clinical_factors["diagnosis_adjustment"] = diagnosis_adjustment
-        
-        # Cap at reasonable bounds
-        final_rate = max(1.0, min(75.0, final_rate))
-        
-        # Calculate cumulative success over 3 cycles
-        cumulative_3_cycles = 1 - (1 - final_rate/100)**3
-        cumulative_3_cycles *= 100
-        
-        # Confidence interval
-        ci_lower = max(1.0, final_rate - 8)
-        ci_upper = min(75.0, final_rate + 8)
-        
-        # Generate recommendations
-        recommendations = self._ivf_recommendations(final_rate, age, amh, clinical_factors)
-        
-        evidence_base = {
-            "data_source": "SART 2023 National Summary",
-            "model": "McLernon et al. 2024 prediction model",
-            "validation": "External validation in US population"
-        }
-        
-        return IVFSuccessResult(
-            live_birth_rate=round(final_rate, 1),
-            confidence_interval=(round(ci_lower, 1), round(ci_upper, 1)),
-            cumulative_success_3_cycles=round(cumulative_3_cycles, 1),
-            age_adjusted_rate=round(base_rate, 1),
-            amh_adjusted_rate=round(amh_adjusted_rate, 1),
-            clinical_factors=clinical_factors,
-            recommendations=recommendations,
-            evidence_base=evidence_base
+        # Map diagnosis to SART parameters
+        male_factor = diagnosis == "male_factor"
+        unexplained = diagnosis == "unexplained"
+        low_ovarian = diagnosis == "diminished_ovarian_reserve"
+        uterine = diagnosis == "uterine"
+        polycystic = False  # Could be inferred from diagnosis in future
+
+        # Calculate BMI-based weight if BMI provided (assuming average height)
+        weight_kg = None
+        if bmi:
+            height_m = 1.65  # Assume average height
+            weight_kg = bmi * (height_m ** 2)
+
+        # Run async calculator
+        result = await self.calculate_ivf_success(
+            age=age,
+            weight_kg=weight_kg,
+            previous_full_term=prior_pregnancies > 0,
+            male_factor=male_factor,
+            polycystic=polycystic,
+            uterine_problems=uterine,
+            unexplained_infertility=unexplained,
+            low_ovarian_reserve=low_ovarian,
+            amh_available=True,
+            amh_value=amh,
         )
-    
-    def _get_base_ivf_rate(self, age: int, cycle_type: str) -> float:
-        """Get base IVF success rate by age and cycle type."""
-        if age < 35:
-            return self.ivf_success_rates["under_35"][cycle_type]
-        elif age <= 37:
-            return self.ivf_success_rates["35_37"][cycle_type]
-        elif age <= 40:
-            return self.ivf_success_rates["38_40"][cycle_type]
-        elif age <= 42:
-            return self.ivf_success_rates["41_42"][cycle_type]
-        elif age <= 44:
-            return self.ivf_success_rates["43_44"][cycle_type]
-        else:
-            return self.ivf_success_rates["over_44"][cycle_type]
-    
-    def _adjust_for_amh(self, base_rate: float, age: int, amh: float) -> float:
-        """Adjust IVF success rate based on AMH levels."""
-        # Get expected AMH for age
-        age_brackets = sorted(self.amh_percentiles.keys())
-        closest_age = min(age_brackets, key=lambda x: abs(x - age))
-        expected_amh = self.amh_percentiles[closest_age]["50th"]
-        
-        # Calculate AMH ratio
-        amh_ratio = amh / expected_amh
-        
-        # Apply adjustment based on published studies
-        if amh_ratio < 0.25:  # Very low AMH
-            adjustment = -25  # 25% reduction
-        elif amh_ratio < 0.5:  # Low AMH
-            adjustment = -15  # 15% reduction
-        elif amh_ratio < 0.75:  # Below average
-            adjustment = -8   # 8% reduction
-        elif amh_ratio > 2.0:   # High AMH
-            adjustment = 5    # 5% increase
-        else:  # Normal range
-            adjustment = 0
-        
-        return base_rate * (1 + adjustment / 100)
-    
-    def _adjust_for_bmi(self, bmi: float) -> float:
-        """Calculate BMI adjustment for IVF success."""
-        if bmi < 18.5:  # Underweight
-            return -8
-        elif bmi > 30:  # Obese
-            return -12
-        elif bmi > 25:  # Overweight
-            return -5
-        else:  # Normal
-            return 0
-    
-    def _adjust_for_diagnosis(self, diagnosis: str) -> float:
-        """Calculate diagnosis-specific adjustment."""
-        adjustments = {
-            "unexplained": 0,
-            "male_factor": 8,
-            "ovulatory": 5,
-            "tubal": -3,
-            "endometriosis": -8,
-            "diminished_ovarian_reserve": -15,
-            "uterine": -10
+
+        # Return in expected format
+        return {
+            "live_birth_rate": result.success_rate_1_cycle,
+            "cumulative_success_3_cycles": result.success_rate_3_cycles,
+            "confidence_interval": (
+                max(0, result.success_rate_1_cycle - 5) if result.success_rate_1_cycle else 0,
+                min(100, result.success_rate_1_cycle + 5) if result.success_rate_1_cycle else 0,
+            ),
+            "age_adjusted_rate": result.success_rate_1_cycle,
+            "amh_adjusted_rate": result.success_rate_1_cycle,
+            "clinical_factors": {
+                "age": age,
+                "amh": amh,
+                "previous_full_term": result.previous_full_term,
+                "male_factor": result.male_factor,
+                "unexplained_infertility": result.unexplained_infertility,
+                "low_ovarian_reserve": result.low_ovarian_reserve,
+            },
+            "recommendations": self._generate_recommendations(result),
+            "evidence_base": {
+                "data_source": "SART IVF Calculator",
+                "model": "University of Aberdeen SART model",
+                "url": SART_URL,
+            },
         }
-        return adjustments.get(diagnosis.lower(), 0)
-    
-    def _ivf_recommendations(self,
-                           success_rate: float,
-                           age: int,
-                           amh: float,
-                           factors: Dict[str, float]) -> List[str]:
-        """Generate IVF recommendations based on predicted success."""
-        
+
+    def predict_ivf_success(
+        self,
+        age: int,
+        amh: float,
+        cycle_type: str = "fresh",
+        prior_pregnancies: int = 0,
+        bmi: Optional[float] = None,
+        diagnosis: Optional[str] = None,
+    ) -> dict:
+        """
+        Synchronous wrapper for IVF success prediction for backwards compatibility.
+
+        Note: This is a synchronous wrapper. Use predict_ivf_success_async in async contexts.
+
+        Args:
+            age: Patient age
+            amh: AMH level (ng/mL)
+            cycle_type: "fresh" or "frozen" (ignored - SART calculator doesn't distinguish)
+            prior_pregnancies: Number of prior pregnancies
+            bmi: Body mass index, optional
+            diagnosis: Primary infertility diagnosis, optional
+
+        Returns:
+            Dictionary containing success rate information
+        """
+        import asyncio
+
+        # Try to get existing event loop
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No event loop running, create one
+            return asyncio.run(self.predict_ivf_success_async(
+                age=age,
+                amh=amh,
+                cycle_type=cycle_type,
+                prior_pregnancies=prior_pregnancies,
+                bmi=bmi,
+                diagnosis=diagnosis,
+            ))
+        else:
+            # Event loop is running, use run_in_executor
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                future = pool.submit(
+                    asyncio.run,
+                    self.predict_ivf_success_async(
+                        age=age,
+                        amh=amh,
+                        cycle_type=cycle_type,
+                        prior_pregnancies=prior_pregnancies,
+                        bmi=bmi,
+                        diagnosis=diagnosis,
+                    )
+                )
+                return future.result()
+
+    def _generate_recommendations(self, result: IVFSuccessResult) -> list[str]:
+        """Generate clinical recommendations based on SART calculator results."""
         recommendations = []
-        
+
+        success_rate = result.success_rate_1_cycle or 0
+
         if success_rate < 10:
             recommendations.extend([
                 "Success rate is low - consider donor egg IVF",
                 "Genetic counseling recommended",
                 "Consider multiple cycle planning",
-                "Discuss realistic expectations with fertility specialist"
+                "Discuss realistic expectations with fertility specialist",
             ])
         elif success_rate < 20:
             recommendations.extend([
                 "Modified stimulation protocols may be beneficial",
                 "Consider PGT-A testing",
                 "Plan for potentially multiple cycles",
-                "Optimize health before treatment"
+                "Optimize health before treatment",
             ])
         elif success_rate >= 40:
             recommendations.extend([
                 "Good prognosis for IVF success",
                 "Single embryo transfer recommended to reduce multiple pregnancy risk",
-                "Consider freeze-all strategy if high AMH"
             ])
-        
+
         # Age-specific recommendations
-        if age >= 42:
+        if result.age >= 42:
             recommendations.append("Time-sensitive - expedited treatment recommended")
-        elif age >= 38:
+        elif result.age >= 38:
             recommendations.append("Consider accelerated treatment timeline")
-        
+
         # AMH-specific recommendations
-        if amh < 1.0:
-            recommendations.append("Low AMH - consider mini-IVF or natural cycle protocols")
-        elif amh > 5.0:
-            recommendations.append("High AMH - monitor for OHSS risk")
-        
-        return recommendations
-    
-    def predict_menopause_timing(self,
-                               age: int,
-                               amh: float,
-                               smoking: bool = False,
-                               bmi: Optional[float] = None,
-                               family_history: Optional[str] = None,
-                               ethnicity: Optional[str] = None,
-                               parity: int = 0) -> MenopausePredictionResult:
-        """
-        Predict menopause timing using SWAN study algorithms.
-        
-        Args:
-            age: Current age
-            amh: Current AMH level
-            smoking: Current smoking status
-            bmi: Body mass index
-            family_history: "early" (<45), "normal" (45-55), "late" (>55)
-            ethnicity: Patient ethnicity
-            parity: Number of live births
-            
-        Returns:
-            MenopausePredictionResult with timing prediction
-        """
-        
-        # Base prediction from AMH and age
-        base_prediction = self._base_menopause_prediction(age, amh)
-        
-        # Apply risk/protective factors
-        adjusted_age = base_prediction
-        risk_factors = []
-        protective_factors = []
-        
-        if smoking:
-            adjusted_age += self.menopause_factors["smoking"]["effect"]
-            risk_factors.append("Current smoking")
-        
-        if bmi and bmi > 30:
-            adjusted_age += self.menopause_factors["bmi_over_30"]["effect"]
-            protective_factors.append("Higher BMI")
-        
-        if family_history == "early":
-            adjusted_age += self.menopause_factors["family_history_early"]["effect"]
-            risk_factors.append("Family history of early menopause")
-        
-        if parity == 0:
-            adjusted_age += self.menopause_factors["nulliparity"]["effect"]
-            risk_factors.append("Nulliparity")
-        
-        if ethnicity:
-            if "chinese" in ethnicity.lower():
-                adjusted_age += self.menopause_factors["chinese_ethnicity"]["effect"]
-                protective_factors.append("Chinese ethnicity")
-            elif "japanese" in ethnicity.lower():
-                adjusted_age += self.menopause_factors["japanese_ethnicity"]["effect"]
-                protective_factors.append("Japanese ethnicity")
-        
-        # Calculate confidence interval
-        prediction_uncertainty = 2.5  # years
-        ci_lower = max(40, adjusted_age - prediction_uncertainty)
-        ci_upper = min(65, adjusted_age + prediction_uncertainty)
-        
-        # Determine current reproductive stage
-        current_stage = self._determine_reproductive_stage(age, amh)
-        
-        # Calculate time remaining
-        time_remaining = max(0, adjusted_age - age)
-        
-        # Fertility window assessment
-        fertility_window = time_remaining > 2 and amh > 0.5
-        
-        # Generate recommendations
-        recommendations = self._menopause_recommendations(
-            adjusted_age, age, amh, current_stage, risk_factors
-        )
-        
-        evidence_base = {
-            "study": "SWAN (Study of Women's Health Across the Nation)",
-            "model": "Freeman et al. 2024 AMH-based prediction",
-            "population": "Multi-ethnic US cohort (n=3,302)"
-        }
-        
-        return MenopausePredictionResult(
-            predicted_age=round(adjusted_age, 1),
-            confidence_interval=(round(ci_lower, 1), round(ci_upper, 1)),
-            current_stage=current_stage,
-            time_to_menopause_years=round(time_remaining, 1),
-            fertility_window_remaining=fertility_window,
-            risk_factors=risk_factors,
-            protective_factors=protective_factors,
-            recommendations=recommendations,
-            evidence_base=evidence_base
-        )
-    
-    def _base_menopause_prediction(self, age: int, amh: float) -> float:
-        """Calculate base menopause prediction from AMH and age."""
-        # Freeman et al. model: log(years to menopause) = β₀ + β₁×log(AMH) + β₂×age
-        # Simplified version for demonstration
-        
-        if amh <= 0.01:
-            return age + 0.5  # Very close to menopause
-        
-        log_amh = math.log(amh)
-        
-        # Coefficients from published studies (simplified)
-        beta_0 = 3.8
-        beta_1 = 0.4
-        beta_2 = -0.02
-        
-        log_years_remaining = beta_0 + beta_1 * log_amh + beta_2 * age
-        years_remaining = math.exp(log_years_remaining)
-        
-        # Cap reasonable bounds
-        years_remaining = max(0.5, min(15, years_remaining))
-        
-        return age + years_remaining
-    
-    def _determine_reproductive_stage(self, age: int, amh: float) -> MenopauseStage:
-        """Determine current reproductive stage using STRAW+10 criteria."""
-        
-        if age < 40 and amh > 2.0:
-            return MenopauseStage.REPRODUCTIVE
-        elif age < 45 and amh > 1.0:
-            return MenopauseStage.REPRODUCTIVE
-        elif amh > 0.5:
-            return MenopauseStage.EARLY_TRANSITION
-        elif amh > 0.1:
-            return MenopauseStage.LATE_TRANSITION
-        elif age < 65:
-            return MenopauseStage.EARLY_POSTMENOPAUSE
-        else:
-            return MenopauseStage.LATE_POSTMENOPAUSE
-    
-    def _menopause_recommendations(self,
-                                 predicted_age: float,
-                                 current_age: int,
-                                 amh: float,
-                                 stage: MenopauseStage,
-                                 risk_factors: List[str]) -> List[str]:
-        """Generate menopause-related recommendations."""
-        
-        recommendations = []
-        time_remaining = predicted_age - current_age
-        
-        if stage == MenopauseStage.REPRODUCTIVE:
-            recommendations.extend([
-                "Regular reproductive health monitoring",
-                "Consider fertility preservation if delaying pregnancy",
-                "Maintain bone health with weight-bearing exercise"
-            ])
-        elif stage == MenopauseStage.EARLY_TRANSITION:
-            recommendations.extend([
-                "Monitor for irregular menstrual cycles",
-                "Discuss contraception needs (still fertile)",
-                "Begin bone density screening",
-                "Consider cardiovascular risk assessment"
-            ])
-        elif stage == MenopauseStage.LATE_TRANSITION:
-            recommendations.extend([
-                "Expect increasing menopausal symptoms",
-                "Discuss hormone therapy options",
-                "Optimize bone health and cardiovascular health",
-                "Consider fertility preservation if pregnancy desired"
-            ])
-        
-        if time_remaining < 5:
-            recommendations.append("Consider expedited fertility evaluation if pregnancy desired")
-        
-        if "Current smoking" in risk_factors:
-            recommendations.append("Smoking cessation counseling to delay menopause")
-        
+        if result.amh_available and result.amh_value:
+            if result.amh_value < 1.0:
+                recommendations.append("Low AMH - consider mini-IVF or natural cycle protocols")
+            elif result.amh_value > 5.0:
+                recommendations.append("High AMH - monitor for OHSS risk")
+
+        # Clinical factor recommendations
+        if result.polycystic:
+            recommendations.append("PCOS - monitor for ovarian hyperstimulation syndrome")
+
+        if result.low_ovarian_reserve:
+            recommendations.append("Low ovarian reserve - may require multiple cycles")
+
         return recommendations
 
 
 if __name__ == "__main__":
-    # Test the clinical calculators
-    print("=== CLINICAL CALCULATORS TEST ===\n")
-    
-    calc = ClinicalCalculators()
-    
-    # Test ovarian reserve assessment
-    print("1. OVARIAN RESERVE ASSESSMENT")
-    print("-" * 40)
-    
-    reserve_result = calc.assess_ovarian_reserve(
-        age=38,
-        amh=0.8,
-        fsh=12,
-        antral_follicle_count=6
-    )
-    
-    print(f"Category: {reserve_result.category.value}")
-    print(f"Percentile: {reserve_result.percentile}th")
-    print(f"Interpretation: {reserve_result.clinical_interpretation}")
-    print(f"Recommendations: {len(reserve_result.recommendations)} items")
-    
-    # Test IVF success prediction
-    print("\n2. IVF SUCCESS PREDICTION")
-    print("-" * 40)
-    
-    ivf_result = calc.predict_ivf_success(
-        age=38,
-        amh=0.8,
-        cycle_type="fresh",
-        prior_pregnancies=0,
-        bmi=24,
-        diagnosis="unexplained"
-    )
-    
-    print(f"Live birth rate: {ivf_result.live_birth_rate}%")
-    print(f"Confidence interval: {ivf_result.confidence_interval}")
-    print(f"Cumulative success (3 cycles): {ivf_result.cumulative_success_3_cycles}%")
-    print(f"Recommendations: {len(ivf_result.recommendations)} items")
-    
-    # Test menopause prediction
-    print("\n3. MENOPAUSE TIMING PREDICTION")
-    print("-" * 40)
-    
-    menopause_result = calc.predict_menopause_timing(
-        age=45,
-        amh=0.3,
-        smoking=False,
-        bmi=26,
-        family_history="normal",
-        ethnicity="caucasian",
-        parity=2
-    )
-    
-    print(f"Predicted menopause age: {menopause_result.predicted_age} years")
-    print(f"Current stage: {menopause_result.current_stage.value}")
-    print(f"Time remaining: {menopause_result.time_to_menopause_years} years")
-    print(f"Fertility window: {menopause_result.fertility_window_remaining}")
-    print(f"Recommendations: {len(menopause_result.recommendations)} items")
+    # Test the SART IVF calculator
+    import asyncio
+
+    async def test():
+        print("=== SART IVF CALCULATOR TEST ===\n")
+
+        calc = ClinicalCalculators()
+
+        # Test SART IVF calculator
+        print("SART IVF Success Calculation")
+        print("-" * 40)
+
+        result = await calc.calculate_ivf_success(
+            age=35,
+            height_cm=165,
+            weight_kg=65,
+            previous_full_term=False,
+            male_factor=False,
+            polycystic=False,
+            uterine_problems=False,
+            unexplained_infertility=True,
+            low_ovarian_reserve=False,
+            amh_available=True,
+            amh_value=2.5,
+        )
+
+        print(f"Age: {result.age}")
+        print(f"Success rate (1 cycle): {result.success_rate_1_cycle}%")
+        print(f"Success rate (2 cycles): {result.success_rate_2_cycles}%")
+        print(f"Success rate (3 cycles): {result.success_rate_3_cycles}%")
+        print(f"AMH: {result.amh_value} ng/ml")
+
+        # Test backwards-compatible async wrapper
+        print("\n\nBackwards Compatible Async API Test")
+        print("-" * 40)
+
+        compat_result = await calc.predict_ivf_success_async(
+            age=35,
+            amh=2.5,
+            cycle_type="fresh",
+            prior_pregnancies=0,
+            bmi=24,
+            diagnosis="unexplained",
+        )
+
+        print(f"Live birth rate: {compat_result['live_birth_rate']}%")
+        print(f"Cumulative success (3 cycles): {compat_result['cumulative_success_3_cycles']}%")
+        print(f"Recommendations: {len(compat_result['recommendations'])} items")
+
+    asyncio.run(test())
