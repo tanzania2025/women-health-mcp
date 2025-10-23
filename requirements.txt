@@ -6,8 +6,8 @@ streamlit>=1.28.0
 # AI Integration
 anthropic>=0.39.0
 
-# MCP (Model Context Protocol)
-mcp>=1.1.0
+# MCP (Model Context Protocol) - Official Anthropic SDK
+git+https://github.com/modelcontextprotocol/python-sdk.git
 
 # HTTP Client
 httpx>=0.25.0
