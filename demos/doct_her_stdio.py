@@ -287,10 +287,6 @@ st.markdown("""
         display: none !important;
     }
 
-    .stForm > div > div > div:last-child {
-        display: none !important;
-    }
-
     /* Form submit button styling (for Enter key support) */
     .stForm button[kind="formSubmit"] {
         background: linear-gradient(135deg, #a78bfa 0%, #c084fc 100%) !important;
@@ -711,7 +707,7 @@ def main():
                     user_input = st.text_input(
                         "message",
                         placeholder="e.g., I'm 38 with AMH 0.8, should I consider IVF?",
-                        key="user_input",
+                        key=f"user_input_{st.session_state.form_counter}",
                         label_visibility="collapsed"
                     )
 
@@ -765,7 +761,7 @@ def main():
                     user_input = st.text_input(
                         "message",
                         placeholder="e.g., I'm 38 with AMH 0.8, should I consider IVF?",
-                        key="user_input_chat",
+                        key=f"user_input_chat_{st.session_state.form_counter}",
                         label_visibility="collapsed"
                     )
 
