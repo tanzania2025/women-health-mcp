@@ -855,7 +855,8 @@ def main():
         st.session_state.show_upload_menu = False
 
         handle_user_input(message_content)
-        st.rerun()
+        # Form will auto-clear due to clear_on_submit=True
+        # Streamlit will automatically rerun after form submission
 
 
 if __name__ == "__main__":
