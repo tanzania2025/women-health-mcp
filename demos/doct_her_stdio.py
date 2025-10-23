@@ -45,6 +45,16 @@ st.markdown("""
     header {visibility: hidden;}
     .stTextInput > label {display: none !important;}
 
+    /* Force light mode only - no dark mode support */
+    :root {
+        color-scheme: light only !important;
+    }
+
+    html, body, .stApp {
+        color-scheme: light only !important;
+        background-color: #ffffff !important;
+    }
+
     * {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
@@ -150,6 +160,16 @@ st.markdown("""
         transition: all 0.3s ease !important;
         background: #fefeff !important;
         box-shadow: 0 2px 8px rgba(167, 139, 250, 0.04) !important;
+        /* Force visible text for iOS Safari */
+        color: #1e293b !important;
+        -webkit-text-fill-color: #1e293b !important;
+        -webkit-appearance: none !important;
+    }
+
+    .stTextInput > div > div > input::placeholder {
+        color: #94a3b8 !important;
+        -webkit-text-fill-color: #94a3b8 !important;
+        opacity: 1 !important;
     }
 
     .stTextInput > div > div > input:focus {
