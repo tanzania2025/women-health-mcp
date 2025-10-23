@@ -101,6 +101,15 @@ st.markdown("""
         font-weight: 400;
     }
 
+    .powered-by {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        opacity: 0.6;
+        margin-top: -1rem;
+        font-weight: 400;
+        letter-spacing: 0.3px;
+    }
+
     /* Chat container - scrollable area */
     .chat-container {
         max-width: 1680px;
@@ -314,6 +323,20 @@ st.markdown("""
         color: #94a3b8;
         font-size: 0.85rem;
         font-weight: 400;
+    }
+
+    .privacy-disclaimer {
+        text-align: center;
+        margin-top: 2rem;
+        padding: 1rem 2rem;
+        color: #94a3b8;
+        font-size: 0.75rem;
+        font-weight: 400;
+        line-height: 1.5;
+        opacity: 0.7;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -545,6 +568,7 @@ def render_landing_page():
         <div class="landing-container">
             <div class="logo">Doct-Her</div>
             <div class="tagline">How can I help?</div>
+            <div class="powered-by">Powered by Claude Sonnet 4</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -742,11 +766,19 @@ def main():
         # Capabilities hint
         render_capabilities_hint()
 
+        # Privacy disclaimer
+        st.markdown("""
+            <div class="privacy-disclaimer">
+                None of the text or data used in the prompts is saved or used to train any models. All data is in your browser and deleted as soon as you refresh or move away from the page.
+            </div>
+        """, unsafe_allow_html=True)
+
     else:
         # Show title at top of chat
         st.markdown("""
-            <div style="text-align: center; padding: 0.5rem 0 0 0;">
-                <div class="logo" style="font-size: 2rem; margin-bottom: 0;">Doct-Her</div>
+            <div style="text-align: center; padding: 0.5rem 0 1rem 0;">
+                <div class="logo" style="font-size: 2rem; margin-bottom: 0.25rem;">Doct-Her</div>
+                <div class="powered-by" style="margin-top: 0;">Powered by Claude Sonnet 4</div>
             </div>
         """, unsafe_allow_html=True)
 
