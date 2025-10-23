@@ -233,6 +233,18 @@ st.markdown("""
     }
 
     /* Hide verbose file uploader when in menu */
+    .upload-menu-container .stFileUploader {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    .upload-menu-container .stFileUploader > div {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+
     .upload-menu-container .stFileUploader label {
         display: none !important;
     }
@@ -241,7 +253,17 @@ st.markdown("""
         display: none !important;
     }
 
+    .upload-menu-container .stFileUploader [data-testid="stFileUploaderDropzoneInstructions"] {
+        display: none !important;
+    }
+
     .upload-menu-container .stFileUploader section {
+        border: none !important;
+        padding: 0 !important;
+        background: transparent !important;
+    }
+
+    .upload-menu-container .stFileUploader section > div {
         border: none !important;
         padding: 0 !important;
         background: transparent !important;
