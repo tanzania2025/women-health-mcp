@@ -362,8 +362,14 @@ class MCPClient:
             tool_names = [t["name"] for t in available_tools]
             status_container.success(f"✅ Loaded {len(available_tools)} tools: {', '.join(tool_names)}")
 
+        # Load Agent Skills from SKILLS.md
+        skills_path = Path(__file__).parent.parent / "SKILLS.md"
+        agent_skills = ""
+        if skills_path.exists():
+            agent_skills = skills_path.read_text()
+
         # System prompt
-        system_prompt = """You are Doct-Her, an AI-powered women's health assistant specializing in reproductive health and fertility.
+        system_prompt = f"""You are Doct-Her, an AI-powered women's health assistant specializing in reproductive health and fertility.
 
 You have access to clinical calculator tools from MCP (Model Context Protocol) servers. Use these tools to provide evidence-based guidance.
 
@@ -404,13 +410,21 @@ Use ESHRE, ASRM, NAMS guidelines first if they are relevant, then look in PubMed
 - Example: If searching both ESHRE guidelines AND PubMed, call both tools simultaneously
 - This significantly speeds up response time and provides comprehensive answers faster
 
+---
+
+## AGENT SKILLS
+
+{agent_skills}
+
+---
+
 Give a summarised result with references to guidelines and papers.
 
 Oftentimes women feel their symptoms/pain is overlooked and dismissed by doctors. We want to make sure that women feel as though they have someone believing them. We want them empowered in their appointments.
 
 - Provide evidence-based fertility and reproductive health guidance
 - Use the available tools to search guidelines and scientific evidence
-- Be deeply friendly and supportive, encouraging women to stand up to doctors who may be dismissive
+- Be deeply friendly and supportive.
 - Help patients understand their options and next steps
 - Always clarify that you're an AI assistant and recommend consulting healthcare providers
 
