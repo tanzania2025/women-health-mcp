@@ -610,7 +610,6 @@ def render_landing_page():
         <div class="landing-container">
             <div class="logo">Doct-Her</div>
             <div class="tagline">How can I help?</div>
-            <div class="powered-by">Powered by Claude Sonnet 4</div>
         </div>
     """, unsafe_allow_html=True)
 
