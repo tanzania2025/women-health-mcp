@@ -21,7 +21,7 @@ Created 9 new organized folders:
   - biomini_intake.py, netmind_router.py, manus_agents.py
   - huggingface_integration.py, claude_mcp_integration.py, multi_dataset_integration.py
 
-- **`demos/`** - 7 demo applications
+- **`app/`** - Application entry points
   - main.py, streamlit_demo.py, enhanced_streamlit_demo.py
   - enhanced_mcp_demo.py, end_to_end_demo.py, complete_hackathon_demo.py
   - swan_mcp_demo.py
@@ -60,7 +60,7 @@ All 37 files from the dans_stuff/ folder were successfully integrated:
 ### 3. Import Statements Fixed
 Updated imports in 11 files using automated script:
 - All `from X import` changed to `from core.X import` or `from servers.X import`
-- Fixed sys.path issues in 4 Streamlit demos
+- Fixed sys.path issues in Streamlit applications
 - Changed hardcoded file paths to proper module imports
 
 ### 4. Documentation Updated
@@ -104,7 +104,7 @@ python -m servers.asrm_server
 ## Benefits
 
 1. **Better Organization** - Easy to find related files
-2. **Clear Separation of Concerns** - Servers, clients, core logic, demos all separated
+2. **Clear Separation of Concerns** - Servers, clients, core logic, application entry points all separated
 3. **Easier Maintenance** - Modular structure makes updates simpler
 4. **Professional Structure** - Follows Python best practices
 5. **Scalable** - Easy to add new components to appropriate folders

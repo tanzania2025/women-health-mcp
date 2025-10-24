@@ -265,7 +265,7 @@ Content-Type: application/json
 - **Protocol Standardization**: Consistent ASRM/ESHRE guideline application
 
 ### For AI Developers
-- **Research Data Access**: Real longitudinal study data (not mock/synthetic)
+- **Research Data Access**: Real longitudinal study data 
 - **Standardized Protocol**: MCP compliance for ecosystem interoperability
 - **Clinical Validation**: SWAN study backing for algorithm predictions
 - **Multi-Modal Integration**: Unified interface to diverse data sources

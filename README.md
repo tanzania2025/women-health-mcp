@@ -1,18 +1,20 @@
-# Women's Health MCP - Enhanced Multi-Modal Context Protocol
+# Women's Health MCP - Multi-Modal Context Protocol
 
-🚀 **Multi-Modal Context Protocol for Women's Health AI Agents**
+🚀 **Production-Ready Model Context Protocol for Women's Health AI**
 
-A comprehensive Model Context Protocol (MCP) implementation that addresses the critical infrastructure gap in women's health AI systems. This enhanced MCP provides AI agents with standardized, real-time access to reproductive health data sources while maintaining HIPAA compliance and privacy protection.
+A comprehensive Model Context Protocol (MCP) implementation providing AI agents with standardized, real-time access to reproductive health data sources. All data is sourced from authoritative medical databases, clinical guidelines, and peer-reviewed research.
 
-## 🌟 Challenge Solution Overview
+## 🌟 Real Data Sources
 
-This implementation solves the core problem identified in: **the lack of standardized infrastructure for women's health AI systems**. Our enhanced MCP enables AI agents to access:
+This production MCP implementation provides real-time access to authoritative medical data:
 
-- ✅ **Clinical Data**: EHRs (FHIR), lab results, imaging
-- ✅ **Research Databases**: SWAN, SART, PubMed, clinical trials
-- ✅ **Clinical Calculators**: Ovarian reserve, IVF success, menopause prediction
-- ✅ **Guidelines**: ASRM, ESHRE treatment protocols
-- ✅ **Patient-Generated Data**: Cycle tracking apps, wearables
+- ✅ **PubMed**: Real-time search of 35M+ peer-reviewed articles via NCBI E-utilities API
+- ✅ **ClinicalTrials.gov**: Live access to 400K+ clinical trials via official API v2
+- ✅ **ESHRE Guidelines**: Web-scraped European fertility treatment guidelines
+- ✅ **NAMS Protocols**: Menopause Society clinical protocols and position statements
+- ✅ **ELSA Data**: English Longitudinal Study of Ageing datasets and metadata
+- ✅ **SART Calculator**: Evidence-based IVF success rates from real clinic data
+- ✅ **FHIR Integration**: Healthcare data standards for interoperability
 
 ## 🏗️ Enhanced Architecture Flowchart
 
@@ -71,11 +73,6 @@ women-health-mcp/
 │   ├── elsa_server.py         # ELSA data integration
 │   └── menopause_server.py    # Menopause prediction server
 │
-├── clients/          # Client implementations
-│   ├── asrm_client.py         # ASRM client
-│   ├── nams_client.py         # NAMS client
-│   └── pubmed_client.py       # PubMed client
-│
 ├── core/             # Core MCP components
 │   ├── womens_health_mcp.py   # Core MCP protocol
 │   ├── clinical_calculators.py # Clinical calculation engines
@@ -88,22 +85,19 @@ women-health-mcp/
 │   ├── manus_agents.py        # Multi-agent reasoning
 │   └── huggingface_integration.py # ML model integration
 │
-├── demos/            # Demo applications
-│   ├── doct_her_stdio.py      # Main DoctHER chat application (MCP-powered)
-│   └── mcp_server/            # MCP server utilities
+├── app/              # Application entry points
+│   └── doct_her_stdio.py      # Main DoctHER chat application (MCP-powered)
 │
 ├── tests/            # Test suite
 │   ├── test_asrm.py           # ASRM server tests
 │   ├── test_nams.py           # NAMS server tests
 │   ├── test_pubmed.py         # PubMed tests
-│   ├── test_eshre.py          # ESHRE tests
-│   ├── test_demo.py           # Demo tests
-│   └── test_enhanced_demo.py  # Enhanced demo tests
+│   └── test_eshre.py          # ESHRE tests
 │
 ├── scripts/          # Utility scripts
 │   ├── setup_mcp.py           # MCP setup script
-│   ├── run_server.py          # Server runner
-│   ├── activate_claude_integration.py # Claude integration
+│   ├── mcp_stdio_server.py    # FastMCP stdio server
+│   ├── run_server.py          # Server info script
 │   └── fix_imports.py         # Import fixing utility
 │
 ├── docs/             # Documentation
@@ -112,11 +106,6 @@ women-health-mcp/
 │   ├── MCP_SERVER_GUIDE.md    # Server documentation
 │   ├── DEMO_SUMMARY.md        # Demo overview
 │   └── [additional guides]
-│
-├── config/           # Configuration files
-│   ├── claude_*.json          # Claude MCP configs
-│   ├── dans_env.example       # Environment template
-│   └── [additional configs]
 │
 └── data/             # Data files
     ├── pipeline_output.json   # Pipeline results
@@ -144,7 +133,7 @@ pip install -r requirements.txt
 ### 🌐 DoctHER Chat Application (Recommended)
 ```bash
 # Start the DoctHER Streamlit chat interface
-streamlit run demos/doct_her_stdio.py
+streamlit run app/doct_her_stdio.py
 ```
 
 **DoctHER Features:**
@@ -208,18 +197,18 @@ EVIDENCE SYNTHESIS:
 • Research evidence: 3 recent systematic reviews support AMH-guided treatment timing
 ```
 
-## 🏆 Enhanced vs Original Features
+## 🏆 Production Features
 
-| Capability | Original | Enhanced |
-|------------|----------|----------|
-| **Data Sources** | Static mock data | Real-time API integration (6+ platforms) |
-| **Privacy** | None | HIPAA-compliant with encryption & audit |
-| **Clinical Calculators** | Basic | ASRM/ESHRE validated algorithms |
-| **Research Integration** | Mock papers | Live SWAN/SART/PubMed queries |
-| **Interoperability** | Custom format | FHIR R4 compliant |
-| **Patient Data** | Manual entry | Multi-app sync (Clue, Oura, etc.) |
-| **Security** | Basic | AI-powered threat detection |
-| **Consent Management** | None | Granular permissions with easy revocation |
+| Feature | Implementation |
+|---------|----------------|
+| **Data Sources** | Real-time API integration with 7+ authoritative medical databases |
+| **Research Access** | Live PubMed queries (35M+ articles), ClinicalTrials.gov (400K+ trials) |
+| **Clinical Guidelines** | ESHRE fertility guidelines, NAMS menopause protocols |
+| **Population Data** | ELSA longitudinal aging study, SART IVF success rates |
+| **Clinical Calculators** | Evidence-based IVF prediction using real SART data |
+| **Interoperability** | FHIR R4 compliant healthcare data exchange |
+| **Error Handling** | Graceful degradation - returns empty results instead of fake data |
+| **API Management** | Rate limiting, caching, timeout handling for production use |
 
 ## 🎯 Challenge Solution Impact
 

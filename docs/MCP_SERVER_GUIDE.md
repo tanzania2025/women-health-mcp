@@ -2,51 +2,51 @@
 
 ## 🎯 Overview
 
-The Women's Health MCP Server provides a **production-ready Model Context Protocol (MCP) implementation** that enables AI agents to access standardized reproductive health data, clinical calculators, and evidence-based recommendations.
+The Women's Health MCP Server provides a **production-ready Model Context Protocol (MCP) implementation** using stdio (Standard Input/Output) that enables AI agents to access standardized reproductive health data, clinical calculators, and evidence-based recommendations.
 
 ## 🏗️ Architecture
 
 ```
 /women-health-mcp/
-├── mcp_server/           # Core MCP server implementation
-│   ├── mcp_protocol.py   # MCP spec compliance layer
-│   ├── server.py         # FastAPI web server  
-│   └── config.py         # Configuration management
-├── demo/                 # Client demonstrations
-│   └── mcp_client_demo.py # Example AI agent client
-├── data/                 # Data storage directory
-└── [enhanced components] # Clinical calculators, FHIR, etc.
+├── scripts/
+│   └── mcp_stdio_server.py   # FastMCP stdio server implementation
+├── app/
+│   └── doct_her_stdio.py     # DoctHER chat interface (uses MCP server)
+├── servers/                   # Individual MCP tool servers
+│   ├── pubmed_server.py       # PubMed research integration
+│   ├── eshre_server.py        # ESHRE guidelines
+│   ├── nams_server.py         # NAMS protocols
+│   └── elsa_server.py         # ELSA data integration
+└── core/                      # Core components
+    ├── clinical_calculators.py
+    ├── research_database_integration.py
+    └── fhir_integration.py
 ```
 
 ## 🚀 Quick Start
 
 ### 1. Setup Environment
 ```bash
-# Setup directories and dependencies
-python setup_mcp.py
+# Install dependencies
+pip install -r requirements.txt
 
-# Copy environment template
-cp .env.example .env
-
-# Edit .env with your API keys
-# ANTHROPIC_API_KEY=your-key
+# Create .env file with your API key
+echo "ANTHROPIC_API_KEY=your-key-here" > .env
 ```
 
-### 2. Start MCP Server
+### 2. Start DoctHER
 ```bash
-python run_server.py
+streamlit run app/doct_her_stdio.py
 ```
 
-Server will start at `http://localhost:8000`
+The MCP server (`scripts/mcp_stdio_server.py`) runs automatically as a subprocess when DoctHER starts.
 
-### 3. Test with Demo Client
-```bash
-# Full demonstration
-python demo/mcp_client_demo.py
+### 3. Example Usage
 
-# Quick test
-python demo/mcp_client_demo.py simple
-```
+Ask DoctHER questions and it will automatically use the appropriate MCP tools:
+- "I'm 38 with AMH 0.8, what are my IVF chances?"
+- "Find recent PubMed articles about fertility after 35"
+- "What are the ESHRE guidelines for IVF?"
 
 ## 📡 MCP Protocol Endpoints
 
@@ -59,13 +59,11 @@ python demo/mcp_client_demo.py simple
 - **`prompts/list`** - List AI prompt templates
 - **`prompts/get`** - Get formatted prompts
 
-### HTTP API Endpoints
-- **`GET /health`** - Server health check
-- **`POST /mcp`** - Send MCP JSON-RPC requests
-- **`WS /mcp/ws`** - WebSocket for real-time communication
-- **`GET /mcp/resources`** - List resources (REST)
-- **`GET /mcp/tools`** - List tools (REST)
-- **`POST /mcp/tools/{tool_name}`** - Call tool (REST)
+### Communication Protocol
+The MCP server uses **stdio** (Standard Input/Output) for communication:
+- Runs as a subprocess of the DoctHER application
+- Communicates via stdin/stdout using JSON-RPC messages
+- Automatically managed by the MCP client library
 
 ## 🔧 Available Tools
 
@@ -232,7 +230,7 @@ curl http://localhost:8000/health
 
 ### Unit Tests
 ```bash
-pytest mcp_server/
+pytest tests/
 ```
 
 ### Integration Tests
