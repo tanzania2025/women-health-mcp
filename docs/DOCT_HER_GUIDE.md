@@ -45,7 +45,7 @@ ENABLE_REAL_APIS=true
 The MCP server runs automatically as a subprocess. Simply start DoctHER:
 
 ```bash
-streamlit run app/doct_her_stdio.py
+streamlit run demos/doct_her_stdio.py
 ```
 
 The app will open in your browser at `http://localhost:8501`

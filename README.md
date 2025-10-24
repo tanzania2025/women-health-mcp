@@ -85,7 +85,7 @@ women-health-mcp/
 │   ├── manus_agents.py        # Multi-agent reasoning
 │   └── huggingface_integration.py # ML model integration
 │
-├── app/              # Application entry points
+├── demos/            # Application entry points
 │   └── doct_her_stdio.py      # Main DoctHER chat application (MCP-powered)
 │
 ├── tests/            # Test suite
@@ -133,7 +133,7 @@ pip install -r requirements.txt
 ### 🌐 DoctHER Chat Application (Recommended)
 ```bash
 # Start the DoctHER Streamlit chat interface
-streamlit run app/doct_her_stdio.py
+streamlit run demos/doct_her_stdio.py
 ```
 
 **DoctHER Features:**

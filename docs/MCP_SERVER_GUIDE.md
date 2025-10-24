@@ -10,7 +10,7 @@ The Women's Health MCP Server provides a **production-ready Model Context Protoc
 /women-health-mcp/
 ├── scripts/
 │   └── mcp_stdio_server.py   # FastMCP stdio server implementation
-├── app/
+├── demos/
 │   └── doct_her_stdio.py     # DoctHER chat interface (uses MCP server)
 ├── servers/                   # Individual MCP tool servers
 │   ├── pubmed_server.py       # PubMed research integration
@@ -36,7 +36,7 @@ echo "ANTHROPIC_API_KEY=your-key-here" > .env
 
 ### 2. Start DoctHER
 ```bash
-streamlit run app/doct_her_stdio.py
+streamlit run demos/doct_her_stdio.py
 ```
 
 The MCP server (`scripts/mcp_stdio_server.py`) runs automatically as a subprocess when DoctHER starts.

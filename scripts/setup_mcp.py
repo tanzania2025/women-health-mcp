@@ -123,7 +123,7 @@ def main():
     print("      Get your key from: https://console.anthropic.com/")
     print()
     print("   2. Start DoctHER:")
-    print("      → streamlit run app/doct_her_stdio.py")
+    print("      → streamlit run demos/doct_her_stdio.py")
     print()
     print("   The MCP server will start automatically!")
     print("="*50)
