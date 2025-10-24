@@ -403,7 +403,7 @@ class MCPClient:
 
         await self.session.initialize()
 
-    async def process_query(self, query: str, status_container=None) -> str:
+    async def process_query(self, query: str, status_container=None, tool_chain_container=None) -> str:
         """Process a query using Claude and available MCP tools."""
 
         if status_container:
@@ -503,16 +503,30 @@ Remember: You're providing educational information, not medical advice. Always c
         # Call Claude with tools
         messages = [{"role": "user", "content": query}]
         tool_calls_made = []
-        current_tool = None
+        tool_chain_html = []
+
+        # Helper function to get tool icon
+        def get_tool_icon(tool_name):
+            """Get icon for tool based on name."""
+            name_lower = tool_name.lower()
+            if 'pubmed' in name_lower or 'article' in name_lower:
+                return 'P'
+            elif 'nams' in name_lower:
+                return 'N'
+            elif 'eshre' in name_lower:
+                return 'E'
+            elif 'elsa' in name_lower:
+                return 'L'
+            elif 'ivf' in name_lower or 'predict' in name_lower:
+                return 'C'
+            else:
+                return '🔧'
 
         # Agentic loop
         for iteration in range(15):
-            # Update status message based on current tool
+            # Update status message
             if status_container:
-                if current_tool:
-                    status_container.info(f"🤖 Doct-her thinking... using **{current_tool}**")
-                else:
-                    status_container.info(f"🤖 Doct-her thinking...")
+                status_container.info(f"🤖 DoctHER thinking...")
 
             response = self.anthropic.messages.create(
                 model="claude-sonnet-4-20250514",
@@ -548,20 +562,42 @@ Remember: You're providing educational information, not medical advice. Always c
                 for content in response.content:
                     if content.type == 'tool_use':
                         # Track which tool is being used
-                        current_tool = content.name
                         tool_calls_made.append(content.name)
 
-                        if status_container:
-                            status_container.warning(f"🔧 Calling tool: **{content.name}**")
+                        # Add to tool chain display
+                        icon = get_tool_icon(content.name)
+                        tool_display_name = content.name.replace('_', ' ').replace('-', ' ').title()
+                        tool_chain_html.append(f"""
+                            <div style="display: flex; align-items: center; padding: 8px 0;">
+                                <div style="width: 32px; height: 32px; border-radius: 6px;
+                                     background: #f1f5f9; display: flex; align-items: center;
+                                     justify-content: center; font-weight: 600; color: #475569;
+                                     margin-right: 12px; font-size: 14px;">
+                                    {icon}
+                                </div>
+                                <div style="color: #334155; font-size: 14px;">
+                                    {tool_display_name}
+                                </div>
+                            </div>
+                        """)
+
+                        # Update tool chain container
+                        if tool_chain_container:
+                            tool_chain_container.markdown(f"""
+                                <div style="background: white; border: 1px solid #e2e8f0;
+                                     border-radius: 8px; padding: 12px; margin: 8px 0;">
+                                    <div style="color: #64748b; font-size: 13px; margin-bottom: 8px;">
+                                        {len(tool_calls_made)} step{'s' if len(tool_calls_made) > 1 else ''}
+                                    </div>
+                                    {''.join(tool_chain_html)}
+                                </div>
+                            """, unsafe_allow_html=True)
 
                         # Execute tool via MCP
                         result = await self.session.call_tool(
                             content.name,
                             content.input
                         )
-
-                        if status_container:
-                            status_container.success(f"✅ Tool **{content.name}** completed")
 
                         tool_results.append({
                             "type": "tool_result",
@@ -670,7 +706,7 @@ def render_chat_history():
 
 
 
-async def handle_user_input_async(user_input: str, status_container):
+async def handle_user_input_async(user_input: str, status_container, tool_chain_container):
     """Process user input asynchronously."""
 
     if not ANTHROPIC_API_KEY:
@@ -690,7 +726,7 @@ To enable AI-powered consultations, please:
         status_container.success("✅ Connected to MCP server")
 
         # Process query - returns (response, tool_log)
-        result = await client.process_query(user_input, status_container)
+        result = await client.process_query(user_input, status_container, tool_chain_container)
 
         # Unpack result
         if isinstance(result, tuple):
@@ -723,11 +759,12 @@ def handle_user_input(user_input: str):
     # Add empty tool log for user message
     st.session_state.tool_logs.append([])
 
-    # Create status container
+    # Create containers for status and tool chain
+    tool_chain_container = st.empty()
     status_container = st.empty()
 
     # Process with MCP - returns (response, tool_log)
-    result = asyncio.run(handle_user_input_async(user_input, status_container))
+    result = asyncio.run(handle_user_input_async(user_input, status_container, tool_chain_container))
 
     if isinstance(result, tuple):
         assistant_response, tool_log = result
@@ -735,8 +772,9 @@ def handle_user_input(user_input: str):
         assistant_response = result
         tool_log = []
 
-    # Clear status
+    # Clear status and tool chain containers
     status_container.empty()
+    tool_chain_container.empty()
 
     # Add assistant response
     st.session_state.messages.append({
