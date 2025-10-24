@@ -7,6 +7,7 @@ Modern chat interface using Claude with stdio MCP servers
 import streamlit as st
 import sys
 import os
+import re
 import asyncio
 from pathlib import Path
 from contextlib import AsyncExitStack
@@ -503,7 +504,7 @@ Remember: You're providing educational information, not medical advice. Always c
         # Call Claude with tools
         messages = [{"role": "user", "content": query}]
         tool_calls_made = []
-        tool_chain_html = []
+        tool_summaries = {}  # Store result summaries for each tool by index
 
         # Helper function to get tool icon
         def get_tool_icon(tool_name):
@@ -564,40 +565,55 @@ Remember: You're providing educational information, not medical advice. Always c
                         # Track which tool is being used
                         tool_calls_made.append(content.name)
 
-                        # Add to tool chain display
+                        # Add to tool chain display (without result details yet)
                         icon = get_tool_icon(content.name)
                         tool_display_name = content.name.replace('_', ' ').replace('-', ' ').title()
-                        tool_chain_html.append(f"""
-                            <div style="display: flex; align-items: center; padding: 8px 0;">
-                                <div style="width: 32px; height: 32px; border-radius: 6px;
-                                     background: #f1f5f9; display: flex; align-items: center;
-                                     justify-content: center; font-weight: 600; color: #475569;
-                                     margin-right: 12px; font-size: 14px;">
-                                    {icon}
-                                </div>
-                                <div style="color: #334155; font-size: 14px;">
-                                    {tool_display_name}
-                                </div>
-                            </div>
-                        """)
 
-                        # Update tool chain container
-                        if tool_chain_container:
-                            tool_chain_container.markdown(f"""
-                                <div style="background: white; border: 1px solid #e2e8f0;
-                                     border-radius: 8px; padding: 12px; margin: 8px 0;">
-                                    <div style="color: #64748b; font-size: 13px; margin-bottom: 8px;">
-                                        {len(tool_calls_made)} step{'s' if len(tool_calls_made) > 1 else ''}
-                                    </div>
-                                    {''.join(tool_chain_html)}
-                                </div>
-                            """, unsafe_allow_html=True)
+                        # Update tool chain container with current tool
+                        def update_tool_chain():
+                            """Helper to rebuild and update tool chain display."""
+                            if tool_chain_container:
+                                tools_html = ""
+                                for i, tool_name in enumerate(tool_calls_made):
+                                    tool_icon = get_tool_icon(tool_name)
+                                    tool_label = tool_name.replace('_', ' ').replace('-', ' ').title()
+                                    summary = tool_summaries.get(i, "")
+                                    tools_html += f'<div style="display: flex; align-items: center; padding: 8px 0;"><div style="width: 32px; height: 32px; border-radius: 6px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-weight: 600; color: #475569; margin-right: 12px; font-size: 14px;">{tool_icon}</div><div style="color: #334155; font-size: 14px;">{tool_label}<span style="color: #64748b; font-size: 12px;">{summary}</span></div></div>'
+
+                                tool_chain_container.markdown(
+                                    f'<div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin: 8px 0;"><div style="color: #64748b; font-size: 13px; margin-bottom: 8px;">{len(tool_calls_made)} step{"s" if len(tool_calls_made) > 1 else ""}</div>{tools_html}</div>',
+                                    unsafe_allow_html=True
+                                )
+
+                        update_tool_chain()
 
                         # Execute tool via MCP
                         result = await self.session.call_tool(
                             content.name,
                             content.input
                         )
+
+                        # Parse result to extract details for display
+                        result_text = result.content[0].text if result.content else ""
+                        result_summary = ""
+
+                        # Extract useful info from result
+                        if 'search_pubmed' in content.name.lower() or 'article' in content.name.lower():
+                            # Try to find result count in response
+                            if 'found' in result_text.lower():
+                                match = re.search(r'found (\d+)', result_text.lower())
+                                if match:
+                                    result_summary = f" • Found {match.group(1)} results"
+                            elif 'retrieved' in result_text.lower():
+                                match = re.search(r'retrieved (\d+)', result_text.lower())
+                                if match:
+                                    result_summary = f" • Retrieved {match.group(1)} articles"
+
+                        # Store the summary for this tool
+                        if result_summary:
+                            tool_summaries[len(tool_calls_made) - 1] = result_summary
+                            # Update display with result details
+                            update_tool_chain()
 
                         tool_results.append({
                             "type": "tool_result",
@@ -863,7 +879,6 @@ def main():
         st.markdown("""
             <div style="text-align: center; padding: 0.5rem 0 1rem 0;">
                 <div class="logo" style="font-size: 2rem; margin-bottom: 0.25rem;">DoctHER</div>
-                <div class="powered-by" style="margin-top: 0;">Powered by Claude Sonnet 4</div>
             </div>
         """, unsafe_allow_html=True)
 
