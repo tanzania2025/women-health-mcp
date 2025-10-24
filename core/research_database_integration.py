@@ -202,7 +202,20 @@ class ResearchDatabaseIntegration:
         elif database == DatabaseType.SART:
             result_data = self._query_sart_statistics(query)
         else:
-            result_data = self._mock_population_data(query)
+            # Return empty result for unsupported databases instead of mock data
+            return ResearchResult(
+                result_id=str(uuid.uuid4()),
+                query_id=query.query_id,
+                database=database,
+                data={"error": f"Database {database.value} not yet implemented"},
+                sample_size=0,
+                confidence_level=0.0,
+                publication_date=None,
+                study_quality_score=0.0,
+                limitations=["Database integration not yet implemented"],
+                retrieved_at=datetime.now().isoformat(),
+                cache_expires_at=(datetime.now() + timedelta(hours=1)).isoformat()
+            )
         
         # Create result object
         result = ResearchResult(
@@ -291,8 +304,14 @@ class ResearchDatabaseIntegration:
                 "limitations": ["AMH assay variation over time", "Limited ethnic diversity in early cohorts"]
             }
         
-        return self._mock_population_data(query)
-    
+        # Return error for unsupported SWAN queries
+        return {
+            "error": f"SWAN query not supported for condition: {query.parameters['condition']}",
+            "sample_size": 0,
+            "confidence_level": 0.0,
+            "limitations": ["Query type not implemented for SWAN database"]
+        }
+
     def _query_sart_statistics(self, query: ResearchQuery) -> Dict[str, Any]:
         """Query SART database for IVF success rates."""
         condition = query.parameters["condition"].lower()
@@ -355,8 +374,14 @@ class ResearchDatabaseIntegration:
                 "publication_date": "2024-03-01"
             }
         
-        return self._mock_population_data(query)
-    
+        # Return error for unsupported SART queries
+        return {
+            "error": f"SART query not supported for condition: {query.parameters['condition']}",
+            "sample_size": 0,
+            "confidence_level": 0.0,
+            "limitations": ["Query type not implemented for SART database"]
+        }
+
     def _query_nhanes_statistics(self, query: ResearchQuery) -> Dict[str, Any]:
         """Query NHANES for general reproductive health statistics."""
         condition = query.parameters["condition"].lower()
@@ -410,8 +435,14 @@ class ResearchDatabaseIntegration:
                 "publication_date": "2023-12-15"
             }
         
-        return self._mock_population_data(query)
-    
+        # Return error for unsupported NHANES queries
+        return {
+            "error": f"NHANES query not supported for condition: {query.parameters['condition']}",
+            "sample_size": 0,
+            "confidence_level": 0.0,
+            "limitations": ["Query type not implemented for NHANES database"]
+        }
+
     def search_clinical_trials(self,
                              condition: str,
                              intervention_type: Optional[str] = None,
@@ -670,23 +701,6 @@ class ResearchDatabaseIntegration:
         except Exception as e:
             print(f"Error parsing PubMed results: {e}")
             return []
-    
-    def _mock_population_data(self, query: ResearchQuery) -> Dict[str, Any]:
-        """Generate mock population data for unsupported queries."""
-        return {
-            "condition": query.parameters.get("condition", "unknown"),
-            "sample_size": 1000,
-            "age_range": query.age_range,
-            "statistics": {
-                "prevalence": 0.15,
-                "confidence_interval": [0.12, 0.18]
-            },
-            "data_quality": "mock_data",
-            "confidence_level": 0.80,
-            "study_quality": 0.70,
-            "limitations": ["Mock data for demonstration", "Not validated"],
-            "publication_date": datetime.now().strftime("%Y-%m-%d")
-        }
     
     def _generate_cache_key(self, query: ResearchQuery) -> str:
         """Generate unique cache key for query."""
