@@ -417,115 +417,259 @@ class ResearchDatabaseIntegration:
                              intervention_type: Optional[str] = None,
                              status: str = "recruiting",
                              phase: Optional[str] = None) -> List[ClinicalTrialResult]:
-        """Search for relevant clinical trials."""
-        
-        # Mock clinical trials data - in production would query ClinicalTrials.gov API
-        mock_trials = [
-            {
-                "nct_id": "NCT05123456",
-                "title": "AMH-guided IVF Stimulation Protocol Study",
-                "status": "recruiting",
-                "phase": "Phase 3",
-                "condition": "Infertility",
-                "intervention": "Personalized ovarian stimulation",
-                "enrollment": 500,
-                "primary_outcome": "Live birth rate per cycle",
-                "locations": [
-                    {"facility": "Reproductive Medicine Associates", "city": "New York", "state": "NY"},
-                    {"facility": "Shady Grove Fertility", "city": "Rockville", "state": "MD"}
-                ],
-                "eligibility_criteria": "Women 18-42 years, AMH 0.5-4.0 ng/mL, attempting IVF",
-                "start_date": "2024-01-15",
-                "estimated_completion": "2026-12-31",
-                "sponsor": "National Institute of Health",
-                "study_url": "https://clinicaltrials.gov/ct2/show/NCT05123456"
-            },
-            {
-                "nct_id": "NCT05234567",
-                "title": "Menopause Prediction Using Machine Learning",
-                "status": "recruiting",
-                "phase": None,
-                "condition": "Menopause transition",
-                "intervention": "Biomarker analysis",
-                "enrollment": 1000,
-                "primary_outcome": "Accuracy of menopause timing prediction",
-                "locations": [
-                    {"facility": "UCSF Women's Health Center", "city": "San Francisco", "state": "CA"}
-                ],
-                "eligibility_criteria": "Women 40-50 years, regular menstrual cycles",
-                "start_date": "2024-03-01",
-                "estimated_completion": "2027-02-28",
-                "sponsor": "University of California San Francisco",
-                "study_url": "https://clinicaltrials.gov/ct2/show/NCT05234567"
+        """Search for relevant clinical trials using real ClinicalTrials.gov API."""
+
+        try:
+            # Build search query
+            search_url = "https://clinicaltrials.gov/api/v2/studies"
+
+            # Build query parameters
+            query_parts = [f"AREA[Condition]{condition}"]
+
+            if intervention_type:
+                query_parts.append(f"AREA[InterventionName]{intervention_type}")
+
+            # Map status to API format
+            status_mapping = {
+                "recruiting": "RECRUITING",
+                "active": "ACTIVE_NOT_RECRUITING",
+                "completed": "COMPLETED",
+                "enrolling": "ENROLLING_BY_INVITATION"
             }
-        ]
-        
-        # Filter trials based on criteria
-        filtered_trials = []
-        for trial in mock_trials:
-            if condition.lower() in trial["condition"].lower():
-                if not intervention_type or intervention_type.lower() in trial["intervention"].lower():
-                    if trial["status"].lower() == status.lower():
-                        if not phase or trial["phase"] == phase:
-                            trial_result = ClinicalTrialResult(**trial)
-                            filtered_trials.append(trial_result)
-        
-        return filtered_trials
+            api_status = status_mapping.get(status.lower(), "RECRUITING")
+            query_parts.append(f"AREA[OverallStatus]{api_status}")
+
+            if phase:
+                query_parts.append(f"AREA[Phase]{phase}")
+
+            query_string = " AND ".join(query_parts)
+
+            params = {
+                "query.term": query_string,
+                "pageSize": 10,
+                "format": "json"
+            }
+
+            response = requests.get(search_url, params=params, timeout=15)
+            response.raise_for_status()
+            data = response.json()
+
+            # Parse results
+            trials = []
+            studies = data.get("studies", [])
+
+            for study in studies[:10]:  # Limit to 10 results
+                protocol_section = study.get("protocolSection", {})
+                identification_module = protocol_section.get("identificationModule", {})
+                status_module = protocol_section.get("statusModule", {})
+                description_module = protocol_section.get("descriptionModule", {})
+                conditions_module = protocol_section.get("conditionsModule", {})
+                arms_module = protocol_section.get("armsInterventionsModule", {})
+                design_module = protocol_section.get("designModule", {})
+                eligibility_module = protocol_section.get("eligibilityModule", {})
+                contacts_module = protocol_section.get("contactsLocationsModule", {})
+                sponsor_module = protocol_section.get("sponsorCollaboratorsModule", {})
+                outcomes_module = protocol_section.get("outcomesModule", {})
+
+                # Extract data
+                nct_id = identification_module.get("nctId", "")
+                title = identification_module.get("briefTitle", "")
+                trial_status = status_module.get("overallStatus", "")
+                phase_info = design_module.get("phases", [])
+                phase_str = phase_info[0] if phase_info else None
+
+                # Get conditions
+                conditions = conditions_module.get("conditions", [])
+                condition_str = conditions[0] if conditions else ""
+
+                # Get interventions
+                interventions = arms_module.get("interventions", [])
+                intervention_str = interventions[0].get("name", "") if interventions else ""
+
+                # Get enrollment
+                enrollment_info = design_module.get("enrollmentInfo", {})
+                enrollment_count = enrollment_info.get("count", 0)
+
+                # Get primary outcome
+                primary_outcomes = outcomes_module.get("primaryOutcomes", [])
+                primary_outcome_str = primary_outcomes[0].get("measure", "") if primary_outcomes else ""
+
+                # Get locations
+                locations = []
+                for loc in contacts_module.get("locations", [])[:3]:  # First 3 locations
+                    locations.append({
+                        "facility": loc.get("facility", ""),
+                        "city": loc.get("city", ""),
+                        "state": loc.get("state", "")
+                    })
+
+                # Get eligibility criteria
+                eligibility_text = eligibility_module.get("eligibilityCriteria", "")
+                if len(eligibility_text) > 200:
+                    eligibility_text = eligibility_text[:200] + "..."
+
+                # Get dates
+                start_date_struct = status_module.get("startDateStruct", {})
+                start_date = start_date_struct.get("date", "")
+
+                completion_date_struct = status_module.get("completionDateStruct", {})
+                completion_date = completion_date_struct.get("date", "")
+
+                # Get sponsor
+                lead_sponsor = sponsor_module.get("leadSponsor", {})
+                sponsor_name = lead_sponsor.get("name", "")
+
+                # Build trial result
+                trial = ClinicalTrialResult(
+                    nct_id=nct_id,
+                    title=title,
+                    status=trial_status,
+                    phase=phase_str,
+                    condition=condition_str,
+                    intervention=intervention_str,
+                    enrollment=enrollment_count,
+                    primary_outcome=primary_outcome_str,
+                    locations=locations,
+                    eligibility_criteria=eligibility_text,
+                    start_date=start_date,
+                    estimated_completion=completion_date,
+                    sponsor=sponsor_name,
+                    study_url=f"https://clinicaltrials.gov/study/{nct_id}"
+                )
+
+                trials.append(trial)
+
+            return trials
+
+        except requests.exceptions.RequestException as e:
+            print(f"ClinicalTrials.gov API error: {e}")
+            return []
+        except Exception as e:
+            print(f"Error parsing clinical trials results: {e}")
+            return []
     
     def search_recent_publications(self,
                                  topic: str,
                                  publication_types: List[str] = None,
                                  max_results: int = 10,
                                  months_back: int = 12) -> List[Dict[str, Any]]:
-        """Search for recent publications on reproductive health topics."""
-        
+        """Search for recent publications on reproductive health topics using real PubMed API."""
+
         if publication_types is None:
             publication_types = ["systematic review", "meta-analysis", "clinical trial"]
-        
-        # Mock publication data - in production would query PubMed API
-        mock_publications = [
-            {
-                "pmid": "38123456",
-                "title": "Anti-Müllerian hormone as a predictor of menopause timing: systematic review and meta-analysis",
-                "authors": ["Smith JA", "Johnson BC", "Williams CD"],
-                "journal": "Human Reproduction",
-                "publication_date": "2024-02-15",
-                "abstract": "Systematic review of 15 studies examining AMH as predictor of menopause timing...",
-                "keywords": ["AMH", "menopause", "prediction", "biomarker"],
-                "study_type": "systematic review",
-                "sample_size": 45672,
-                "quality_score": 0.89,
-                "doi": "10.1093/humrep/deab123",
-                "full_text_url": "https://doi.org/10.1093/humrep/deab123"
-            },
-            {
-                "pmid": "38234567", 
-                "title": "Machine learning approaches to IVF success prediction: multicenter validation study",
-                "authors": ["Chen L", "Rodriguez M", "Thompson K"],
-                "journal": "Fertility and Sterility",
-                "publication_date": "2024-01-30",
-                "abstract": "Validation of ML models for IVF success prediction across 25 fertility centers...",
-                "keywords": ["IVF", "machine learning", "prediction", "artificial intelligence"],
-                "study_type": "clinical trial",
-                "sample_size": 12847,
-                "quality_score": 0.92,
-                "doi": "10.1016/j.fertnstert.2024.01.015",
-                "full_text_url": "https://doi.org/10.1016/j.fertnstert.2024.01.015"
-            }
-        ]
-        
-        # Filter by topic and date
+
+        # Build PubMed search query
+        search_query = topic
+
+        # Add publication type filters
+        pub_type_filters = []
+        for pt in publication_types:
+            if "systematic review" in pt.lower():
+                pub_type_filters.append("systematic review[pt]")
+            elif "meta-analysis" in pt.lower():
+                pub_type_filters.append("meta-analysis[pt]")
+            elif "clinical trial" in pt.lower():
+                pub_type_filters.append("clinical trial[pt]")
+
+        if pub_type_filters:
+            search_query += " AND (" + " OR ".join(pub_type_filters) + ")"
+
+        # Add date filter
         cutoff_date = datetime.now() - timedelta(days=months_back * 30)
-        filtered_pubs = []
-        
-        for pub in mock_publications:
-            pub_date = datetime.strptime(pub["publication_date"], "%Y-%m-%d")
-            if pub_date >= cutoff_date:
-                if topic.lower() in pub["title"].lower() or any(kw.lower() in topic.lower() for kw in pub["keywords"]):
-                    if any(pt.lower() in pub["study_type"].lower() for pt in publication_types):
-                        filtered_pubs.append(pub)
-        
-        return filtered_pubs[:max_results]
+        date_filter = cutoff_date.strftime("%Y/%m/%d")
+        search_query += f" AND {date_filter}[PDAT]:3000[PDAT]"
+
+        try:
+            # Step 1: Search PubMed to get PMIDs
+            search_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+            search_params = {
+                "db": "pubmed",
+                "term": search_query,
+                "retmax": max_results,
+                "retmode": "json",
+                "sort": "relevance"
+            }
+
+            search_response = requests.get(search_url, params=search_params, timeout=10)
+            search_response.raise_for_status()
+            search_data = search_response.json()
+
+            pmids = search_data.get("esearchresult", {}).get("idlist", [])
+
+            if not pmids:
+                return []
+
+            # Step 2: Fetch article summaries
+            summary_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
+            summary_params = {
+                "db": "pubmed",
+                "id": ",".join(pmids),
+                "retmode": "json"
+            }
+
+            summary_response = requests.get(summary_url, params=summary_params, timeout=10)
+            summary_response.raise_for_status()
+            summary_data = summary_response.json()
+
+            # Step 3: Parse results
+            publications = []
+            result_dict = summary_data.get("result", {})
+
+            for pmid in pmids:
+                if pmid not in result_dict:
+                    continue
+
+                article = result_dict[pmid]
+
+                # Extract authors
+                authors = []
+                for author in article.get("authors", [])[:3]:  # First 3 authors
+                    authors.append(author.get("name", ""))
+
+                # Parse publication date
+                pub_date = article.get("pubdate", "")
+                try:
+                    # Try to parse full date
+                    if len(pub_date) >= 10:
+                        pub_date_formatted = datetime.strptime(pub_date[:10], "%Y %b %d").strftime("%Y-%m-%d")
+                    elif len(pub_date) >= 7:
+                        pub_date_formatted = datetime.strptime(pub_date[:7], "%Y %b").strftime("%Y-%m-%d")
+                    else:
+                        pub_date_formatted = f"{pub_date[:4]}-01-01"
+                except:
+                    pub_date_formatted = datetime.now().strftime("%Y-%m-%d")
+
+                # Extract publication type
+                pub_types = article.get("pubtype", [])
+                study_type = pub_types[0] if pub_types else "research article"
+
+                # Build publication record
+                publication = {
+                    "pmid": pmid,
+                    "title": article.get("title", ""),
+                    "authors": authors,
+                    "journal": article.get("fulljournalname", article.get("source", "")),
+                    "publication_date": pub_date_formatted,
+                    "abstract": "",  # Would need efetch for full abstract
+                    "keywords": [],
+                    "study_type": study_type.lower(),
+                    "sample_size": 0,  # Not available in summary
+                    "quality_score": 0.85,  # Default - would need detailed analysis
+                    "doi": article.get("elocationid", "").replace("doi: ", ""),
+                    "full_text_url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+                }
+
+                publications.append(publication)
+
+            return publications
+
+        except requests.exceptions.RequestException as e:
+            print(f"PubMed API error: {e}")
+            # Return empty list instead of mock data on error
+            return []
+        except Exception as e:
+            print(f"Error parsing PubMed results: {e}")
+            return []
     
     def _mock_population_data(self, query: ResearchQuery) -> Dict[str, Any]:
         """Generate mock population data for unsupported queries."""
