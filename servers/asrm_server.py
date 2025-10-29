@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
 """
-ASRM Practice Guidance MCP Server
+ASRM Practice Guidance MCP Server - FastMCP Implementation
 
 This MCP server provides tools to search and access ASRM (American Society for
 Reproductive Medicine) practice guidance documents, committee opinions, ethics
 opinions, and other clinical resources.
 """
 
-import os
-import asyncio
 from typing import Any, Optional
-import httpx
+import requests
 from bs4 import BeautifulSoup
 import re
-from mcp.server.models import InitializationOptions
-import mcp.types as types
-from mcp.server import NotificationOptions, Server
-import mcp.server.stdio
+from fastmcp import FastMCP
+from pydantic import Field
 
 # ASRM URLs
 ASRM_BASE_URL = "https://www.asrm.org"
@@ -24,11 +20,11 @@ PRACTICE_GUIDANCE_URL = f"{ASRM_BASE_URL}/practice-guidance/"
 PRACTICE_DOCUMENTS_URL = f"{ASRM_BASE_URL}/practice-guidance/practice-committee-documents/"
 ETHICS_OPINIONS_URL = f"{ASRM_BASE_URL}/practice-guidance/ethics-opinions/"
 
-# Create server instance
-server = Server("asrm-server")
+# Create FastMCP server
+mcp = FastMCP("asrm-server")
 
 
-async def fetch_page(url: str) -> str:
+def fetch_page(url: str) -> str:
     """
     Fetch a webpage and return its HTML content.
 
@@ -38,20 +34,19 @@ async def fetch_page(url: str) -> str:
     Returns:
         HTML content as string
     """
-    async with httpx.AsyncClient(follow_redirects=True) as client:
-        response = await client.get(url, timeout=30.0)
-        response.raise_for_status()
-        return response.text
+    response = requests.get(url, timeout=30.0, allow_redirects=True)
+    response.raise_for_status()
+    return response.text
 
 
-async def parse_practice_documents() -> list[dict[str, Any]]:
+def parse_practice_documents() -> list[dict[str, Any]]:
     """
     Parse the practice guidance page to extract available documents.
 
     Returns:
         List of documents with title, URL, and description
     """
-    html = await fetch_page(PRACTICE_GUIDANCE_URL)
+    html = fetch_page(PRACTICE_GUIDANCE_URL)
     soup = BeautifulSoup(html, 'html.parser')
 
     documents = []
@@ -117,14 +112,14 @@ async def parse_practice_documents() -> list[dict[str, Any]]:
     return unique_documents
 
 
-async def parse_ethics_opinions() -> list[dict[str, Any]]:
+def parse_ethics_opinions() -> list[dict[str, Any]]:
     """
     Parse the ethics opinions page to extract available opinions.
 
     Returns:
         List of ethics opinions with title, URL, and description
     """
-    html = await fetch_page(PRACTICE_GUIDANCE_URL)
+    html = fetch_page(PRACTICE_GUIDANCE_URL)
     soup = BeautifulSoup(html, 'html.parser')
 
     opinions = []
@@ -178,7 +173,7 @@ async def parse_ethics_opinions() -> list[dict[str, Any]]:
     return unique_opinions
 
 
-async def search_guidelines(query: str, category: Optional[str] = None) -> list[dict[str, Any]]:
+def search_guidelines(query: str, category: Optional[str] = None) -> list[dict[str, Any]]:
     """
     Search ASRM guidelines by keyword.
 
@@ -193,11 +188,11 @@ async def search_guidelines(query: str, category: Optional[str] = None) -> list[
 
     # Fetch based on category
     if category is None or category.lower() == 'practice':
-        practice_docs = await parse_practice_documents()
+        practice_docs = parse_practice_documents()
         all_docs.extend(practice_docs)
 
     if category is None or category.lower() == 'ethics':
-        ethics_docs = await parse_ethics_opinions()
+        ethics_docs = parse_ethics_opinions()
         all_docs.extend(ethics_docs)
 
     # Filter by query
@@ -211,7 +206,7 @@ async def search_guidelines(query: str, category: Optional[str] = None) -> list[
     return matching_docs
 
 
-async def get_guideline_content(url: str) -> dict[str, Any]:
+def get_guideline_content(url: str) -> dict[str, Any]:
     """
     Fetch the full content of a specific guideline document.
 
@@ -221,7 +216,7 @@ async def get_guideline_content(url: str) -> dict[str, Any]:
     Returns:
         Dictionary with title, content, and metadata
     """
-    html = await fetch_page(url)
+    html = fetch_page(url)
     soup = BeautifulSoup(html, 'html.parser')
 
     # Extract title
@@ -272,182 +267,113 @@ async def get_guideline_content(url: str) -> dict[str, Any]:
     }
 
 
-@server.list_tools()
-async def handle_list_tools() -> list[types.Tool]:
-    """
-    List available tools.
-    """
-    return [
-        types.Tool(
-            name="list_practice_documents",
-            description="List available ASRM practice committee documents and guidelines",
-            inputSchema={
-                "type": "object",
-                "properties": {},
-                "required": []
-            },
-        ),
-        types.Tool(
-            name="list_ethics_opinions",
-            description="List available ASRM ethics committee opinions",
-            inputSchema={
-                "type": "object",
-                "properties": {},
-                "required": []
-            },
-        ),
-        types.Tool(
-            name="search_asrm_guidelines",
-            description="Search ASRM guidelines by keyword. Can filter by category (practice or ethics).",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "Search query (e.g., 'IVF', 'endometriosis', 'genetic testing')"
-                    },
-                    "category": {
-                        "type": "string",
-                        "description": "Optional category filter: 'practice' or 'ethics'",
-                        "enum": ["practice", "ethics"]
-                    }
-                },
-                "required": ["query"]
-            },
-        ),
-        types.Tool(
-            name="get_guideline_content",
-            description="Retrieve the full content of a specific ASRM guideline document by URL",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "url": {
-                        "type": "string",
-                        "description": "Full URL of the guideline document"
-                    }
-                },
-                "required": ["url"]
-            },
-        ),
-    ]
+# ==================== FastMCP Tools ====================
+
+@mcp.tool(
+    name="list_practice_documents",
+    description="List available ASRM practice committee documents and guidelines."
+)
+def list_practice_documents() -> str:
+    documents = parse_practice_documents()
+
+    result = "# ASRM Practice Documents\n\n"
+    result += f"Found {len(documents)} practice documents:\n\n"
+
+    for i, doc in enumerate(documents[:20], 1):  # Limit to 20 for readability
+        result += f"{i}. **{doc['title']}**\n"
+        if doc['description']:
+            result += f"   {doc['description']}\n"
+        result += f"   URL: {doc['url']}\n\n"
+
+    if len(documents) > 20:
+        result += f"\n...and {len(documents) - 20} more documents.\n"
+
+    return result
 
 
-@server.call_tool()
-async def handle_call_tool(
-    name: str, arguments: dict | None
-) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
-    """
-    Handle tool execution requests.
-    """
-    try:
-        if name == "list_practice_documents":
-            documents = await parse_practice_documents()
+@mcp.tool(
+    name="list_ethics_opinions",
+    description="List available ASRM ethics committee opinions."
+)
+def list_ethics_opinions() -> str:
+    opinions = parse_ethics_opinions()
 
-            result = "# ASRM Practice Documents\n\n"
-            result += f"Found {len(documents)} practice documents:\n\n"
+    result = "# ASRM Ethics Opinions\n\n"
+    result += f"Found {len(opinions)} ethics opinions:\n\n"
 
-            for i, doc in enumerate(documents[:20], 1):  # Limit to 20 for readability
-                result += f"{i}. **{doc['title']}**\n"
-                if doc['description']:
-                    result += f"   {doc['description']}\n"
-                result += f"   URL: {doc['url']}\n\n"
+    for i, op in enumerate(opinions[:20], 1):
+        result += f"{i}. **{op['title']}**\n"
+        if op['description']:
+            result += f"   {op['description']}\n"
+        result += f"   URL: {op['url']}\n\n"
 
-            if len(documents) > 20:
-                result += f"\n...and {len(documents) - 20} more documents.\n"
+    if len(opinions) > 20:
+        result += f"\n...and {len(opinions) - 20} more opinions.\n"
 
-            return [types.TextContent(type="text", text=result)]
-
-        elif name == "list_ethics_opinions":
-            opinions = await parse_ethics_opinions()
-
-            result = "# ASRM Ethics Opinions\n\n"
-            result += f"Found {len(opinions)} ethics opinions:\n\n"
-
-            for i, op in enumerate(opinions[:20], 1):
-                result += f"{i}. **{op['title']}**\n"
-                if op['description']:
-                    result += f"   {op['description']}\n"
-                result += f"   URL: {op['url']}\n\n"
-
-            if len(opinions) > 20:
-                result += f"\n...and {len(opinions) - 20} more opinions.\n"
-
-            return [types.TextContent(type="text", text=result)]
-
-        elif name == "search_asrm_guidelines":
-            if not arguments or "query" not in arguments:
-                raise ValueError("query parameter is required")
-
-            query = arguments["query"]
-            category = arguments.get("category")
-
-            results = await search_guidelines(query, category)
-
-            result = f"# Search Results for '{query}'\n\n"
-
-            if category:
-                result += f"Category: {category}\n\n"
-
-            result += f"Found {len(results)} matching documents:\n\n"
-
-            for i, doc in enumerate(results, 1):
-                result += f"{i}. **{doc['title']}**\n"
-                result += f"   Type: {doc['type']}\n"
-                if doc['description']:
-                    result += f"   {doc['description']}\n"
-                result += f"   URL: {doc['url']}\n\n"
-
-            if not results:
-                result += "No documents found matching your query.\n"
-                result += "Try different keywords or browse all documents using list_practice_documents or list_ethics_opinions.\n"
-
-            return [types.TextContent(type="text", text=result)]
-
-        elif name == "get_guideline_content":
-            if not arguments or "url" not in arguments:
-                raise ValueError("url parameter is required")
-
-            url = arguments["url"]
-            content = await get_guideline_content(url)
-
-            result = f"# {content['title']}\n\n"
-            result += f"**URL:** {content['url']}\n"
-            if content['date']:
-                result += f"**Date:** {content['date']}\n"
-            result += f"**Word Count:** {content['word_count']}\n\n"
-            result += "---\n\n"
-            result += content['content']
-
-            return [types.TextContent(type="text", text=result)]
-
-        else:
-            raise ValueError(f"Unknown tool: {name}")
-
-    except Exception as e:
-        return [types.TextContent(
-            type="text",
-            text=f"Error executing {name}: {str(e)}"
-        )]
+    return result
 
 
-async def main():
-    """
-    Main entry point for the ASRM MCP server.
-    """
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name="asrm-server",
-                server_version="0.1.0",
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
-                ),
-            ),
-        )
+@mcp.tool(
+    name="search_asrm_guidelines",
+    description="Search ASRM guidelines by keyword. Can filter by category (practice or ethics)."
+)
+def search_asrm_guidelines(
+    query: str = Field(description="Search query (e.g., 'IVF', 'endometriosis', 'genetic testing')"),
+    category: Optional[str] = Field(None, description="Optional category filter: 'practice' or 'ethics'")
+) -> str:
+    results = search_guidelines(query, category)
+
+    result = f"# Search Results for '{query}'\n\n"
+
+    if category:
+        result += f"Category: {category}\n\n"
+
+    result += f"Found {len(results)} matching documents:\n\n"
+
+    for i, doc in enumerate(results, 1):
+        result += f"{i}. **{doc['title']}**\n"
+        result += f"   Type: {doc['type']}\n"
+        if doc['description']:
+            result += f"   {doc['description']}\n"
+        result += f"   URL: {doc['url']}\n\n"
+
+    if not results:
+        result += "No documents found matching your query.\n"
+        result += "Try different keywords or browse all documents using list_practice_documents or list_ethics_opinions.\n"
+
+    return result
 
 
+@mcp.tool(
+    name="get_guideline_content",
+    description="Retrieve the full content of a specific ASRM guideline document by URL."
+)
+def get_guideline_content_tool(url: str = Field(description="Full URL of the guideline document")) -> str:
+    content = get_guideline_content(url)
+
+    result = f"# {content['title']}\n\n"
+    result += f"**URL:** {content['url']}\n"
+    if content['date']:
+        result += f"**Date:** {content['date']}\n"
+    result += f"**Word Count:** {content['word_count']}\n\n"
+    result += "---\n\n"
+    result += content['content']
+
+    return result
+
+
+# ==================== Resources ====================
+
+@mcp.resource("asrm://documents", mime_type="application/json")
+def list_all_asrm_resources() -> dict:
+    """List all available ASRM resources."""
+    return {
+        "practice_documents": "ASRM Practice Committee documents and guidelines",
+        "ethics_opinions": "ASRM Ethics Committee opinions and statements",
+        "search_capabilities": "Full-text search across all ASRM content"
+    }
+
+
+# Run the server
 if __name__ == "__main__":
-    asyncio.run(main())
+    mcp.run()

@@ -1,29 +1,25 @@
 #!/usr/bin/env python
 """
-NAMS Position Statements MCP Server
+NAMS Position Statements MCP Server - FastMCP Implementation
 
 This MCP server provides tools to search and access NAMS (North American Menopause Society,
 now The Menopause Society) position statements, clinical guidelines, and treatment protocols.
 """
 
-import os
-import asyncio
 from typing import Any, Optional
-import httpx
+import requests
 from bs4 import BeautifulSoup
 import re
-from mcp.server.models import InitializationOptions
-import mcp.types as types
-from mcp.server import NotificationOptions, Server
-import mcp.server.stdio
+from fastmcp import FastMCP
+from pydantic import Field
 
 # NAMS URLs
 NAMS_BASE_URL = "https://www.menopause.org"
 POSITION_STATEMENTS_URL = f"{NAMS_BASE_URL}/publications/professional-publications/position-statements-other-reports"
 PROFESSIONAL_RESOURCES_URL = f"{NAMS_BASE_URL}/professional-resources"
 
-# Create server instance
-server = Server("nams-server")
+# Create FastMCP server
+mcp = FastMCP("nams-server")
 
 # Common headers to avoid being blocked
 HEADERS = {
@@ -35,7 +31,7 @@ HEADERS = {
 }
 
 
-async def fetch_page(url: str) -> str:
+def fetch_page(url: str) -> str:
     """
     Fetch a webpage and return its HTML content.
 
@@ -45,13 +41,12 @@ async def fetch_page(url: str) -> str:
     Returns:
         HTML content as string
     """
-    async with httpx.AsyncClient(follow_redirects=True) as client:
-        response = await client.get(url, headers=HEADERS, timeout=30.0)
-        response.raise_for_status()
-        return response.text
+    response = requests.get(url, headers=HEADERS, timeout=30.0, allow_redirects=True)
+    response.raise_for_status()
+    return response.text
 
 
-async def parse_position_statements() -> list[dict[str, Any]]:
+def parse_position_statements() -> list[dict[str, Any]]:
     """
     Parse the position statements page to extract available documents.
 
@@ -59,7 +54,7 @@ async def parse_position_statements() -> list[dict[str, Any]]:
         List of position statements with title, URL, and description
     """
     try:
-        html = await fetch_page(POSITION_STATEMENTS_URL)
+        html = fetch_page(POSITION_STATEMENTS_URL)
         soup = BeautifulSoup(html, 'html.parser')
 
         statements = []
@@ -202,7 +197,7 @@ def get_known_position_statements() -> list[dict[str, Any]]:
     ]
 
 
-async def search_protocols(query: str, topic: Optional[str] = None) -> list[dict[str, Any]]:
+def search_protocols(query: str, topic: Optional[str] = None) -> list[dict[str, Any]]:
     """
     Search NAMS protocols and position statements by keyword.
 
@@ -214,7 +209,7 @@ async def search_protocols(query: str, topic: Optional[str] = None) -> list[dict
         List of matching documents
     """
     # Get all statements (try web scraping first, fall back to known list)
-    all_docs = await parse_position_statements()
+    all_docs = parse_position_statements()
 
     # If web scraping failed or returned few results, supplement with known statements
     if len(all_docs) < 5:
@@ -245,7 +240,7 @@ async def search_protocols(query: str, topic: Optional[str] = None) -> list[dict
     return matching_docs
 
 
-async def get_protocol_content(url: str) -> dict[str, Any]:
+def get_protocol_content(url: str) -> dict[str, Any]:
     """
     Fetch the full content of a specific NAMS protocol or position statement.
 
@@ -265,7 +260,7 @@ async def get_protocol_content(url: str) -> dict[str, Any]:
             'word_count': 0
         }
 
-    html = await fetch_page(url)
+    html = fetch_page(url)
     soup = BeautifulSoup(html, 'html.parser')
 
     # Extract title
@@ -316,205 +311,141 @@ async def get_protocol_content(url: str) -> dict[str, Any]:
     }
 
 
-@server.list_tools()
-async def handle_list_tools() -> list[types.Tool]:
+# ==================== FastMCP Tools ====================
+
+@mcp.tool(
+    name="list_nams_position_statements",
+    description="List available NAMS position statements and clinical guidelines on menopause management."
+)
+def list_nams_position_statements() -> str:
+    statements = parse_position_statements()
+
+    # Supplement with known statements if needed
+    if len(statements) < 5:
+        known = get_known_position_statements()
+        seen_urls = {s['url'] for s in statements}
+        for stmt in known:
+            if stmt['url'] not in seen_urls:
+                statements.append(stmt)
+
+    result = "# NAMS Position Statements & Clinical Guidelines\n\n"
+    result += f"Found {len(statements)} position statements and guidelines:\n\n"
+
+    for i, stmt in enumerate(statements, 1):
+        result += f"{i}. **{stmt['title']}**\n"
+        if stmt.get('topic'):
+            result += f"   Topic: {stmt['topic']}\n"
+        if stmt.get('description'):
+            result += f"   {stmt['description']}\n"
+        result += f"   Type: {stmt['type']}\n"
+        result += f"   URL: {stmt['url']}\n\n"
+
+    return result
+
+
+@mcp.tool(
+    name="search_nams_protocols",
+    description="Search NAMS position statements and protocols by keyword or topic (e.g., 'hormone therapy', 'osteoporosis', 'vasomotor symptoms')."
+)
+def search_nams_protocols(
+    query: str = Field(description="Search query (e.g., 'hormone therapy', 'hot flashes', 'bone health')"),
+    topic: Optional[str] = Field(None, description="Optional topic filter (e.g., 'hormone therapy', 'cardiovascular', 'genitourinary')")
+) -> str:
+    results = search_protocols(query, topic)
+
+    result = f"# Search Results for '{query}'\n\n"
+
+    if topic:
+        result += f"Topic filter: {topic}\n\n"
+
+    result += f"Found {len(results)} matching documents:\n\n"
+
+    for i, doc in enumerate(results, 1):
+        result += f"{i}. **{doc['title']}**\n"
+        result += f"   Type: {doc['type']}\n"
+        if doc.get('topic'):
+            result += f"   Topic: {doc['topic']}\n"
+        if doc.get('description'):
+            result += f"   {doc['description']}\n"
+        result += f"   URL: {doc['url']}\n\n"
+
+    if not results:
+        result += "No documents found matching your query.\n"
+        result += "Try different keywords or browse all documents using list_nams_position_statements.\n"
+        result += "\nCommon topics: hormone therapy, vasomotor symptoms, osteoporosis, cardiovascular, genitourinary\n"
+
+    return result
+
+
+@mcp.tool(
+    name="get_protocol_content",
+    description="Retrieve the full content of a specific NAMS protocol or position statement by URL."
+)
+def get_protocol_content_tool(
+    url: str = Field(description="Full URL of the protocol or position statement")
+) -> str:
+    content = get_protocol_content(url)
+
+    result = f"# {content['title']}\n\n"
+    result += f"**URL:** {content['url']}\n"
+    result += f"**Content Type:** {content['content_type']}\n"
+    if content.get('date'):
+        result += f"**Date:** {content['date']}\n"
+    if content['word_count'] > 0:
+        result += f"**Word Count:** {content['word_count']}\n"
+    result += "\n---\n\n"
+    result += content['content']
+
+    return result
+
+
+@mcp.tool()
+def list_nams_topics() -> str:
     """
-    List available tools.
+    List common topics covered by NAMS position statements.
     """
-    return [
-        types.Tool(
-            name="list_nams_position_statements",
-            description="List available NAMS position statements and clinical guidelines on menopause management",
-            inputSchema={
-                "type": "object",
-                "properties": {},
-                "required": []
-            },
-        ),
-        types.Tool(
-            name="search_nams_protocols",
-            description="Search NAMS position statements and protocols by keyword or topic (e.g., 'hormone therapy', 'osteoporosis', 'vasomotor symptoms')",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "Search query (e.g., 'hormone therapy', 'hot flashes', 'bone health')"
-                    },
-                    "topic": {
-                        "type": "string",
-                        "description": "Optional topic filter (e.g., 'hormone therapy', 'cardiovascular', 'genitourinary')"
-                    }
-                },
-                "required": ["query"]
-            },
-        ),
-        types.Tool(
-            name="get_protocol_content",
-            description="Retrieve the full content of a specific NAMS protocol or position statement by URL",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "url": {
-                        "type": "string",
-                        "description": "Full URL of the protocol or position statement"
-                    }
-                },
-                "required": ["url"]
-            },
-        ),
-        types.Tool(
-            name="list_nams_topics",
-            description="List common topics covered by NAMS position statements",
-            inputSchema={
-                "type": "object",
-                "properties": {},
-                "required": []
-            },
-        ),
+    topics = [
+        "Hormone Therapy",
+        "Vasomotor Symptoms (hot flashes, night sweats)",
+        "Genitourinary Syndrome of Menopause",
+        "Osteoporosis and Bone Health",
+        "Cardiovascular Health",
+        "Sexual Health",
+        "Mood and Cognitive Function",
+        "Sleep Disorders",
+        "Weight Management",
+        "Breast Health",
+        "Nonhormonal Therapies",
+        "Bioidentical Hormones",
+        "Premature Menopause",
+        "Complementary and Alternative Medicine"
     ]
 
+    result = "# Common Topics in NAMS Position Statements\n\n"
+    result += "The following topics are commonly addressed in NAMS position statements:\n\n"
 
-@server.call_tool()
-async def handle_call_tool(
-    name: str, arguments: dict | None
-) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
-    """
-    Handle tool execution requests.
-    """
-    try:
-        if name == "list_nams_position_statements":
-            statements = await parse_position_statements()
+    for i, topic in enumerate(topics, 1):
+        result += f"{i}. {topic}\n"
 
-            # Supplement with known statements if needed
-            if len(statements) < 5:
-                known = get_known_position_statements()
-                seen_urls = {s['url'] for s in statements}
-                for stmt in known:
-                    if stmt['url'] not in seen_urls:
-                        statements.append(stmt)
+    result += "\nUse these topics to search for specific position statements with the search_nams_protocols tool.\n"
 
-            result = "# NAMS Position Statements & Clinical Guidelines\n\n"
-            result += f"Found {len(statements)} position statements and guidelines:\n\n"
-
-            for i, stmt in enumerate(statements, 1):
-                result += f"{i}. **{stmt['title']}**\n"
-                if stmt.get('topic'):
-                    result += f"   Topic: {stmt['topic']}\n"
-                if stmt.get('description'):
-                    result += f"   {stmt['description']}\n"
-                result += f"   Type: {stmt['type']}\n"
-                result += f"   URL: {stmt['url']}\n\n"
-
-            return [types.TextContent(type="text", text=result)]
-
-        elif name == "search_nams_protocols":
-            if not arguments or "query" not in arguments:
-                raise ValueError("query parameter is required")
-
-            query = arguments["query"]
-            topic = arguments.get("topic")
-
-            results = await search_protocols(query, topic)
-
-            result = f"# Search Results for '{query}'\n\n"
-
-            if topic:
-                result += f"Topic filter: {topic}\n\n"
-
-            result += f"Found {len(results)} matching documents:\n\n"
-
-            for i, doc in enumerate(results, 1):
-                result += f"{i}. **{doc['title']}**\n"
-                result += f"   Type: {doc['type']}\n"
-                if doc.get('topic'):
-                    result += f"   Topic: {doc['topic']}\n"
-                if doc.get('description'):
-                    result += f"   {doc['description']}\n"
-                result += f"   URL: {doc['url']}\n\n"
-
-            if not results:
-                result += "No documents found matching your query.\n"
-                result += "Try different keywords or browse all documents using list_nams_position_statements.\n"
-                result += "\nCommon topics: hormone therapy, vasomotor symptoms, osteoporosis, cardiovascular, genitourinary\n"
-
-            return [types.TextContent(type="text", text=result)]
-
-        elif name == "get_protocol_content":
-            if not arguments or "url" not in arguments:
-                raise ValueError("url parameter is required")
-
-            url = arguments["url"]
-            content = await get_protocol_content(url)
-
-            result = f"# {content['title']}\n\n"
-            result += f"**URL:** {content['url']}\n"
-            result += f"**Content Type:** {content['content_type']}\n"
-            if content.get('date'):
-                result += f"**Date:** {content['date']}\n"
-            if content['word_count'] > 0:
-                result += f"**Word Count:** {content['word_count']}\n"
-            result += "\n---\n\n"
-            result += content['content']
-
-            return [types.TextContent(type="text", text=result)]
-
-        elif name == "list_nams_topics":
-            topics = [
-                "Hormone Therapy",
-                "Vasomotor Symptoms (hot flashes, night sweats)",
-                "Genitourinary Syndrome of Menopause",
-                "Osteoporosis and Bone Health",
-                "Cardiovascular Health",
-                "Sexual Health",
-                "Mood and Cognitive Function",
-                "Sleep Disorders",
-                "Weight Management",
-                "Breast Health",
-                "Nonhormonal Therapies",
-                "Bioidentical Hormones",
-                "Premature Menopause",
-                "Complementary and Alternative Medicine"
-            ]
-
-            result = "# Common Topics in NAMS Position Statements\n\n"
-            result += "The following topics are commonly addressed in NAMS position statements:\n\n"
-
-            for i, topic in enumerate(topics, 1):
-                result += f"{i}. {topic}\n"
-
-            result += "\nUse these topics to search for specific position statements with the search_nams_protocols tool.\n"
-
-            return [types.TextContent(type="text", text=result)]
-
-        else:
-            raise ValueError(f"Unknown tool: {name}")
-
-    except Exception as e:
-        return [types.TextContent(
-            type="text",
-            text=f"Error executing {name}: {str(e)}"
-        )]
+    return result
 
 
-async def main():
-    """
-    Main entry point for the NAMS MCP server.
-    """
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name="nams-server",
-                server_version="0.1.0",
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
-                ),
-            ),
-        )
+# ==================== Resources ====================
+
+@mcp.resource("nams://statements", mime_type="application/json")
+def list_nams_resources() -> dict:
+    """List all available NAMS resources."""
+    return {
+        "position_statements": "NAMS position statements and clinical guidelines",
+        "topics": ["hormone therapy", "vasomotor symptoms", "osteoporosis", "cardiovascular", "genitourinary"],
+        "search_capabilities": "Keyword and topic-based search across statements",
+        "content_access": "Full text extraction with fallback mechanisms",
+        "base_url": NAMS_BASE_URL
+    }
 
 
+# Run the server
 if __name__ == "__main__":
-    asyncio.run(main())
+    mcp.run()

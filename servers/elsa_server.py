@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ELSA (English Longitudinal Study of Ageing) MCP Server
+ELSA (English Longitudinal Study of Ageing) MCP Server - FastMCP Implementation
 
 Provides structured real-time access to ELSA data information, metadata, and documentation.
 Data source: UK Data Service (UKDS) - Study Number SN 5050
@@ -19,9 +19,8 @@ import logging
 from typing import Any, Dict, List, Optional
 from datetime import datetime
 
-import mcp.types as types
-from mcp.server import Server
-from mcp.server.stdio import stdio_server
+from fastmcp import FastMCP
+from pydantic import Field
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -202,523 +201,414 @@ ELSA_DATA_MODULES = {
     }
 }
 
-# Initialize MCP server
-app = Server("elsa-server")
+# Create FastMCP server
+mcp = FastMCP("elsa-server")
 
 
-@app.list_tools()
-async def list_tools() -> list[types.Tool]:
-    """List available ELSA data tools."""
-    return [
-        types.Tool(
-            name="list_elsa_waves",
-            description="List all available ELSA waves with basic information",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "include_details": {
-                        "type": "boolean",
-                        "description": "Include detailed information about each wave",
-                        "default": False
-                    }
-                }
-            }
-        ),
-        types.Tool(
-            name="get_wave_details",
-            description="Get detailed information about a specific ELSA wave",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "wave": {
-                        "type": "string",
-                        "description": "Wave number (0-11) or 'latest' for most recent wave"
-                    }
-                },
-                "required": ["wave"]
-            }
-        ),
-        types.Tool(
-            name="search_data_modules",
-            description="Search ELSA data modules and variables by topic or keyword",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "Search term (e.g., 'cognitive', 'depression', 'wealth')"
-                    },
-                    "module": {
-                        "type": "string",
-                        "description": "Specific module to search (optional)",
-                        "enum": list(ELSA_DATA_MODULES.keys())
-                    }
-                },
-                "required": ["query"]
-            }
-        ),
-        types.Tool(
-            name="get_data_module_info",
-            description="Get detailed information about a specific ELSA data module",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "module": {
-                        "type": "string",
-                        "description": "Module identifier",
-                        "enum": list(ELSA_DATA_MODULES.keys())
-                    }
-                },
-                "required": ["module"]
-            }
-        ),
-        types.Tool(
-            name="get_access_information",
-            description="Get information on how to access ELSA data from UK Data Service",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "detailed": {
-                        "type": "boolean",
-                        "description": "Include detailed step-by-step access instructions",
-                        "default": True
-                    }
-                }
-            }
-        ),
-        types.Tool(
-            name="get_study_metadata",
-            description="Get comprehensive metadata about the ELSA study",
-            inputSchema={
-                "type": "object",
-                "properties": {}
-            }
-        ),
-        types.Tool(
-            name="get_documentation_links",
-            description="Get links to ELSA documentation, questionnaires, and user guides",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "wave": {
-                        "type": "string",
-                        "description": "Specific wave number (optional, returns all if not specified)"
-                    },
-                    "doc_type": {
-                        "type": "string",
-                        "description": "Type of documentation",
-                        "enum": ["questionnaire", "user_guide", "technical", "data_dictionary", "all"]
-                    }
-                }
-            }
-        ),
-        types.Tool(
-            name="compare_waves",
-            description="Compare variables and topics across multiple ELSA waves",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "waves": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "description": "List of wave numbers to compare (e.g., ['1', '5', '9'])"
-                    },
-                    "focus": {
-                        "type": "string",
-                        "description": "Specific aspect to focus comparison on",
-                        "enum": ["topics", "sample_size", "all"]
-                    }
-                },
-                "required": ["waves"]
-            }
-        ),
-        types.Tool(
-            name="get_research_examples",
-            description="Get examples of research questions that can be answered with ELSA data",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "topic": {
-                        "type": "string",
-                        "description": "Research topic area (optional)"
-                    }
-                }
-            }
-        )
-    ]
+# ==================== FastMCP Tools ====================
 
-
-@app.call_tool()
-async def call_tool(name: str, arguments: Any) -> list[types.TextContent]:
-    """Handle tool calls for ELSA data access."""
-
-    if name == "list_elsa_waves":
-        include_details = arguments.get("include_details", False)
-
-        if include_details:
-            result = {
-                "study": ELSA_FULL_NAME,
-                "study_number": ELSA_STUDY_NUMBER,
-                "total_waves": len(ELSA_WAVES),
-                "waves": ELSA_WAVES
-            }
-        else:
-            result = {
-                "study": ELSA_FULL_NAME,
-                "total_waves": len(ELSA_WAVES),
-                "waves": [
-                    {
-                        "wave": v["wave"],
-                        "name": v["name"],
-                        "year": v["year"]
-                    }
-                    for v in ELSA_WAVES.values()
-                ]
-            }
-
-        return [types.TextContent(
-            type="text",
-            text=json.dumps(result, indent=2)
-        )]
-
-    elif name == "get_wave_details":
-        wave = arguments.get("wave")
-
-        if wave == "latest":
-            wave = "11"
-
-        if wave not in ELSA_WAVES:
-            return [types.TextContent(
-                type="text",
-                text=json.dumps({
-                    "error": f"Wave {wave} not found. Available waves: 0-11"
-                }, indent=2)
-            )]
-
-        wave_info = ELSA_WAVES[wave].copy()
-        wave_info["ukds_url"] = f"{UKDS_BASE_URL}/datacatalogue/studies/study?id={ELSA_STUDY_NUMBER}"
-        wave_info["project_url"] = f"{ELSA_PROJECT_URL}/data-and-documentation"
-
-        return [types.TextContent(
-            type="text",
-            text=json.dumps(wave_info, indent=2)
-        )]
-
-    elif name == "search_data_modules":
-        query = arguments.get("query", "").lower()
-        module_filter = arguments.get("module")
-
-        results = []
-
-        modules_to_search = {module_filter: ELSA_DATA_MODULES[module_filter]} if module_filter else ELSA_DATA_MODULES
-
-        for mod_id, mod_data in modules_to_search.items():
-            # Search in name, description, and variables
-            searchable_text = f"{mod_data['name']} {mod_data['description']} {' '.join(mod_data['variables'])}".lower()
-
-            if query in searchable_text:
-                results.append({
-                    "module_id": mod_id,
-                    "module_name": mod_data["name"],
-                    "description": mod_data["description"],
-                    "relevant_variables": [v for v in mod_data["variables"] if query in v.lower()]
-                })
-
-        return [types.TextContent(
-            type="text",
-            text=json.dumps({
-                "query": query,
-                "results_found": len(results),
-                "modules": results
-            }, indent=2)
-        )]
-
-    elif name == "get_data_module_info":
-        module = arguments.get("module")
-
-        if module not in ELSA_DATA_MODULES:
-            return [types.TextContent(
-                type="text",
-                text=json.dumps({
-                    "error": f"Module '{module}' not found. Available modules: {list(ELSA_DATA_MODULES.keys())}"
-                }, indent=2)
-            )]
-
-        module_info = ELSA_DATA_MODULES[module].copy()
-        module_info["module_id"] = module
-
-        return [types.TextContent(
-            type="text",
-            text=json.dumps(module_info, indent=2)
-        )]
-
-    elif name == "get_access_information":
-        detailed = arguments.get("detailed", True)
-
-        access_info = {
-            "study": ELSA_FULL_NAME,
-            "study_number": ELSA_STUDY_NUMBER,
-            "data_provider": "UK Data Service (UKDS)",
-            "access_url": f"{UKDS_BASE_URL}/datacatalogue/studies/study?id={ELSA_STUDY_NUMBER}",
-            "contact_email": ELSA_DATA_EMAIL,
-            "registration_required": True,
-            "access_levels": {
-                "open": "Some datasets available without registration",
-                "safeguarded": "Most ELSA data - requires UKDS registration",
-                "controlled": "Sensitive data - requires SecureLab access"
-            }
-        }
-
-        if detailed:
-            access_info["access_steps"] = [
-                {
-                    "step": 1,
-                    "action": "Register with UK Data Service",
-                    "url": "https://ukdataservice.ac.uk/",
-                    "notes": "UK academics can use institutional login (UKAMF). Others can create free account."
-                },
-                {
-                    "step": 2,
-                    "action": "Search for ELSA data",
-                    "url": f"{UKDS_BASE_URL}/datacatalogue/studies/study?id={ELSA_STUDY_NUMBER}",
-                    "notes": "Study Number: SN 5050 - English Longitudinal Study of Ageing: Waves 0-11"
-                },
-                {
-                    "step": 3,
-                    "action": "Review data documentation",
-                    "notes": "Check questionnaires, user guides, and data dictionaries"
-                },
-                {
-                    "step": 4,
-                    "action": "Accept End User License",
-                    "notes": "Agree to terms of use for data access"
-                },
-                {
-                    "step": 5,
-                    "action": "Download data",
-                    "notes": "Available formats: SPSS, Stata, tab-delimited"
-                }
-            ]
-
-            access_info["programmatic_access"] = {
-                "r_package": {
-                    "name": "ukds",
-                    "description": "R package for downloading UKDS datasets programmatically",
-                    "repository": "CRAN"
-                },
-                "python_package": {
-                    "name": "ukds",
-                    "description": "Python package for working with UKDS datasets",
-                    "repository": "PyPI"
-                }
-            }
-
-            access_info["controlled_data_access"] = {
-                "method": "UK Data Service SecureLab",
-                "description": "Remote access safe environment for sensitive data",
-                "requirements": "Separate application required",
-                "url": "https://ukdataservice.ac.uk/help/secure-lab/"
-            }
-
-        return [types.TextContent(
-            type="text",
-            text=json.dumps(access_info, indent=2)
-        )]
-
-    elif name == "get_study_metadata":
-        metadata = {
-            "study_name": ELSA_FULL_NAME,
-            "study_number": ELSA_STUDY_NUMBER,
-            "principal_investigators": [
-                "Professor Andrew Steptoe (University College London)",
-                "Dr. Daisy Fancourt (University College London)"
-            ],
-            "funding": "National Institute on Aging (NIA), UK Government departments",
-            "study_design": "Longitudinal panel study",
-            "target_population": "Adults aged 50 and over living in England",
-            "baseline_year": 1998,
-            "total_waves": len(ELSA_WAVES),
-            "latest_wave": 11,
-            "latest_fieldwork": "2023-2024",
-            "data_collection_modes": [
-                "Face-to-face computer-assisted interviews",
-                "Self-completion questionnaires",
-                "Nurse visits (selected waves)",
-                "Biomarker collection"
-            ],
-            "key_domains": list(ELSA_DATA_MODULES.keys()),
-            "geographic_coverage": "England (representative sample)",
-            "data_formats": ["SPSS", "Stata", "Tab-delimited"],
-            "citation": "NatCen Social Research, University College London, Institute for Fiscal Studies. (2024). English Longitudinal Study of Ageing. [data collection]. UK Data Service. SN: 5050, DOI: 10.5255/UKDA-SN-5050-25",
-            "project_website": ELSA_PROJECT_URL,
-            "documentation_url": f"{ELSA_PROJECT_URL}/data-and-documentation",
-            "ukds_url": f"{UKDS_BASE_URL}/datacatalogue/studies/study?id={ELSA_STUDY_NUMBER}"
-        }
-
-        return [types.TextContent(
-            type="text",
-            text=json.dumps(metadata, indent=2)
-        )]
-
-    elif name == "get_documentation_links":
-        wave = arguments.get("wave")
-        doc_type = arguments.get("doc_type", "all")
-
-        base_docs = {
-            "main_project_site": ELSA_PROJECT_URL,
-            "data_documentation": f"{ELSA_PROJECT_URL}/data-and-documentation",
-            "ukds_catalogue": f"{UKDS_BASE_URL}/datacatalogue/studies/study?id={ELSA_STUDY_NUMBER}",
-            "user_guides": f"{ELSA_PROJECT_URL}/data-and-documentation",
-            "questionnaires": f"{ELSA_PROJECT_URL}/data-and-documentation",
-            "technical_reports": f"{ELSA_PROJECT_URL}/publications",
-            "data_dictionaries": "Available via UKDS download",
-            "faqs": f"{ELSA_PROJECT_URL}/frequently-asked-questions"
-        }
-
-        result = {
-            "study": ELSA_FULL_NAME,
-            "documentation_links": base_docs,
-            "contact": {
-                "data_queries": ELSA_DATA_EMAIL,
-                "general_enquiries": f"{ELSA_PROJECT_URL}/contact"
-            },
-            "notes": [
-                "Detailed wave-specific documentation available after UKDS registration",
-                "User guides include variable derivations and technical details",
-                "Questionnaires show exact wording of questions asked"
-            ]
-        }
-
-        if wave:
-            result["wave"] = wave
-            result["note"] = f"Wave {wave} specific documentation available via UKDS after registration"
-
-        return [types.TextContent(
-            type="text",
-            text=json.dumps(result, indent=2)
-        )]
-
-    elif name == "compare_waves":
-        waves = arguments.get("waves", [])
-        focus = arguments.get("focus", "all")
-
-        if not waves:
-            return [types.TextContent(
-                type="text",
-                text=json.dumps({"error": "No waves specified for comparison"}, indent=2)
-            )]
-
-        comparison = {
-            "waves_compared": waves,
-            "comparison": {}
-        }
-
-        for wave in waves:
-            if wave not in ELSA_WAVES:
-                comparison["comparison"][wave] = {"error": "Wave not found"}
-                continue
-
-            wave_data = ELSA_WAVES[wave]
-
-            if focus == "all" or focus == "topics":
-                comparison["comparison"][wave] = {
-                    "name": wave_data["name"],
-                    "year": wave_data["year"],
-                    "key_topics": wave_data["key_topics"]
-                }
-
-            if focus == "all" or focus == "sample_size":
-                if wave not in comparison["comparison"]:
-                    comparison["comparison"][wave] = {}
-                comparison["comparison"][wave]["sample_size"] = wave_data["sample_size"]
-                comparison["comparison"][wave]["fieldwork_period"] = wave_data["fieldwork_period"]
-
-        return [types.TextContent(
-            type="text",
-            text=json.dumps(comparison, indent=2)
-        )]
-
-    elif name == "get_research_examples":
-        topic = arguments.get("topic", "general")
-
-        research_examples = {
-            "general": [
-                "How does health change with age in the English population?",
-                "What are the predictors of successful aging?",
-                "How do social determinants affect health outcomes in older adults?"
-            ],
-            "health": [
-                "What is the trajectory of cognitive decline in aging?",
-                "How do chronic conditions cluster in older adults?",
-                "What factors predict disability-free life expectancy?"
-            ],
-            "economic": [
-                "How does wealth accumulation vary across cohorts?",
-                "What is the relationship between pension adequacy and well-being?",
-                "How does retirement affect health and cognitive function?"
-            ],
-            "mental_health": [
-                "What are the prevalence and predictors of depression in older age?",
-                "How does social isolation affect mental health trajectories?",
-                "What role does social support play in resilience to life stressors?"
-            ],
-            "covid": [
-                "How did COVID-19 affect mental health in older adults?",
-                "What were the health behavior changes during the pandemic?",
-                "How did social isolation during lockdowns affect cognitive function?"
-            ],
-            "biomarkers": [
-                "How do biological markers relate to subjective health ratings?",
-                "What is the relationship between inflammation and cognitive aging?",
-                "How do health behaviors affect biomarker profiles?"
-            ]
-        }
-
-        examples = research_examples.get(topic.lower(), research_examples["general"])
-
-        result = {
-            "topic": topic,
-            "research_questions": examples,
-            "data_strengths": [
-                "Longitudinal design allows for causal inference",
-                "Rich multidimensional data (health, economic, social)",
-                "Biomarker data in selected waves",
-                "Large representative sample of English adults 50+",
-                "Long follow-up period (1998-2024)"
-            ],
-            "analysis_possibilities": [
-                "Longitudinal modeling of change over time",
-                "Cross-sectional comparisons across age groups",
-                "Life course epidemiology",
-                "Health inequality research",
-                "Policy evaluation studies"
-            ]
-        }
-
-        return [types.TextContent(
-            type="text",
-            text=json.dumps(result, indent=2)
-        )]
-
+@mcp.tool()
+def list_elsa_waves(
+    include_details: bool = Field(False, description="Include detailed information about each wave")
+) -> str:
+    """
+    List all available ELSA waves with basic information.
+    """
+    if include_details:
+        result = f"# {ELSA_FULL_NAME}\n\n"
+        result += f"**Study Number:** {ELSA_STUDY_NUMBER}\n"
+        result += f"**Total Waves:** {len(ELSA_WAVES)}\n\n"
+        
+        for wave_id, wave_data in ELSA_WAVES.items():
+            result += f"## Wave {wave_data['wave']}: {wave_data['name']}\n"
+            result += f"**Year:** {wave_data['year']}\n"
+            result += f"**Sample Size:** {wave_data['sample_size']}\n"
+            result += f"**Fieldwork Period:** {wave_data['fieldwork_period']}\n"
+            result += f"**Description:** {wave_data['description']}\n"
+            result += f"**Key Topics:** {', '.join(wave_data['key_topics'])}\n"
+            if 'notes' in wave_data:
+                result += f"**Notes:** {wave_data['notes']}\n"
+            result += "\n"
     else:
-        return [types.TextContent(
-            type="text",
-            text=json.dumps({"error": f"Unknown tool: {name}"}, indent=2)
-        )]
+        result = f"# {ELSA_FULL_NAME}\n\n"
+        result += f"**Total Waves:** {len(ELSA_WAVES)}\n\n"
+        
+        for wave_id, wave_data in ELSA_WAVES.items():
+            result += f"- **Wave {wave_data['wave']}:** {wave_data['name']} ({wave_data['year']})\n"
+    
+    return result
 
 
-async def main():
-    """Run the ELSA MCP server."""
-    logger.info("Starting ELSA MCP server")
+@mcp.tool()
+def get_wave_details(
+    wave: str = Field(description="Wave number (0-11) or 'latest' for most recent wave")
+) -> str:
+    """
+    Get detailed information about a specific ELSA wave.
+    """
+    if wave == "latest":
+        wave = "11"
+    
+    if wave not in ELSA_WAVES:
+        return f"**Error:** Wave {wave} not found. Available waves: 0-11"
+    
+    wave_data = ELSA_WAVES[wave]
+    
+    result = f"# {wave_data['name']}\n\n"
+    result += f"**Wave:** {wave_data['wave']}\n"
+    result += f"**Year:** {wave_data['year']}\n"
+    result += f"**Sample Size:** {wave_data['sample_size']}\n"
+    result += f"**Fieldwork Period:** {wave_data['fieldwork_period']}\n"
+    result += f"**Description:** {wave_data['description']}\n\n"
+    
+    result += f"**Key Topics:**\n"
+    for topic in wave_data['key_topics']:
+        result += f"- {topic}\n"
+    
+    if 'notes' in wave_data:
+        result += f"\n**Notes:** {wave_data['notes']}\n"
+    
+    result += f"\n**Data Access:**\n"
+    result += f"- UKDS URL: {UKDS_BASE_URL}/datacatalogue/studies/study?id={ELSA_STUDY_NUMBER}\n"
+    result += f"- Project URL: {ELSA_PROJECT_URL}/data-and-documentation\n"
+    
+    return result
 
-    async with stdio_server() as (read_stream, write_stream):
-        logger.info("Server running on stdio")
-        await app.run(
-            read_stream,
-            write_stream,
-            app.create_initialization_options()
-        )
+
+@mcp.tool()
+def search_data_modules(
+    query: str = Field(description="Search term (e.g., 'cognitive', 'depression', 'wealth')"),
+    module: Optional[str] = Field(None, description="Specific module to search (optional)")
+) -> str:
+    """
+    Search ELSA data modules and variables by topic or keyword.
+    """
+    results = []
+    modules_to_search = {module: ELSA_DATA_MODULES[module]} if module and module in ELSA_DATA_MODULES else ELSA_DATA_MODULES
+    
+    for mod_id, mod_data in modules_to_search.items():
+        searchable_text = f"{mod_data['name']} {mod_data['description']} {' '.join(mod_data['variables'])}".lower()
+        
+        if query.lower() in searchable_text:
+            relevant_vars = [v for v in mod_data['variables'] if query.lower() in v.lower()]
+            results.append({
+                'id': mod_id,
+                'name': mod_data['name'],
+                'description': mod_data['description'],
+                'relevant_variables': relevant_vars
+            })
+    
+    result = f"# Search Results for '{query}'\n\n"
+    result += f"**Results Found:** {len(results)}\n\n"
+    
+    if not results:
+        result += "No matching modules found. Try different keywords or browse all modules with get_data_module_info.\n"
+        result += f"\n**Available modules:** {', '.join(ELSA_DATA_MODULES.keys())}\n"
+        return result
+    
+    for i, res in enumerate(results, 1):
+        result += f"## {i}. {res['name']} ({res['id']})\n"
+        result += f"{res['description']}\n\n"
+        
+        if res['relevant_variables']:
+            result += f"**Relevant Variables:**\n"
+            for var in res['relevant_variables']:
+                result += f"- {var}\n"
+        result += "\n"
+    
+    return result
 
 
+@mcp.tool()
+def get_data_module_info(
+    module: str = Field(description="Module identifier")
+) -> str:
+    """
+    Get detailed information about a specific ELSA data module.
+    """
+    if module not in ELSA_DATA_MODULES:
+        return f"**Error:** Module '{module}' not found. Available modules: {', '.join(ELSA_DATA_MODULES.keys())}"
+    
+    mod_data = ELSA_DATA_MODULES[module]
+    
+    result = f"# {mod_data['name']}\n\n"
+    result += f"**Module ID:** {module}\n"
+    result += f"**Description:** {mod_data['description']}\n\n"
+    
+    result += f"**Variables Include:**\n"
+    for var in mod_data['variables']:
+        result += f"- {var}\n"
+    
+    return result
+
+
+@mcp.tool()
+def get_access_information(
+    detailed: bool = Field(True, description="Include detailed step-by-step access instructions")
+) -> str:
+    """
+    Get information on how to access ELSA data from UK Data Service.
+    """
+    result = f"# {ELSA_FULL_NAME} Data Access\n\n"
+    result += f"**Study Number:** {ELSA_STUDY_NUMBER}\n"
+    result += f"**Data Provider:** UK Data Service (UKDS)\n"
+    result += f"**Contact:** {ELSA_DATA_EMAIL}\n"
+    result += f"**Access URL:** {UKDS_BASE_URL}/datacatalogue/studies/study?id={ELSA_STUDY_NUMBER}\n\n"
+    
+    result += f"**Access Levels:**\n"
+    result += f"- **Open:** Some datasets available without registration\n"
+    result += f"- **Safeguarded:** Most ELSA data - requires UKDS registration\n"
+    result += f"- **Controlled:** Sensitive data - requires SecureLab access\n\n"
+    
+    if detailed:
+        result += f"## Step-by-Step Access Instructions\n\n"
+        
+        steps = [
+            ("Register with UK Data Service", "https://ukdataservice.ac.uk/", "UK academics can use institutional login (UKAMF). Others can create free account."),
+            ("Search for ELSA data", f"{UKDS_BASE_URL}/datacatalogue/studies/study?id={ELSA_STUDY_NUMBER}", "Study Number: SN 5050 - English Longitudinal Study of Ageing: Waves 0-11"),
+            ("Review data documentation", None, "Check questionnaires, user guides, and data dictionaries"),
+            ("Accept End User License", None, "Agree to terms of use for data access"),
+            ("Download data", None, "Available formats: SPSS, Stata, tab-delimited")
+        ]
+        
+        for i, (action, url, notes) in enumerate(steps, 1):
+            result += f"**{i}. {action}**\n"
+            if url:
+                result += f"   - URL: {url}\n"
+            result += f"   - {notes}\n\n"
+        
+        result += f"## Programmatic Access\n\n"
+        result += f"**R Package:**\n"
+        result += f"- Package: ukds (available on CRAN)\n"
+        result += f"- Description: R package for downloading UKDS datasets programmatically\n\n"
+        
+        result += f"**Python Package:**\n"
+        result += f"- Package: ukds (available on PyPI)\n"
+        result += f"- Description: Python package for working with UKDS datasets\n\n"
+        
+        result += f"## Controlled Data Access\n\n"
+        result += f"**Method:** UK Data Service SecureLab\n"
+        result += f"**Description:** Remote access safe environment for sensitive data\n"
+        result += f"**Requirements:** Separate application required\n"
+        result += f"**URL:** https://ukdataservice.ac.uk/help/secure-lab/\n"
+    
+    return result
+
+
+@mcp.tool()
+def get_study_metadata() -> str:
+    """
+    Get comprehensive metadata about the ELSA study.
+    """
+    result = f"# {ELSA_FULL_NAME} Metadata\n\n"
+    
+    result += f"**Study Number:** {ELSA_STUDY_NUMBER}\n"
+    result += f"**Principal Investigators:**\n"
+    result += f"- Professor Andrew Steptoe (University College London)\n"
+    result += f"- Dr. Daisy Fancourt (University College London)\n\n"
+    
+    result += f"**Study Design:** Longitudinal panel study\n"
+    result += f"**Target Population:** Adults aged 50 and over living in England\n"
+    result += f"**Geographic Coverage:** England (representative sample)\n"
+    result += f"**Baseline Year:** 1998\n"
+    result += f"**Total Waves:** {len(ELSA_WAVES)}\n"
+    result += f"**Latest Wave:** 11\n"
+    result += f"**Latest Fieldwork:** 2023-2024\n\n"
+    
+    result += f"**Funding:** National Institute on Aging (NIA), UK Government departments\n\n"
+    
+    result += f"**Data Collection Modes:**\n"
+    modes = ["Face-to-face computer-assisted interviews", "Self-completion questionnaires", "Nurse visits (selected waves)", "Biomarker collection"]
+    for mode in modes:
+        result += f"- {mode}\n"
+    result += "\n"
+    
+    result += f"**Key Data Domains:**\n"
+    for domain in ELSA_DATA_MODULES.keys():
+        result += f"- {domain}\n"
+    result += "\n"
+    
+    result += f"**Data Formats:** SPSS, Stata, Tab-delimited\n\n"
+    
+    result += f"**Citation:**\n"
+    result += f"NatCen Social Research, University College London, Institute for Fiscal Studies. (2024). English Longitudinal Study of Ageing. [data collection]. UK Data Service. SN: {ELSA_STUDY_NUMBER}, DOI: 10.5255/UKDA-SN-{ELSA_STUDY_NUMBER}-25\n\n"
+    
+    result += f"**Links:**\n"
+    result += f"- Project Website: {ELSA_PROJECT_URL}\n"
+    result += f"- Documentation: {ELSA_PROJECT_URL}/data-and-documentation\n"
+    result += f"- UKDS Catalogue: {UKDS_BASE_URL}/datacatalogue/studies/study?id={ELSA_STUDY_NUMBER}\n"
+    
+    return result
+
+
+@mcp.tool()
+def get_documentation_links(
+    wave: Optional[str] = Field(None, description="Specific wave number (optional, returns all if not specified)"),
+    doc_type: Optional[str] = Field("all", description="Type of documentation")
+) -> str:
+    """
+    Get links to ELSA documentation, questionnaires, and user guides.
+    """
+    result = f"# {ELSA_FULL_NAME} Documentation Links\n\n"
+    
+    if wave:
+        result += f"**Wave {wave} Documentation**\n\n"
+    
+    result += f"**Main Documentation Links:**\n"
+    result += f"- Main Project Site: {ELSA_PROJECT_URL}\n"
+    result += f"- Data Documentation: {ELSA_PROJECT_URL}/data-and-documentation\n"
+    result += f"- UKDS Catalogue: {UKDS_BASE_URL}/datacatalogue/studies/study?id={ELSA_STUDY_NUMBER}\n"
+    result += f"- User Guides: {ELSA_PROJECT_URL}/data-and-documentation\n"
+    result += f"- Questionnaires: {ELSA_PROJECT_URL}/data-and-documentation\n"
+    result += f"- Technical Reports: {ELSA_PROJECT_URL}/publications\n"
+    result += f"- Data Dictionaries: Available via UKDS download\n"
+    result += f"- FAQs: {ELSA_PROJECT_URL}/frequently-asked-questions\n\n"
+    
+    result += f"**Contact Information:**\n"
+    result += f"- Data Queries: {ELSA_DATA_EMAIL}\n"
+    result += f"- General Enquiries: {ELSA_PROJECT_URL}/contact\n\n"
+    
+    result += f"**Important Notes:**\n"
+    result += f"- Detailed wave-specific documentation available after UKDS registration\n"
+    result += f"- User guides include variable derivations and technical details\n"
+    result += f"- Questionnaires show exact wording of questions asked\n"
+    
+    if wave:
+        result += f"\n**Note:** Wave {wave} specific documentation available via UKDS after registration\n"
+    
+    return result
+
+
+@mcp.tool()
+def compare_waves(
+    waves: List[str] = Field(description="List of wave numbers to compare (e.g., ['1', '5', '9'])"),
+    focus: str = Field("all", description="Specific aspect to focus comparison on (topics, sample_size, or all)")
+) -> str:
+    """
+    Compare variables and topics across multiple ELSA waves.
+    """
+    if not waves:
+        return "**Error:** No waves specified for comparison"
+    
+    result = f"# ELSA Wave Comparison\n\n"
+    result += f"**Waves Compared:** {', '.join(waves)}\n"
+    result += f"**Focus:** {focus}\n\n"
+    
+    for wave in waves:
+        if wave not in ELSA_WAVES:
+            result += f"## Wave {wave}\n**Error:** Wave not found\n\n"
+            continue
+        
+        wave_data = ELSA_WAVES[wave]
+        
+        result += f"## Wave {wave}: {wave_data['name']}\n"
+        result += f"**Year:** {wave_data['year']}\n"
+        
+        if focus in ["all", "sample_size"]:
+            result += f"**Sample Size:** {wave_data['sample_size']}\n"
+            result += f"**Fieldwork Period:** {wave_data['fieldwork_period']}\n"
+        
+        if focus in ["all", "topics"]:
+            result += f"**Key Topics:**\n"
+            for topic in wave_data['key_topics']:
+                result += f"- {topic}\n"
+        
+        if 'notes' in wave_data:
+            result += f"**Notes:** {wave_data['notes']}\n"
+        
+        result += "\n"
+    
+    return result
+
+
+@mcp.tool()
+def get_research_examples(
+    topic: Optional[str] = Field(None, description="Research topic area (optional)")
+) -> str:
+    """
+    Get examples of research questions that can be answered with ELSA data.
+    """
+    research_examples = {
+        "general": [
+            "How does health change with age in the English population?",
+            "What are the predictors of successful aging?",
+            "How do social determinants affect health outcomes in older adults?"
+        ],
+        "health": [
+            "What is the trajectory of cognitive decline in aging?",
+            "How do chronic conditions cluster in older adults?",
+            "What factors predict disability-free life expectancy?"
+        ],
+        "economic": [
+            "How does wealth accumulation vary across cohorts?",
+            "What is the relationship between pension adequacy and well-being?",
+            "How does retirement affect health and cognitive function?"
+        ],
+        "mental_health": [
+            "What are the prevalence and predictors of depression in older age?",
+            "How does social isolation affect mental health trajectories?",
+            "What role does social support play in resilience to life stressors?"
+        ],
+        "covid": [
+            "How did COVID-19 affect mental health in older adults?",
+            "What were the health behavior changes during the pandemic?",
+            "How did social isolation during lockdowns affect cognitive function?"
+        ],
+        "biomarkers": [
+            "How do biological markers relate to subjective health ratings?",
+            "What is the relationship between inflammation and cognitive aging?",
+            "How do health behaviors affect biomarker profiles?"
+        ]
+    }
+    
+    topic = (topic or "general").lower()
+    examples = research_examples.get(topic, research_examples["general"])
+    
+    result = f"# Research Examples - {topic.title()} Topic\n\n"
+    
+    result += f"**Example Research Questions:**\n"
+    for i, question in enumerate(examples, 1):
+        result += f"{i}. {question}\n"
+    
+    result += f"\n**ELSA Data Strengths:**\n"
+    strengths = [
+        "Longitudinal design allows for causal inference",
+        "Rich multidimensional data (health, economic, social)",
+        "Biomarker data in selected waves",
+        "Large representative sample of English adults 50+",
+        "Long follow-up period (1998-2024)"
+    ]
+    for strength in strengths:
+        result += f"- {strength}\n"
+    
+    result += f"\n**Analysis Possibilities:**\n"
+    analyses = [
+        "Longitudinal modeling of change over time",
+        "Cross-sectional comparisons across age groups",
+        "Life course epidemiology",
+        "Health inequality research",
+        "Policy evaluation studies"
+    ]
+    for analysis in analyses:
+        result += f"- {analysis}\n"
+    
+    return result
+
+
+# ==================== Resources ====================
+
+@mcp.resource("elsa://metadata", mime_type="application/json")
+def list_elsa_resources() -> dict:
+    """List all available ELSA resources."""
+    return {
+        "waves": f"{len(ELSA_WAVES)} waves available (0-11)",
+        "data_modules": f"{len(ELSA_DATA_MODULES)} data modules",
+        "study_period": "1998-2024",
+        "data_access": "UK Data Service registration required",
+        "capabilities": "Search, browse, compare waves and modules"
+    }
+
+
+# Run the server
 if __name__ == "__main__":
-    asyncio.run(main())
+    mcp.run()

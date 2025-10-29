@@ -1,22 +1,19 @@
 #!/usr/bin/env python
 """
-MCP Server for Menopause Age Calculator
+MCP Server for Menopause Age Calculator - FastMCP Implementation
 
 Based on the calculator at https://reverse.health/calculator/menopause-age-calculator
 Estimates menopause age based on genetics, lifestyle, and health factors.
 """
 
 import asyncio
-import json
-from typing import Any
-from mcp.server.models import InitializationOptions
-import mcp.types as types
-from mcp.server import NotificationOptions, Server
-import mcp.server.stdio
+from typing import Any, Optional
+from fastmcp import FastMCP
+from pydantic import Field
 
 
-# Create server instance
-server = Server("menopause-calculator")
+# Create FastMCP server
+mcp = FastMCP("menopause-calculator")
 
 
 def calculate_menopause_age(
@@ -156,162 +153,99 @@ def calculate_menopause_age(
     }
 
 
-@server.list_tools()
-async def handle_list_tools() -> list[types.Tool]:
-    """List available tools."""
-    return [
-        types.Tool(
-            name="calculate_menopause_age",
-            description="""Calculate estimated menopause age based on genetics, lifestyle, and health factors.
+# ==================== FastMCP Tools ====================
 
-Based on research showing:
-- Typical menopause age: 51 years
-- Genetics (mother's age) is the strongest predictor
-- Smoking accelerates menopause by up to 2 years
-- BMI, exercise, and stress also influence timing
-
-This calculator provides an educational estimate. Always consult healthcare professionals for medical advice.""",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "current_age": {
-                        "type": "integer",
-                        "description": "Current age in years (typically 30-60)",
-                        "minimum": 30,
-                        "maximum": 65
-                    },
-                    "mothers_menopause_age": {
-                        "type": "integer",
-                        "description": "Age when mother reached menopause (optional, but strongest predictor)",
-                        "minimum": 35,
-                        "maximum": 65
-                    },
-                    "smoking_status": {
-                        "type": "string",
-                        "enum": ["never", "former", "current"],
-                        "description": "Smoking history",
-                        "default": "never"
-                    },
-                    "bmi": {
-                        "type": "number",
-                        "description": "Body Mass Index (optional)",
-                        "minimum": 15,
-                        "maximum": 50
-                    },
-                    "exercise_frequency": {
-                        "type": "string",
-                        "enum": ["low", "moderate", "high"],
-                        "description": "Exercise frequency",
-                        "default": "moderate"
-                    },
-                    "stress_level": {
-                        "type": "string",
-                        "enum": ["low", "moderate", "high"],
-                        "description": "Overall stress level",
-                        "default": "moderate"
-                    },
-                    "cycle_changes": {
-                        "type": "boolean",
-                        "description": "Currently experiencing menstrual cycle changes",
-                        "default": False
-                    }
-                },
-                "required": ["current_age"]
-            }
-        )
-    ]
-
-
-@server.call_tool()
-async def handle_call_tool(
-    name: str, arguments: dict | None
-) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
-    """Handle tool execution requests."""
-
-    if name != "calculate_menopause_age":
-        raise ValueError(f"Unknown tool: {name}")
-
-    if not arguments:
-        raise ValueError("Missing arguments")
-
-    # Extract parameters
-    current_age = arguments.get("current_age")
-    mothers_age = arguments.get("mothers_menopause_age")
-    smoking = arguments.get("smoking_status", "never")
-    bmi = arguments.get("bmi")
-    exercise = arguments.get("exercise_frequency", "moderate")
-    stress = arguments.get("stress_level", "moderate")
-    cycle_changes = arguments.get("cycle_changes", False)
-
-    # Calculate menopause age
+@mcp.tool(
+    name="calculate_menopause_age_estimate",
+    description="Calculate estimated menopause age based on genetics, lifestyle, and health factors using evidence-based algorithms."
+)
+def calculate_menopause_age_estimate(
+    current_age: int = Field(description="Current age in years (typically 30-65)", ge=30, le=65),
+    mothers_menopause_age: Optional[int] = Field(None, description="Age when mother reached menopause (optional, but strongest predictor)", ge=35, le=65),
+    smoking_status: str = Field("never", description="Smoking history (never/former/current)"),
+    bmi: Optional[float] = Field(None, description="Body Mass Index (optional)", ge=15, le=50),
+    exercise_frequency: str = Field("moderate", description="Exercise frequency (low/moderate/high)"),
+    stress_level: str = Field("moderate", description="Overall stress level (low/moderate/high)"),
+    cycle_changes: bool = Field(False, description="Currently experiencing menstrual cycle changes")
+) -> str:
+    """
+    Calculate estimated menopause age based on genetics, lifestyle, and health factors.
+    
+    Based on research showing:
+    - Typical menopause age: 51 years
+    - Genetics (mother's age) is the strongest predictor
+    - Smoking accelerates menopause by up to 2 years
+    - BMI, exercise, and stress also influence timing
+    
+    This calculator provides an educational estimate. Always consult healthcare professionals for medical advice.
+    """
+    # Use the original calculation function
     result = calculate_menopause_age(
         current_age=current_age,
-        mothers_menopause_age=mothers_age,
-        smoking_status=smoking,
+        mothers_menopause_age=mothers_menopause_age,
+        smoking_status=smoking_status,
         bmi=bmi,
-        exercise_frequency=exercise,
-        stress_level=stress,
+        exercise_frequency=exercise_frequency,
+        stress_level=stress_level,
         cycle_changes=cycle_changes
     )
 
     # Format output
-    output = f"""Menopause Age Estimate
+    output = f"""# Menopause Age Estimate
 
-📊 Estimated Menopause Age: {result['estimated_menopause_age']} years
-⏳ Years Until Estimated Menopause: {result['years_until_menopause']} years
-👤 Your Current Age: {result['current_age']} years
-📈 Statistical Baseline: {result['baseline_age']} years
+📊 **Estimated Menopause Age:** {result['estimated_menopause_age']} years  
+⏳ **Years Until Estimated Menopause:** {result['years_until_menopause']} years  
+👤 **Your Current Age:** {result['current_age']} years  
+📈 **Statistical Baseline:** {result['baseline_age']} years
 
 """
 
     if result['adjustments']:
-        output += "🔍 Contributing Factors:\n"
+        output += "## 🔍 Contributing Factors:\n"
         for adj in result['adjustments']:
             sign = "+" if adj['adjustment'] > 0 else ""
-            output += f"  • {adj['factor']}: {sign}{adj['adjustment']} years ({adj['impact']} impact)\n"
+            output += f"- **{adj['factor']}**: {sign}{adj['adjustment']} years ({adj['impact']} impact)\n"
         output += "\n"
 
     if result['cycle_changes_note']:
-        output += f"⚠️ {result['cycle_changes_note']}\n\n"
+        output += f"⚠️ **Note:** {result['cycle_changes_note']}\n\n"
 
-    output += f"ℹ️ {result['disclaimer']}\n\n"
-    output += """📚 Key Information:
-• Menopause typically occurs between ages 45-58
-• 80% of women experience hot flashes
-• Perimenopause often begins years before final period
-• Genetics (mother's age) is the strongest predictor
-• Smoking can advance menopause by up to 2 years
-• Healthy weight and exercise may provide some protection
+    output += f"ℹ️ **Disclaimer:** {result['disclaimer']}\n\n"
+    output += """## 📚 Key Information:
+- Menopause typically occurs between ages 45-58
+- 80% of women experience hot flashes
+- Perimenopause often begins years before final period
+- Genetics (mother's age) is the strongest predictor
+- Smoking can advance menopause by up to 2 years
+- Healthy weight and exercise may provide some protection
 
-🏥 When to Consult a Healthcare Provider:
-• Heavy bleeding or periods lasting >7 days
-• Bleeding between cycles
-• Severe mood changes or persistent insomnia
-• Hot flashes occurring multiple times daily
-• Planning for bone health and fertility considerations
+## 🏥 When to Consult a Healthcare Provider:
+- Heavy bleeding or periods lasting >7 days
+- Bleeding between cycles
+- Severe mood changes or persistent insomnia
+- Hot flashes occurring multiple times daily
+- Planning for bone health and fertility considerations
 
-Source: https://reverse.health/calculator/menopause-age-calculator
+**Source:** https://reverse.health/calculator/menopause-age-calculator
 """
 
-    return [types.TextContent(type="text", text=output)]
+    return output
 
 
-async def main():
-    """Main entry point for the server."""
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name="menopause-calculator",
-                server_version="1.0.0",
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
-                ),
-            ),
-        )
+# ==================== Resources ====================
+
+@mcp.resource("menopause://calculator", mime_type="application/json")
+def menopause_calculator_info() -> dict:
+    """Information about the menopause calculator."""
+    return {
+        "calculator": "Menopause Age Estimator",
+        "factors": ["genetics", "smoking", "BMI", "exercise", "stress", "cycle_changes"],
+        "accuracy_note": "Genetics (mother's age) is the strongest predictor",
+        "source": "https://reverse.health/calculator/menopause-age-calculator",
+        "disclaimer": "Educational estimate only - consult healthcare professionals for medical advice"
+    }
 
 
+# Run the server
 if __name__ == "__main__":
-    asyncio.run(main())
+    mcp.run()

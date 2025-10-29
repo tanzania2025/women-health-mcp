@@ -1,31 +1,27 @@
 #!/usr/bin/env python3
 """
-ESHRE Guidelines MCP Server
+ESHRE Guidelines MCP Server - FastMCP Implementation
 
 This MCP server provides tools to search and access ESHRE (European Society
 for Human Reproduction and Embryology) clinical guidelines and recommendations.
 """
 
-import os
-import asyncio
 from typing import Any, Optional
-import httpx
+import requests
 from bs4 import BeautifulSoup
 import re
-from mcp.server.models import InitializationOptions
-import mcp.types as types
-from mcp.server import NotificationOptions, Server
-import mcp.server.stdio
+from fastmcp import FastMCP
+from pydantic import Field
 
 # ESHRE URLs
 ESHRE_BASE_URL = "https://www.eshre.eu"
 GUIDELINES_URL = f"{ESHRE_BASE_URL}/Guidelines-and-Legal"
 
-# Create server instance
-server = Server("eshre-server")
+# Create FastMCP server
+mcp = FastMCP("eshre-server")
 
 
-async def fetch_page(url: str) -> str:
+def fetch_page(url: str) -> str:
     """
     Fetch a webpage and return its HTML content.
 
@@ -35,20 +31,19 @@ async def fetch_page(url: str) -> str:
     Returns:
         HTML content as string
     """
-    async with httpx.AsyncClient(follow_redirects=True) as client:
-        response = await client.get(url, timeout=30.0)
-        response.raise_for_status()
-        return response.text
+    response = requests.get(url, timeout=30.0, allow_redirects=True)
+    response.raise_for_status()
+    return response.text
 
 
-async def parse_guidelines_list() -> list[dict[str, Any]]:
+def parse_guidelines_list() -> list[dict[str, Any]]:
     """
     Parse the guidelines page to extract available guidelines.
 
     Returns:
         List of guidelines with title, URL, and description
     """
-    html = await fetch_page(GUIDELINES_URL)
+    html = fetch_page(GUIDELINES_URL)
     soup = BeautifulSoup(html, 'html.parser')
 
     guidelines = []
@@ -122,7 +117,7 @@ async def parse_guidelines_list() -> list[dict[str, Any]]:
     return unique_guidelines
 
 
-async def search_guidelines(query: str) -> list[dict[str, Any]]:
+def search_guidelines(query: str) -> list[dict[str, Any]]:
     """
     Search ESHRE guidelines by keyword.
 
@@ -132,7 +127,7 @@ async def search_guidelines(query: str) -> list[dict[str, Any]]:
     Returns:
         List of matching guidelines
     """
-    all_guidelines = await parse_guidelines_list()
+    all_guidelines = parse_guidelines_list()
 
     # Filter by query
     query_lower = query.lower()
@@ -145,7 +140,7 @@ async def search_guidelines(query: str) -> list[dict[str, Any]]:
     return matching_guidelines
 
 
-async def get_guideline_content(url: str) -> dict[str, Any]:
+def get_guideline_content(url: str) -> dict[str, Any]:
     """
     Fetch the full content of a specific guideline document.
 
@@ -155,7 +150,7 @@ async def get_guideline_content(url: str) -> dict[str, Any]:
     Returns:
         Dictionary with title, content, metadata, and download links
     """
-    html = await fetch_page(url)
+    html = fetch_page(url)
     soup = BeautifulSoup(html, 'html.parser')
 
     # Extract title
@@ -240,148 +235,92 @@ async def get_guideline_content(url: str) -> dict[str, Any]:
     }
 
 
-@server.list_tools()
-async def handle_list_tools() -> list[types.Tool]:
-    """
-    List available tools.
-    """
-    return [
-        types.Tool(
-            name="list_eshre_guidelines",
-            description="List all available ESHRE clinical guidelines and recommendations",
-            inputSchema={
-                "type": "object",
-                "properties": {},
-                "required": []
-            },
-        ),
-        types.Tool(
-            name="search_eshre_guidelines",
-            description="Search ESHRE guidelines by keyword or topic (e.g., 'endometriosis', 'IVF', 'PCOS', 'fertility preservation')",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "Search query (e.g., 'endometriosis', 'IVF', 'PCOS', 'fertility')"
-                    }
-                },
-                "required": ["query"]
-            },
-        ),
-        types.Tool(
-            name="get_eshre_guideline",
-            description="Retrieve the full content and download links for a specific ESHRE guideline by URL",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "url": {
-                        "type": "string",
-                        "description": "Full URL of the guideline document"
-                    }
-                },
-                "required": ["url"]
-            },
-        ),
-    ]
+# ==================== FastMCP Tools ====================
+
+@mcp.tool(
+    name="list_eshre_guidelines",
+    description="List all available ESHRE clinical guidelines and recommendations."
+)
+def list_eshre_guidelines() -> str:
+    guidelines = parse_guidelines_list()
+
+    result = "# ESHRE Clinical Guidelines\n\n"
+    result += f"Found {len(guidelines)} clinical guidelines:\n\n"
+
+    for i, guideline in enumerate(guidelines, 1):
+        result += f"{i}. **{guideline['title']}**\n"
+        if guideline['description']:
+            result += f"   {guideline['description']}\n"
+        result += f"   URL: {guideline['url']}\n\n"
+
+    return result
 
 
-@server.call_tool()
-async def handle_call_tool(
-    name: str, arguments: dict | None
-) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
-    """
-    Handle tool execution requests.
-    """
-    try:
-        if name == "list_eshre_guidelines":
-            guidelines = await parse_guidelines_list()
+@mcp.tool(
+    name="search_eshre_guidelines",
+    description="Search ESHRE guidelines by keyword or topic (e.g., 'endometriosis', 'IVF', 'PCOS', 'fertility preservation')."
+)
+def search_eshre_guidelines(
+    query: str = Field(description="Search query (e.g., 'endometriosis', 'IVF', 'PCOS', 'fertility')")
+) -> str:
+    results = search_guidelines(query)
 
-            result = "# ESHRE Clinical Guidelines\n\n"
-            result += f"Found {len(guidelines)} clinical guidelines:\n\n"
+    result = f"# Search Results for '{query}'\n\n"
+    result += f"Found {len(results)} matching guidelines:\n\n"
 
-            for i, guideline in enumerate(guidelines, 1):
-                result += f"{i}. **{guideline['title']}**\n"
-                if guideline['description']:
-                    result += f"   {guideline['description']}\n"
-                result += f"   URL: {guideline['url']}\n\n"
+    for i, guideline in enumerate(results, 1):
+        result += f"{i}. **{guideline['title']}**\n"
+        if guideline['description']:
+            result += f"   {guideline['description']}\n"
+        result += f"   URL: {guideline['url']}\n\n"
 
-            return [types.TextContent(type="text", text=result)]
+    if not results:
+        result += "No guidelines found matching your query.\n"
+        result += "Try different keywords or browse all guidelines using list_eshre_guidelines.\n"
 
-        elif name == "search_eshre_guidelines":
-            if not arguments or "query" not in arguments:
-                raise ValueError("query parameter is required")
-
-            query = arguments["query"]
-            results = await search_guidelines(query)
-
-            result = f"# Search Results for '{query}'\n\n"
-            result += f"Found {len(results)} matching guidelines:\n\n"
-
-            for i, guideline in enumerate(results, 1):
-                result += f"{i}. **{guideline['title']}**\n"
-                if guideline['description']:
-                    result += f"   {guideline['description']}\n"
-                result += f"   URL: {guideline['url']}\n\n"
-
-            if not results:
-                result += "No guidelines found matching your query.\n"
-                result += "Try different keywords or browse all guidelines using list_eshre_guidelines.\n"
-
-            return [types.TextContent(type="text", text=result)]
-
-        elif name == "get_eshre_guideline":
-            if not arguments or "url" not in arguments:
-                raise ValueError("url parameter is required")
-
-            url = arguments["url"]
-            content = await get_guideline_content(url)
-
-            result = f"# {content['title']}\n\n"
-            result += f"**URL:** {content['url']}\n"
-            if content['date']:
-                result += f"**Published:** {content['date']}\n"
-            result += f"**Word Count:** {content['word_count']}\n\n"
-
-            if content['downloads']:
-                result += "## Downloads\n\n"
-                for dl in content['downloads']:
-                    result += f"- [{dl['title']}]({dl['url']})\n"
-                result += "\n"
-
-            result += "---\n\n"
-            result += content['content']
-
-            return [types.TextContent(type="text", text=result)]
-
-        else:
-            raise ValueError(f"Unknown tool: {name}")
-
-    except Exception as e:
-        return [types.TextContent(
-            type="text",
-            text=f"Error executing {name}: {str(e)}"
-        )]
+    return result
 
 
-async def main():
-    """
-    Main entry point for the ESHRE MCP server.
-    """
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name="eshre-server",
-                server_version="0.1.0",
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
-                ),
-            ),
-        )
+@mcp.tool(
+    name="get_eshre_guideline",
+    description="Retrieve the full content and download links for a specific ESHRE guideline by URL."
+)
+def get_eshre_guideline(
+    url: str = Field(description="Full URL of the guideline document")
+) -> str:
+    content = get_guideline_content(url)
+
+    result = f"# {content['title']}\n\n"
+    result += f"**URL:** {content['url']}\n"
+    if content['date']:
+        result += f"**Published:** {content['date']}\n"
+    result += f"**Word Count:** {content['word_count']}\n\n"
+
+    if content['downloads']:
+        result += "## Downloads\n\n"
+        for dl in content['downloads']:
+            result += f"- [{dl['title']}]({dl['url']})\n"
+        result += "\n"
+
+    result += "---\n\n"
+    result += content['content']
+
+    return result
 
 
+# ==================== Resources ====================
+
+@mcp.resource("eshre://guidelines", mime_type="application/json")
+def list_eshre_resources() -> dict:
+    """List all available ESHRE resources."""
+    return {
+        "clinical_guidelines": "ESHRE clinical practice guidelines and recommendations",
+        "search_capabilities": "Keyword search across guideline titles and descriptions",
+        "content_access": "Full text content extraction and download links",
+        "base_url": ESHRE_BASE_URL
+    }
+
+
+# Run the server
 if __name__ == "__main__":
-    asyncio.run(main())
+    mcp.run()
