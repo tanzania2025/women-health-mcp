@@ -8,15 +8,17 @@ import asyncio
 import sys
 from pathlib import Path
 from typing import Optional
+import json
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fastmcp import FastMCP
+from pydantic import Field
+from fastmcp.prompts import Message
 from core.clinical_calculators import ClinicalCalculators
 from core.research_database_integration import ResearchDatabaseIntegration
 from core.fhir_integration import ReproductiveHealthFHIR
-import json
 
 # Import research server modules
 sys.path.insert(0, str(Path(__file__).parent.parent / "servers"))
@@ -35,41 +37,24 @@ mcp = FastMCP("women-health-mcp")
 
 @mcp.tool()
 async def predict_ivf_success(
-    age: int,
-    amh: float,
-    height_cm: Optional[float] = None,
-    weight_kg: Optional[float] = None,
-    height_ft: Optional[int] = None,
-    height_in: Optional[int] = None,
-    weight_lbs: Optional[float] = None,
-    prior_pregnancies: int = 0,
-    male_factor: bool = False,
-    polycystic: bool = False,
-    uterine_problems: bool = False,
-    unexplained_infertility: bool = False,
-    low_ovarian_reserve: bool = False,
-    bmi: Optional[float] = None
+    age: int = Field(description="Patient age in years (18-45)"),
+    amh: float = Field(description="Anti-Müllerian Hormone level in ng/mL"),
+    height_cm: Optional[float] = Field(None, description="Height in centimeters (120-220)"),
+    weight_kg: Optional[float] = Field(None, description="Weight in kilograms (30-160)"),
+    height_ft: Optional[int] = Field(None, description="Height in feet (4-7)"),
+    height_in: Optional[int] = Field(None, description="Height in inches (0-11)"),
+    weight_lbs: Optional[float] = Field(None, description="Weight in pounds (70-350)"),
+    prior_pregnancies: int = Field(0, description="Number of prior full-term pregnancies"),
+    male_factor: bool = Field(False, description="Partner has sperm problems"),
+    polycystic: bool = Field(False, description="Patient has PCOS"),
+    uterine_problems: bool = Field(False, description="Patient has uterine problems"),
+    unexplained_infertility: bool = Field(False, description="Diagnosed with unexplained infertility"),
+    low_ovarian_reserve: bool = Field(False, description="Diagnosed with low ovarian reserve"),
+    bmi: Optional[float] = Field(None, description="Body Mass Index (optional)")
 ) -> str:
     """
     Predict IVF success rates using SART Calculator API.
-
     Calculates live birth probability for 1, 2, and 3 complete IVF cycles based on patient characteristics.
-
-    Args:
-        age: Patient age in years (18-45)
-        amh: Anti-Müllerian Hormone level in ng/mL
-        height_cm: Height in centimeters (120-220). Use this OR height_ft/height_in
-        weight_kg: Weight in kilograms (30-160). Use this OR weight_lbs
-        height_ft: Height in feet (4-7). Use with height_in if not using height_cm
-        height_in: Height in inches (0-11). Use with height_ft if not using height_cm
-        weight_lbs: Weight in pounds (70-350). Use if not using weight_kg
-        prior_pregnancies: Number of prior full-term pregnancies (>37 weeks)
-        male_factor: Does partner have sperm problems?
-        polycystic: Does patient have PCOS?
-        uterine_problems: Does patient have uterine problems?
-        unexplained_infertility: Diagnosed with unexplained infertility?
-        low_ovarian_reserve: Diagnosed with low ovarian reserve?
-        bmi: Body Mass Index (optional, for internal calculations)
     """
     # Build parameters for SART calculator
     calc_params = {
@@ -138,15 +123,13 @@ async def predict_ivf_success(
 # ==================== PubMed Tools ====================
 
 @mcp.tool()
-async def search_pubmed(query: str, max_results: int = 10) -> str:
+async def search_pubmed(
+    query: str = Field(description="Search query (e.g., 'breast cancer treatment', 'PCOS polycystic ovary syndrome')"),
+    max_results: int = Field(10, description="Maximum number of results to return (default: 10, max: 100)")
+) -> str:
     """
     Search PubMed for scientific articles.
-
     Returns a list of article PMIDs and basic information matching the search query.
-
-    Args:
-        query: Search query (e.g., 'breast cancer treatment', 'PCOS polycystic ovary syndrome')
-        max_results: Maximum number of results to return (default: 10, max: 100)
     """
     max_results = min(max_results, 100)
 
@@ -176,12 +159,9 @@ async def search_pubmed(query: str, max_results: int = 10) -> str:
 
 
 @mcp.tool()
-async def get_article(pmid: str) -> str:
+async def get_article(pmid: str = Field(description="PubMed ID (PMID) of the article to retrieve")) -> str:
     """
     Retrieve full article details including title, abstract, authors, journal, publication date, DOI, and keywords.
-
-    Args:
-        pmid: PubMed ID (PMID) of the article to retrieve
     """
     article = await pubmed_server.fetch_article_abstract(pmid)
 
@@ -208,14 +188,10 @@ async def get_article(pmid: str) -> str:
 
 
 @mcp.tool()
-async def get_multiple_articles(pmids: list[str]) -> str:
+async def get_multiple_articles(pmids: list[str] = Field(description="List of PubMed IDs to retrieve")) -> str:
     """
     Retrieve full details for multiple PubMed articles at once.
-
     Returns abstracts, titles, authors, and metadata for all specified PMIDs.
-
-    Args:
-        pmids: List of PubMed IDs to retrieve
     """
     articles = []
     for pmid in pmids:
@@ -273,12 +249,11 @@ async def list_eshre_guidelines() -> str:
 
 
 @mcp.tool()
-async def search_eshre_guidelines(query: str) -> str:
+async def search_eshre_guidelines(
+    query: str = Field(description="Search query (e.g., 'endometriosis', 'IVF', 'PCOS', 'fertility preservation')")
+) -> str:
     """
     Search ESHRE guidelines by keyword or topic.
-
-    Args:
-        query: Search query (e.g., 'endometriosis', 'IVF', 'PCOS', 'fertility preservation')
     """
     results = await eshre_server.search_guidelines(query)
 
@@ -299,12 +274,9 @@ async def search_eshre_guidelines(query: str) -> str:
 
 
 @mcp.tool()
-async def get_eshre_guideline(url: str) -> str:
+async def get_eshre_guideline(url: str = Field(description="Full URL of the guideline document")) -> str:
     """
     Retrieve the full content and download links for a specific ESHRE guideline.
-
-    Args:
-        url: Full URL of the guideline document
     """
     content = await eshre_server.get_guideline_content(url)
 
@@ -359,13 +331,12 @@ async def list_nams_position_statements() -> str:
 
 
 @mcp.tool()
-async def search_nams_protocols(query: str, topic: Optional[str] = None) -> str:
+async def search_nams_protocols(
+    query: str = Field(description="Search query (e.g., 'hormone therapy', 'hot flashes', 'bone health')"),
+    topic: Optional[str] = Field(None, description="Optional topic filter (e.g., 'hormone therapy', 'cardiovascular', 'genitourinary')")
+) -> str:
     """
     Search NAMS position statements and protocols by keyword or topic.
-
-    Args:
-        query: Search query (e.g., 'hormone therapy', 'hot flashes', 'bone health')
-        topic: Optional topic filter (e.g., 'hormone therapy', 'cardiovascular', 'genitourinary')
     """
     results = await nams_server.search_protocols(query, topic)
 
@@ -394,12 +365,9 @@ async def search_nams_protocols(query: str, topic: Optional[str] = None) -> str:
 
 
 @mcp.tool()
-async def get_nams_protocol(url: str) -> str:
+async def get_nams_protocol(url: str = Field(description="Full URL of the protocol or position statement")) -> str:
     """
     Retrieve the full content of a specific NAMS protocol or position statement.
-
-    Args:
-        url: Full URL of the protocol or position statement
     """
     content = await nams_server.get_protocol_content(url)
 
@@ -419,12 +387,9 @@ async def get_nams_protocol(url: str) -> str:
 # ==================== ELSA Tools ====================
 
 @mcp.tool()
-async def list_elsa_waves(include_details: bool = False) -> str:
+def list_elsa_waves(include_details: bool = Field(False, description="Include detailed information about each wave")) -> str:
     """
     List all available ELSA waves with basic information.
-
-    Args:
-        include_details: Include detailed information about each wave
     """
     if include_details:
         result = {
@@ -451,13 +416,12 @@ async def list_elsa_waves(include_details: bool = False) -> str:
 
 
 @mcp.tool()
-async def search_elsa_data(query: str, module: Optional[str] = None) -> str:
+def search_elsa_data(
+    query: str = Field(description="Search term (e.g., 'cognitive', 'depression', 'wealth', 'menopause')"),
+    module: Optional[str] = Field(None, description="Specific module to search (optional)")
+) -> str:
     """
     Search ELSA data modules and variables by topic or keyword.
-
-    Args:
-        query: Search term (e.g., 'cognitive', 'depression', 'wealth', 'menopause')
-        module: Specific module to search (optional)
     """
     query_lower = query.lower()
     results = []
@@ -480,6 +444,71 @@ async def search_elsa_data(query: str, module: Optional[str] = None) -> str:
         "results_found": len(results),
         "modules": results
     }, indent=2)
+
+
+# ==================== Resources ====================
+
+@mcp.resource("health://guidelines", mime_type="application/json")
+def list_all_guidelines() -> dict:
+    """List all available clinical guidelines and resources."""
+    return {
+        "eshre_guidelines": "European Society of Human Reproduction and Embryology guidelines",
+        "nams_statements": "North American Menopause Society position statements",
+        "asrm_documents": "American Society for Reproductive Medicine practice documents",
+        "pubmed_search": "PubMed scientific literature search",
+        "elsa_data": "English Longitudinal Study of Ageing research data"
+    }
+
+
+# ==================== Prompts ====================
+
+@mcp.prompt(
+    name="analyze_research",
+    description="Analyze research findings and provide clinical recommendations"
+)
+def analyze_research_prompt(
+    topic: str = Field(description="Research topic to analyze"),
+    patient_context: Optional[str] = Field(None, description="Patient context for personalized recommendations")
+) -> list[Message]:
+    """Generate a prompt for analyzing research findings in clinical context."""
+    
+    prompt = f"""
+    You are a clinical research analyst specializing in women's health. Your task is to analyze research findings on the topic: "{topic}"
+    
+    Please follow these steps:
+    
+    1. **Search for relevant research**: Use the search_pubmed tool to find recent high-quality studies on this topic.
+    
+    2. **Review clinical guidelines**: Check relevant guidelines using:
+       - search_eshre_guidelines for reproductive health topics
+       - search_nams_protocols for menopause-related topics
+    
+    3. **Synthesize findings**: Combine evidence from multiple sources and identify:
+       - Key findings and their clinical significance
+       - Quality of evidence (study types, sample sizes, limitations)
+       - Consensus or disagreements in the literature
+       
+    4. **Provide recommendations**: Based on the evidence, provide:
+       - Evidence-based clinical recommendations
+       - Areas where more research is needed
+       - Practical implementation considerations
+    """
+    
+    if patient_context:
+        prompt += f"""
+        
+    5. **Patient-specific considerations**: Given this patient context: "{patient_context}"
+       - Tailor recommendations to this specific scenario
+       - Consider contraindications or special considerations
+       - Suggest appropriate monitoring or follow-up
+        """
+    
+    prompt += """
+    
+    Present your analysis in a structured format with clear sections and cite specific studies where appropriate.
+    """
+    
+    return [Message(role="user", content=prompt)]
 
 
 # Run the server
