@@ -33,19 +33,12 @@ st.set_page_config(
 # Anthropic Configuration
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
-# MCP Server Paths - Individual domain-specific servers
+# MCP Server Paths - FastMCP unified servers
 MCP_SERVERS = {
-    "pubmed": str(Path(__file__).parent.parent / "servers" / "pubmed_server.py"),
-    "asrm": str(Path(__file__).parent.parent / "servers" / "asrm_server.py"),
-    "eshre": str(Path(__file__).parent.parent / "servers" / "eshre_server.py"),
-    "nams": str(Path(__file__).parent.parent / "servers" / "nams_server.py"),
-    "elsa": str(Path(__file__).parent.parent / "servers" / "elsa_server.py"),
-    "sart_ivf": str(Path(__file__).parent.parent / "servers" / "sart_ivf_server.py"),
-    "menopause": str(Path(__file__).parent.parent / "servers" / "menopause_server.py")
+    "api": str(Path(__file__).parent.parent / "mcp_servers" / "api_server.py"),
+    "database": str(Path(__file__).parent.parent / "mcp_servers" / "database_server.py"),
+    "calculator": str(Path(__file__).parent.parent / "mcp_servers" / "calculator_server.py")
 }
-
-# Fallback to legacy router if new servers don't exist
-LEGACY_MCP_SERVER = str(Path(__file__).parent.parent / "scripts" / "mcp_stdio_server.py")
 
 # Sophisticated Medical Journal Aesthetic CSS
 st.markdown("""
@@ -304,33 +297,21 @@ class MultiServerMCPClient:
         self.tool_registry = {}  # tool_name -> server_name
         self.exit_stack = AsyncExitStack()
         self.anthropic = Anthropic(api_key=ANTHROPIC_API_KEY)
-        self.use_legacy = False
 
     async def connect_to_servers(self, server_paths: dict, status_container=None):
-        """Connect to multiple MCP servers."""
-        
-        # Check if new servers exist, otherwise fallback to legacy
-        servers_exist = all(Path(path).exists() for path in server_paths.values())
-        
-        if not servers_exist:
-            if status_container:
-                status_container.warning("⚠️ New multi-server architecture not found, using legacy server")
-            self.use_legacy = True
-            await self.connect_to_legacy_server()
-            return
-            
+        """Connect to multiple FastMCP servers."""
         if status_container:
-            status_container.info("🔄 Connecting to multi-server architecture...")
+            status_container.info("🔄 Connecting to FastMCP servers...")
 
         # Connect to each server
         for server_name, server_path in server_paths.items():
             try:
                 if status_container:
                     status_container.info(f"🔄 Connecting to {server_name} server...")
-                    
+
                 server_params = StdioServerParameters(
-                    command="python",
-                    args=[server_path]
+                    command="fastmcp",
+                    args=["run", server_path]
                 )
 
                 stdio_transport = await self.exit_stack.enter_async_context(
@@ -343,40 +324,17 @@ class MultiServerMCPClient:
 
                 await session.initialize()
                 self.sessions[server_name] = session
-                
+
                 if status_container:
                     status_container.success(f"✅ Connected to {server_name} server")
-                    
+
             except Exception as e:
                 if status_container:
                     status_container.error(f"❌ Failed to connect to {server_name} server: {str(e)}")
-                # Fall back to legacy if any server fails
-                if not self.use_legacy:
-                    self.use_legacy = True
-                    await self.connect_to_legacy_server()
-                    return
+                raise
 
         # Build tool registry
         await self._discover_tools(status_container)
-        
-    async def connect_to_legacy_server(self):
-        """Fallback to legacy single-server architecture."""
-        if not Path(LEGACY_MCP_SERVER).exists():
-            raise FileNotFoundError("Neither new multi-server nor legacy server found")
-            
-        server_params = StdioServerParameters(
-            command=sys.executable,
-            args=[LEGACY_MCP_SERVER]
-        )
-
-        stdio_transport = await self.exit_stack.enter_async_context(
-            stdio_client(server_params)
-        )
-        stdio, write = stdio_transport
-        self.sessions["legacy"] = await self.exit_stack.enter_async_context(
-            ClientSession(stdio, write)
-        )
-        await self.sessions["legacy"].initialize()
 
     async def _discover_tools(self, status_container=None):
         """Build registry of which tool belongs to which server."""
@@ -399,14 +357,10 @@ class MultiServerMCPClient:
 
     async def call_tool(self, tool_name: str, arguments: dict):
         """Route tool call to appropriate server."""
-        if self.use_legacy:
-            session = self.sessions["legacy"]
-        else:
-            server_name = self.tool_registry.get(tool_name)
-            if not server_name:
-                raise ValueError(f"Unknown tool: {tool_name}")
-            session = self.sessions[server_name]
-        
+        server_name = self.tool_registry.get(tool_name)
+        if not server_name:
+            raise ValueError(f"Unknown tool: {tool_name}")
+        session = self.sessions[server_name]
         return await session.call_tool(tool_name, arguments)
 
     async def get_all_tools_for_claude(self):
@@ -427,17 +381,8 @@ class MultiServerMCPClient:
         if status_container:
             status_container.info("🔧 Loading MCP tools...")
 
-        # Get available tools from all MCP servers (or legacy)
-        if self.use_legacy and "legacy" in self.sessions:
-            response = await self.sessions["legacy"].list_tools()
-            available_tools = [{
-                "name": tool.name,
-                "description": tool.description,
-                "input_schema": tool.inputSchema
-            } for tool in response.tools]
-        else:
-            # Use multi-server approach
-            available_tools = await self.get_all_tools_for_claude()
+        # Get available tools from all FastMCP servers
+        available_tools = await self.get_all_tools_for_claude()
 
         if status_container:
             tool_names = [t["name"] for t in available_tools]
