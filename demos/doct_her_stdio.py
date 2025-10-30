@@ -33,11 +33,15 @@ st.set_page_config(
 # Anthropic Configuration
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
-# MCP Server Paths - New Multi-Server Architecture
+# MCP Server Paths - Individual domain-specific servers
 MCP_SERVERS = {
-    "database": str(Path(__file__).parent.parent / "mcp_servers" / "database_server.py"),
-    "api": str(Path(__file__).parent.parent / "mcp_servers" / "api_server.py"),
-    "calculator": str(Path(__file__).parent.parent / "mcp_servers" / "calculator_server.py")
+    "pubmed": str(Path(__file__).parent.parent / "servers" / "pubmed_server.py"),
+    "asrm": str(Path(__file__).parent.parent / "servers" / "asrm_server.py"),
+    "eshre": str(Path(__file__).parent.parent / "servers" / "eshre_server.py"),
+    "nams": str(Path(__file__).parent.parent / "servers" / "nams_server.py"),
+    "elsa": str(Path(__file__).parent.parent / "servers" / "elsa_server.py"),
+    "sart_ivf": str(Path(__file__).parent.parent / "servers" / "sart_ivf_server.py"),
+    "menopause": str(Path(__file__).parent.parent / "servers" / "menopause_server.py")
 }
 
 # Fallback to legacy router if new servers don't exist
@@ -325,8 +329,8 @@ class MultiServerMCPClient:
                     status_container.info(f"🔄 Connecting to {server_name} server...")
                     
                 server_params = StdioServerParameters(
-                    command="fastmcp",
-                    args=["run", server_path, "--transport", "stdio", "--no-banner"]
+                    command="python",
+                    args=[server_path]
                 )
 
                 stdio_transport = await self.exit_stack.enter_async_context(
