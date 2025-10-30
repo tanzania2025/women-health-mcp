@@ -227,7 +227,7 @@ st.markdown("""
             inset 0 1px 2px rgba(255, 255, 255, 0.7);
     }
 
-    /* Button Styling */
+    /* Button Styling - Default */
     .stButton > button {
         background: linear-gradient(135deg, var(--primary-forest) 0%, var(--secondary-sage) 100%) !important;
         color: var(--bg-ivory) !important;
@@ -251,6 +251,65 @@ st.markdown("""
         box-shadow:
             0 6px 18px var(--shadow-cool),
             inset 0 1px 2px rgba(255, 255, 255, 0.15) !important;
+    }
+
+    /* Plus Button (Attachment) - Circular, subtle */
+    .stButton > button:first-child {
+        width: 40px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        background: var(--bg-cream) !important;
+        border: 1px solid var(--border-sepia) !important;
+        color: var(--text-sage) !important;
+        font-size: 1.2rem !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+        box-shadow: 0 2px 4px var(--shadow-warm) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .stButton > button:first-child:hover {
+        background: var(--bg-ivory) !important;
+        border-color: var(--accent-amber) !important;
+        transform: none !important;
+        box-shadow: 0 2px 8px var(--shadow-warm) !important;
+    }
+
+    /* Send Button (Form Submit) - Circular, prominent */
+    button[kind="primary"],
+    button[type="submit"] {
+        width: 48px !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        background: linear-gradient(135deg, var(--accent-amber) 0%, var(--accent-copper) 100%) !important;
+        color: white !important;
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+        border: none !important;
+        box-shadow:
+            0 4px 12px rgba(212, 175, 55, 0.3),
+            inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
+        transition: all 0.3s ease !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    button[kind="primary"]:hover,
+    button[type="submit"]:hover {
+        background: linear-gradient(135deg, var(--accent-copper) 0%, var(--accent-amber) 100%) !important;
+        transform: translateY(-2px) scale(1.05) !important;
+        box-shadow:
+            0 6px 16px rgba(212, 175, 55, 0.4),
+            inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
     }
 
     /* Technical Logs Styling */
@@ -819,35 +878,31 @@ def main():
         # Centered input container
         st.markdown('<div class="input-container centered">', unsafe_allow_html=True)
 
-        # Plus button outside form
-        col_plus, col_rest = st.columns([0.07, 0.93])
+        # Form with input on top, buttons below
+        with st.form(key=f"input_form_{st.session_state.form_counter}", clear_on_submit=False):
+            # Text input takes full width
+            default_value = st.session_state.pending_input if st.session_state.is_processing else ""
+            user_input = st.text_input(
+                "message",
+                value=default_value,
+                placeholder="e.g. I'm 38 with AMH 0.8, should I consider IVF?",
+                key=f"user_input_{st.session_state.form_counter}",
+                label_visibility="collapsed",
+                disabled=st.session_state.is_processing
+            )
 
-        with col_plus:
-            plus_clicked = st.button("➕", key="plus_button", help="Add attachments")
-            if plus_clicked:
-                st.session_state.show_upload_menu = not st.session_state.show_upload_menu
-                st.rerun()
+            # Buttons below input
+            col_plus, col_spacer, col_send = st.columns([0.1, 0.8, 0.1])
 
-        with col_rest:
-            # Form for input and send button (enables Enter key submission)
-            with st.form(key=f"input_form_{st.session_state.form_counter}", clear_on_submit=False):
-                col_input, col_send = st.columns([0.92, 0.08])
+            with col_plus:
+                plus_clicked = st.form_submit_button("➕", help="Add attachments")
+                if plus_clicked:
+                    st.session_state.show_upload_menu = not st.session_state.show_upload_menu
+                    st.rerun()
 
-                with col_input:
-                    # Use pending_input if processing, otherwise empty
-                    default_value = st.session_state.pending_input if st.session_state.is_processing else ""
-                    user_input = st.text_input(
-                        "message",
-                        value=default_value,
-                        placeholder="e.g. I'm 38 with AMH 0.8, should I consider IVF?",
-                        key=f"user_input_{st.session_state.form_counter}",
-                        label_visibility="collapsed",
-                        disabled=st.session_state.is_processing
-                    )
-
-                with col_send:
-                    button_text = "⟳" if st.session_state.is_processing else "↑"
-                    send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing)
+            with col_send:
+                button_text = "⟳" if st.session_state.is_processing else "↑"
+                send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing)
 
         # Show compact file uploader if toggled
         if st.session_state.show_upload_menu:
@@ -896,35 +951,31 @@ def main():
         # Fixed bottom input
         st.markdown('<div class="input-container-bottom">', unsafe_allow_html=True)
 
-        # Plus button outside form
-        col_plus, col_rest = st.columns([0.07, 0.93])
+        # Form with input on top, buttons below
+        with st.form(key=f"input_form_chat_{st.session_state.form_counter}", clear_on_submit=False):
+            # Text input takes full width
+            default_value = st.session_state.pending_input if st.session_state.is_processing else ""
+            user_input = st.text_input(
+                "message",
+                value=default_value,
+                placeholder="e.g. I'm 38 with AMH 0.8, should I consider IVF?",
+                key=f"user_input_chat_{st.session_state.form_counter}",
+                label_visibility="collapsed",
+                disabled=st.session_state.is_processing
+            )
 
-        with col_plus:
-            plus_clicked = st.button("➕", key="plus_button_chat", help="Add attachments")
-            if plus_clicked:
-                st.session_state.show_upload_menu = not st.session_state.show_upload_menu
-                st.rerun()
+            # Buttons below input
+            col_plus, col_spacer, col_send = st.columns([0.1, 0.8, 0.1])
 
-        with col_rest:
-            # Form for input and send button (enables Enter key submission)
-            with st.form(key=f"input_form_chat_{st.session_state.form_counter}", clear_on_submit=False):
-                col_input, col_send = st.columns([0.92, 0.08])
+            with col_plus:
+                plus_clicked = st.form_submit_button("➕", help="Add attachments")
+                if plus_clicked:
+                    st.session_state.show_upload_menu = not st.session_state.show_upload_menu
+                    st.rerun()
 
-                with col_input:
-                    # Use pending_input if processing, otherwise empty
-                    default_value = st.session_state.pending_input if st.session_state.is_processing else ""
-                    user_input = st.text_input(
-                        "message",
-                        value=default_value,
-                        placeholder="e.g. I'm 38 with AMH 0.8, should I consider IVF?",
-                        key=f"user_input_chat_{st.session_state.form_counter}",
-                        label_visibility="collapsed",
-                        disabled=st.session_state.is_processing
-                    )
-
-                with col_send:
-                    button_text = "⟳" if st.session_state.is_processing else "↑"
-                    send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing)
+            with col_send:
+                button_text = "⟳" if st.session_state.is_processing else "↑"
+                send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing)
 
         # Show compact file uploader if toggled (for chat mode)
         if st.session_state.show_upload_menu:
