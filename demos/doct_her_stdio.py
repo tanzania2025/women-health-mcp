@@ -688,10 +688,7 @@ To enable AI-powered consultations, please:
         # Connect to MCP servers
         status_container.info("🔄 Connecting to MCP servers...")
         await client.connect_to_servers(MCP_SERVERS, status_container)
-        if not client.use_legacy:
-            status_container.success("✅ Connected to multi-server architecture")
-        else:
-            status_container.success("✅ Connected to legacy server")
+        status_container.success("✅ Connected to FastMCP servers")
 
         # Process query - returns (response, tool_log)
         result = await client.process_query(user_input, status_container, tool_chain_container)
