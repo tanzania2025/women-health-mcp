@@ -43,593 +43,250 @@ MCP_SERVERS = {
 # Fallback to legacy router if new servers don't exist
 LEGACY_MCP_SERVER = str(Path(__file__).parent.parent / "scripts" / "mcp_stdio_server.py")
 
-# Custom CSS
+# Sophisticated Medical Journal Aesthetic CSS
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Fira+Code:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .stTextInput > label {display: none !important;}
-
-    /* Force light mode only - no dark mode support */
+    /* Root Variables - Medical Journal Palette */
     :root {
-        color-scheme: light only !important;
-        --primary-rose: #ff6b9d;
-        --secondary-coral: #ff8e72;
-        --accent-gold: #ffd89b;
-        --bg-cream: #fef8f4;
-        --bg-rose: #fff5f8;
+        --primary-forest: #1B3B36;
+        --secondary-sage: #4A6741;
+        --accent-amber: #D4AF37;
+        --accent-copper: #B87333;
+        --text-charcoal: #2C2C2C;
+        --text-sage: #5A6B57;
+        --bg-parchment: #FAF7F2;
+        --bg-cream: #F7F4EF;
+        --bg-ivory: #FEFCF8;
+        --border-sepia: #E5D5B7;
+        --shadow-warm: rgba(180, 115, 51, 0.15);
+        --shadow-cool: rgba(27, 59, 54, 0.12);
     }
 
+    /* Force consistent theming */
     html, body, .stApp {
         color-scheme: light only !important;
-        background: var(--bg-cream) !important;
+        background: var(--bg-parchment) !important;
+        font-family: 'Crimson Text', Georgia, serif;
     }
 
-    * {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
+    /* Hide Streamlit defaults */
+    #MainMenu, footer, header { visibility: hidden; }
+    .stTextInput > label { display: none !important; }
 
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-    }
-
-    @keyframes gradient-shift {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-    }
-
-    @keyframes shimmer {
-        0% { background-position: -1000px 0; }
-        100% { background-position: 1000px 0; }
-    }
-
+    /* Atmospheric Background Layers */
     .main {
         background:
-            radial-gradient(ellipse at 10% 20%, rgba(255, 107, 157, 0.08) 0%, transparent 45%),
-            radial-gradient(ellipse at 90% 70%, rgba(255, 142, 114, 0.08) 0%, transparent 45%),
-            radial-gradient(ellipse at 50% 50%, rgba(255, 216, 155, 0.06) 0%, transparent 50%),
-            linear-gradient(180deg, #fef8f4 0%, #fff5f8 50%, #fef8f4 100%);
-        padding: 0;
+            /* Paper texture overlay */
+            url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='discrete' tableValues='0 0.01 0.02 0.01 0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E"),
+            /* Gradient foundation */
+            linear-gradient(135deg, var(--bg-ivory) 0%, var(--bg-parchment) 30%, var(--bg-cream) 70%, var(--bg-parchment) 100%);
         position: relative;
-        overflow: hidden;
+        padding: 0;
     }
 
-    .main::before {
-        content: '';
-        position: fixed;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background:
-            radial-gradient(circle at 20% 80%, rgba(255, 107, 157, 0.03) 0%, transparent 25%),
-            radial-gradient(circle at 80% 20%, rgba(255, 142, 114, 0.03) 0%, transparent 25%),
-            radial-gradient(circle at 40% 40%, rgba(255, 216, 155, 0.02) 0%, transparent 25%);
-        animation: float 20s ease-in-out infinite;
-        pointer-events: none;
-        z-index: 0;
-    }
-
-    .main::after {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-image:
-            url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ff6b9d' fill-opacity='0.02'%3E%3Ccircle cx='50' cy='50' r='1'/%3E%3Ccircle cx='25' cy='25' r='1'/%3E%3Ccircle cx='75' cy='75' r='1'/%3E%3Ccircle cx='25' cy='75' r='1'/%3E%3Ccircle cx='75' cy='25' r='1'/%3E%3C/g%3E%3C/svg%3E");
-        pointer-events: none;
-        opacity: 0.5;
-        z-index: 0;
-    }
-
-    .block-container {
-        padding-top: 3rem;
-        max-width: 900px;
-    }
-
+    /* Landing Page Styling */
     .landing-container {
-        max-width: 800px;
+        max-width: 820px;
         margin: 0 auto;
-        padding-top: 20vh;
-        padding-bottom: 3rem;
+        padding-top: 15vh;
+        padding-bottom: 4rem;
         text-align: center;
     }
 
-    /* Hide streamlit default elements for cleaner UI */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-
-    /* Ensure body has proper height */
-    .main .block-container {
-        padding-top: 0.5rem;
-        padding-bottom: 2rem;
-        max-width: 100%;
-    }
-
-    /* Remove default streamlit padding when chat is active */
-    .stApp {
-        margin: 0;
-        padding: 0;
-    }
-
+    /* Logo - Sophisticated Medical Typography */
     .logo {
-        font-family: 'Playfair Display', serif;
-        font-size: 5.5rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #c2185b 0%, #ff6b9d 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 1.5rem;
-        letter-spacing: -1px;
+        font-family: 'Cormorant Garamond', 'Crimson Text', Georgia, serif;
+        font-size: 4.5rem;
+        font-weight: 600;
+        color: var(--primary-forest);
+        margin-bottom: 1.8rem;
+        letter-spacing: -0.5px;
         position: relative;
         display: inline-block;
-        filter: drop-shadow(0 8px 32px rgba(255, 107, 157, 0.15));
+        text-shadow:
+            0 2px 4px rgba(27, 59, 54, 0.1),
+            0 8px 16px rgba(27, 59, 54, 0.06);
     }
 
-    .logo::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 110%;
-        height: 110%;
-        background: radial-gradient(circle, rgba(255, 107, 157, 0.1) 0%, transparent 70%);
-        border-radius: 50%;
-        z-index: -1;
-        filter: blur(40px);
-    }
-
+    /* Tagline - Editorial styling */
     .tagline {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.8rem;
-        background: linear-gradient(135deg, #c2185b 0%, #ff6b9d 50%, #ff8e72 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 2.5rem;
-        font-weight: 500;
+        font-family: 'Crimson Text', Georgia, serif;
+        font-size: 1.4rem;
         font-style: italic;
-        letter-spacing: 0.5px;
+        color: var(--text-sage);
+        margin-bottom: 3rem;
+        font-weight: 400;
+        letter-spacing: 0.3px;
+        line-height: 1.6;
         opacity: 0.9;
     }
 
-    .powered-by {
-        font-size: 0.75rem;
-        color: #94a3b8;
-        opacity: 0.6;
-        margin-top: -1rem;
-        font-weight: 400;
-        letter-spacing: 0.3px;
-    }
-
-    /* Chat container - scrollable area */
+    /* Chat Container */
     .chat-container {
-        max-width: 1680px;
+        max-width: 1400px;
         margin: 0 auto;
-        padding: 0 2rem 120px 2rem;
+        padding: 0 2.5rem 140px 2.5rem;
         min-height: auto;
         overflow-y: auto;
     }
 
-    /* Input container - centered on landing page */
+    /* Input Styling */
     .input-container.centered {
-        max-width: 700px;
-        margin: 0 auto 1.5rem auto;
+        max-width: 750px;
+        margin: 0 auto 2rem auto;
     }
 
-    /* Input container - fixed at bottom after first message */
     .input-container-bottom {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 20%, rgba(255,255,255,1) 100%);
-        padding: 1.5rem 1rem 1.5rem 1rem;
+        background:
+            linear-gradient(to bottom,
+                rgba(250, 247, 242, 0) 0%,
+                rgba(250, 247, 242, 0.8) 15%,
+                rgba(250, 247, 242, 0.95) 35%,
+                rgba(250, 247, 242, 1) 50%);
+        padding: 2rem 1rem 2rem 1rem;
         z-index: 1000;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--border-sepia);
+        box-shadow:
+            0 -8px 32px var(--shadow-warm),
+            0 -2px 8px var(--shadow-cool);
     }
 
     .input-container-bottom > div {
-        max-width: 1680px;
+        max-width: 1400px;
         margin: 0 auto;
     }
 
+    /* Sophisticated Input Field */
     .stTextInput > div > div > input {
-        border-radius: 28px !important;
-        border: 2px solid transparent !important;
-        background:
-            linear-gradient(#ffffff, #ffffff) padding-box,
-            linear-gradient(135deg, #ff6b9d20 0%, #ff8e7220 50%, #ffd89b20 100%) border-box !important;
-        padding: 1.2rem 1.8rem !important;
-        font-size: 1.05rem !important;
+        border-radius: 8px !important;
+        border: 2px solid var(--border-sepia) !important;
+        background: var(--bg-ivory) !important;
+        padding: 1.4rem 2rem !important;
+        font-family: 'Crimson Text', Georgia, serif !important;
+        font-size: 1.1rem !important;
         font-weight: 400 !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        color: var(--text-charcoal) !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
         box-shadow:
-            0 8px 32px rgba(255, 107, 157, 0.06),
-            0 2px 8px rgba(255, 142, 114, 0.04),
-            inset 0 2px 4px rgba(255, 255, 255, 0.9),
-            inset 0 -1px 2px rgba(255, 107, 157, 0.05) !important;
-        color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
-        -webkit-appearance: none !important;
-        letter-spacing: 0.3px !important;
+            inset 0 2px 4px rgba(27, 59, 54, 0.05),
+            0 4px 12px var(--shadow-warm),
+            0 0 0 0 rgba(212, 175, 55, 0) !important;
+        letter-spacing: 0.2px !important;
+        line-height: 1.5 !important;
     }
 
     .stTextInput > div > div > input::placeholder {
-        color: #000000 !important;
-        opacity: 0.35 !important;
+        color: var(--text-sage) !important;
+        opacity: 0.6 !important;
         font-style: italic !important;
         font-weight: 400 !important;
     }
 
     .stTextInput > div > div > input:focus {
-        border-color: transparent !important;
-        background:
-            linear-gradient(#ffffff, #ffffff) padding-box,
-            linear-gradient(135deg, #ff6b9d 0%, #ff8e72 50%, #ffd89b 100%) border-box !important;
+        border-color: var(--accent-amber) !important;
+        background: var(--bg-ivory) !important;
         box-shadow:
-            0 12px 48px rgba(255, 107, 157, 0.12),
-            0 4px 16px rgba(255, 142, 114, 0.08),
-            0 0 0 6px rgba(255, 107, 157, 0.08),
-            inset 0 2px 4px rgba(255, 255, 255, 0.95),
-            inset 0 -1px 2px rgba(255, 107, 157, 0.08) !important;
+            inset 0 2px 4px rgba(27, 59, 54, 0.05),
+            0 8px 24px var(--shadow-warm),
+            0 0 0 3px rgba(212, 175, 55, 0.15) !important;
         outline: none !important;
     }
 
-    /* Plus button styling */
-    .stButton > button:not([kind="primary"]) {
-        background: transparent !important;
-        color: #64748b !important;
-        font-size: 20px !important;
-        border: none !important;
-        border-radius: 50% !important;
-        width: 36px !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        padding: 0 !important;
-        line-height: 36px !important;
-        transition: all 0.2s ease !important;
-    }
-
-    .stButton > button:not([kind="primary"]):hover {
-        background: #f1f5f9 !important;
-        color: #475569 !important;
-    }
-
-    /* Primary button (send button) styling */
-    .stButton > button[kind="primary"],
-    .stButton > button[data-testid="baseButton-primary"] {
-        background: linear-gradient(135deg,
-            #ff6b9d 0%,
-            #ff8e72 25%,
-            #ffd89b 50%,
-            #ff8e72 75%,
-            #ff6b9d 100%) !important;
-        background-size: 200% auto !important;
-        color: white !important;
-        font-size: 26px !important;
-        font-weight: 700 !important;
-        border: none !important;
-        border-radius: 50% !important;
-        width: 60px !important;
-        height: 60px !important;
-        min-height: 60px !important;
-        padding: 0 !important;
-        line-height: 60px !important;
-        box-shadow:
-            0 8px 32px rgba(255, 107, 157, 0.35),
-            0 4px 16px rgba(255, 142, 114, 0.25),
-            inset 0 2px 4px rgba(255, 255, 255, 0.3),
-            inset 0 -2px 4px rgba(194, 24, 91, 0.2) !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        position: relative !important;
-        animation: gradient-shift 6s ease infinite !important;
-    }
-
-    .stButton > button[kind="primary"]::before,
-    .stButton > button[data-testid="baseButton-primary"]::before {
-        content: '' !important;
-        position: absolute !important;
-        top: -3px !important;
-        left: -3px !important;
-        right: -3px !important;
-        bottom: -3px !important;
-        background: linear-gradient(135deg, #ff6b9d, #ff8e72, #ffd89b, #ff8e72, #ff6b9d) !important;
-        background-size: 200% auto !important;
-        border-radius: 50% !important;
-        z-index: -1 !important;
-        opacity: 0 !important;
-        transition: opacity 0.4s !important;
-        filter: blur(16px) !important;
-        animation: gradient-shift 6s ease infinite !important;
-    }
-
-    .stButton > button[kind="primary"]::after,
-    .stButton > button[data-testid="baseButton-primary"]::after {
-        content: '' !important;
-        position: absolute !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: 0 !important;
-        height: 0 !important;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%) !important;
-        border-radius: 50% !important;
-        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    .stButton > button[kind="primary"]:hover,
-    .stButton > button[data-testid="baseButton-primary"]:hover {
-        transform: scale(1.12) translateY(-3px) rotate(5deg) !important;
-        box-shadow:
-            0 16px 48px rgba(255, 107, 157, 0.4),
-            0 8px 24px rgba(255, 142, 114, 0.3),
-            0 0 0 8px rgba(255, 107, 157, 0.1),
-            inset 0 2px 4px rgba(255, 255, 255, 0.4),
-            inset 0 -2px 4px rgba(194, 24, 91, 0.25) !important;
-    }
-
-    .stButton > button[kind="primary"]:hover::before,
-    .stButton > button[data-testid="baseButton-primary"]:hover::before {
-        opacity: 1 !important;
-    }
-
-    .stButton > button[kind="primary"]:hover::after,
-    .stButton > button[data-testid="baseButton-primary"]:hover::after {
-        width: 100% !important;
-        height: 100% !important;
-        opacity: 0 !important;
-    }
-
-    /* Simple file uploader - hide all verbose elements */
-    .stFileUploader {
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-    }
-
-    .stFileUploader > div {
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-    }
-
-    .stFileUploader label {
-        display: none !important;
-    }
-
-    .stFileUploader [data-testid="stFileUploaderDropzone"] {
-        min-height: 50px !important;
-        padding: 0.75rem 1rem !important;
-        background: #f8fafc !important;
-        border: 1px dashed #cbd5e1 !important;
-        border-radius: 8px !important;
-        margin-top: 0.5rem !important;
-    }
-
-    .stFileUploader [data-testid="stFileUploaderDropzoneInstructions"] {
-        font-size: 0.9rem !important;
-        color: #64748b !important;
-    }
-
-    .stFileUploader section {
-        border: none !important;
-        padding: 0 !important;
-        background: transparent !important;
-    }
-
-    .stFileUploader section > div {
-        border: none !important;
-        padding: 0 !important;
-        background: transparent !important;
-    }
-
-    .stFileUploader small {
-        display: none !important;
-    }
-
-    .chat-message {
-        padding: 2rem 2.5rem;
-        margin: 1.5rem 0;
-        border-radius: 24px;
-        font-size: 1.02rem;
-        line-height: 1.8;
-        max-width: 100%;
-        position: relative;
-        backdrop-filter: blur(20px);
-        border: 1px solid transparent;
-        color: #000000;
-    }
-
-    .chat-message::before {
-        content: '';
-        position: absolute;
-        top: -1px;
-        left: -1px;
-        right: -1px;
-        bottom: -1px;
-        border-radius: 24px;
-        background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(255, 142, 114, 0.1), rgba(255, 216, 155, 0.1));
-        z-index: -1;
-        opacity: 0;
-    }
-
-    .chat-message::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        border-radius: 24px 0 0 24px;
-    }
-
-    .chat-message:first-of-type {
-        margin-top: 0;
-    }
-
+    /* Message Styling */
     .user-message {
-        background:
-            linear-gradient(135deg,
-                rgba(255, 255, 255, 0.95) 0%,
-                rgba(255, 245, 248, 0.9) 100%);
-        border: 1px solid rgba(255, 107, 157, 0.12);
+        background: linear-gradient(135deg, var(--bg-ivory) 0%, var(--bg-cream) 100%);
+        border-left: 4px solid var(--accent-amber);
+        border-radius: 8px;
+        padding: 1.5rem 2rem;
+        margin: 1.5rem 0;
+        font-family: 'Crimson Text', Georgia, serif;
+        font-size: 1.05rem;
+        line-height: 1.6;
+        color: var(--text-charcoal);
         box-shadow:
-            0 8px 32px rgba(255, 107, 157, 0.08),
-            0 2px 8px rgba(255, 142, 114, 0.06),
-            inset 0 2px 0 rgba(255, 255, 255, 0.8),
-            inset 0 -1px 0 rgba(255, 107, 157, 0.06);
-    }
-
-    .user-message::after {
-        background: linear-gradient(180deg, #ff6b9d 0%, #ff8e72 100%);
+            0 4px 12px var(--shadow-warm),
+            inset 0 1px 2px rgba(255, 255, 255, 0.8);
     }
 
     .assistant-message {
-        background:
-            linear-gradient(135deg,
-                rgba(255, 255, 255, 0.98) 0%,
-                rgba(254, 252, 252, 0.95) 100%);
-        border: 1px solid rgba(255, 142, 114, 0.12);
-        box-shadow:
-            0 8px 32px rgba(255, 142, 114, 0.08),
-            0 2px 8px rgba(255, 216, 155, 0.06),
-            inset 0 2px 0 rgba(255, 255, 255, 0.9),
-            inset 0 -1px 0 rgba(255, 142, 114, 0.06);
-    }
-
-    .assistant-message::after {
-        background: linear-gradient(180deg, #ff8e72 0%, #ffd89b 100%);
-    }
-
-    .chat-message strong {
-        color: #000000;
-        font-weight: 600;
-        letter-spacing: 0.2px;
-    }
-
-    /* Log link button styling */
-    button[data-testid*="log_btn"] {
-        background: transparent !important;
-        border: none !important;
-        color: #64748b !important;
-        font-size: 0.85rem !important;
-        text-decoration: underline !important;
-        padding: 0.25rem 0.5rem !important;
-        cursor: pointer !important;
-        transition: color 0.2s ease !important;
-        height: auto !important;
-        min-height: auto !important;
-    }
-
-    button[data-testid*="log_btn"]:hover {
-        color: #475569 !important;
-        background: transparent !important;
-    }
-
-    /* Form styling - remove default borders and padding */
-    .stForm {
-        border: none !important;
-        padding: 0 !important;
-        background: transparent !important;
-    }
-
-    /* Hide "Press Enter to submit form" text */
-    .stForm [data-testid="InputInstructions"] {
-        display: none !important;
-    }
-
-    /* Form submit button styling (for Enter key support) */
-    .stForm button[kind="formSubmit"] {
-        background: linear-gradient(135deg,
-            #ff6b9d 0%,
-            #ff8e72 25%,
-            #ffd89b 50%,
-            #ff8e72 75%,
-            #ff6b9d 100%) !important;
-        background-size: 200% auto !important;
-        color: white !important;
-        font-size: 26px !important;
-        font-weight: 700 !important;
-        border: none !important;
-        border-radius: 50% !important;
-        width: 60px !important;
-        height: 60px !important;
-        min-height: 60px !important;
-        padding: 0 !important;
-        line-height: 60px !important;
-        display: block !important;
-        box-shadow:
-            0 8px 32px rgba(255, 107, 157, 0.35),
-            0 4px 16px rgba(255, 142, 114, 0.25),
-            inset 0 2px 4px rgba(255, 255, 255, 0.3),
-            inset 0 -2px 4px rgba(194, 24, 91, 0.2) !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        position: relative !important;
-        animation: gradient-shift 6s ease infinite !important;
-    }
-
-    .stForm button[kind="formSubmit"]:hover {
-        transform: scale(1.12) translateY(-3px) rotate(5deg) !important;
-        box-shadow:
-            0 16px 48px rgba(255, 107, 157, 0.4),
-            0 8px 24px rgba(255, 142, 114, 0.3),
-            0 0 0 8px rgba(255, 107, 157, 0.1),
-            inset 0 2px 4px rgba(255, 255, 255, 0.4),
-            inset 0 -2px 4px rgba(194, 24, 91, 0.25) !important;
-    }
-
-    /* Spinner animation for processing state */
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    .stForm button[kind="formSubmit"].processing {
-        animation: spin 1s linear infinite !important;
-    }
-
-    .capabilities-hint {
-        text-align: center;
-        margin-top: 2rem;
-        padding: 1.5rem 2.5rem;
-        background: transparent;
-        border: none;
-        font-family: 'Playfair Display', serif;
-        background: linear-gradient(135deg, #c2185b 0%, #ff6b9d 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 1rem;
-        font-weight: 500;
-        font-style: italic;
-        letter-spacing: 0.3px;
-        max-width: 750px;
-        margin-left: auto;
-        margin-right: auto;
-        opacity: 1;
-    }
-
-    .privacy-disclaimer {
-        text-align: center;
-        margin-top: 3rem;
-        padding: 0.75rem 2rem;
-        background: transparent;
-        border: none;
-        color: #000000;
-        font-size: 0.75rem;
-        font-weight: 400;
+        background: linear-gradient(135deg, var(--bg-cream) 0%, var(--bg-parchment) 100%);
+        border-left: 4px solid var(--primary-forest);
+        border-radius: 8px;
+        padding: 1.8rem 2rem;
+        margin: 1.5rem 0;
+        font-family: 'Crimson Text', Georgia, serif;
+        font-size: 1.05rem;
         line-height: 1.7;
-        opacity: 0.5;
-        max-width: 650px;
-        margin-left: auto;
-        margin-right: auto;
+        color: var(--text-charcoal);
+        box-shadow:
+            0 6px 18px var(--shadow-cool),
+            inset 0 1px 2px rgba(255, 255, 255, 0.7);
+    }
+
+    /* Button Styling */
+    .stButton > button {
+        background: linear-gradient(135deg, var(--primary-forest) 0%, var(--secondary-sage) 100%) !important;
+        color: var(--bg-ivory) !important;
+        border: none !important;
+        border-radius: 6px !important;
+        font-family: 'Crimson Text', Georgia, serif !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        padding: 0.8rem 2rem !important;
+        transition: all 0.3s ease !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.8px !important;
+        box-shadow:
+            0 4px 12px var(--shadow-cool),
+            inset 0 1px 2px rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .stButton > button:hover {
+        background: linear-gradient(135deg, var(--secondary-sage) 0%, var(--primary-forest) 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow:
+            0 6px 18px var(--shadow-cool),
+            inset 0 1px 2px rgba(255, 255, 255, 0.15) !important;
+    }
+
+    /* Technical Logs Styling */
+    .debug-logs {
+        font-family: 'Fira Code', 'Monaco', 'Courier New', monospace !important;
+        background: #f8f9fa !important;
+        border-left: 4px solid var(--secondary-sage) !important;
+        padding: 1rem !important;
+        margin: 1rem 0 !important;
+        border-radius: 4px !important;
+        font-size: 0.85rem !important;
+        line-height: 1.4 !important;
+        white-space: pre-wrap !important;
+    }
+
+    .error-details {
+        font-family: 'Fira Code', 'Monaco', 'Courier New', monospace !important;
+        background: #fff5f5 !important;
+        border-left: 4px solid #e53e3e !important;
+        padding: 1rem !important;
+        margin: 1rem 0 !important;
+        border-radius: 4px !important;
+        font-size: 0.85rem !important;
+        line-height: 1.4 !important;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .logo { font-size: 3.5rem; }
+        .tagline { font-size: 1.2rem; }
+        .chat-container { padding: 0 1.5rem 120px 1.5rem; }
+        .user-message, .assistant-message { padding: 1.2rem 1.5rem; }
+        .debug-logs, .error-details { font-size: 0.75rem !important; }
     }
 </style>
 """, unsafe_allow_html=True)
