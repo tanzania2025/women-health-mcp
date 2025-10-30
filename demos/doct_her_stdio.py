@@ -131,9 +131,9 @@ st.markdown("""
 
     /* Input Styling */
     .input-container.centered {
-        max-width: 350px;
+        max-width: 150px;
         margin: 0 auto 2rem auto;
-        padding: 0 1rem;
+        padding: 0 2.5rem;
     }
 
     .input-container-bottom {
