@@ -135,6 +135,56 @@ async def calculate_ivf_success(
         }
 
 
+def generate_recommendations(result: dict[str, Any]) -> list[str]:
+    """Generate clinical recommendations based on SART calculator results."""
+    recommendations = []
+
+    success_rate = result.get("success_rate_1_cycle", 0) or 0
+
+    if success_rate < 10:
+        recommendations.extend([
+            "Success rate is low - consider donor egg IVF",
+            "Genetic counseling recommended",
+            "Consider multiple cycle planning",
+            "Discuss realistic expectations with fertility specialist",
+        ])
+    elif success_rate < 20:
+        recommendations.extend([
+            "Modified stimulation protocols may be beneficial",
+            "Consider PGT-A testing",
+            "Plan for potentially multiple cycles",
+            "Optimize health before treatment",
+        ])
+    elif success_rate >= 40:
+        recommendations.extend([
+            "Good prognosis for IVF success",
+            "Single embryo transfer recommended to reduce multiple pregnancy risk",
+        ])
+
+    # Age-specific recommendations
+    if result.get("age", 0) >= 42:
+        recommendations.append("Time-sensitive - expedited treatment recommended")
+    elif result.get("age", 0) >= 38:
+        recommendations.append("Consider accelerated treatment timeline")
+
+    # AMH-specific recommendations
+    if result.get("amh_available") and result.get("amh_value"):
+        amh_value = result["amh_value"]
+        if amh_value < 1.0:
+            recommendations.append("Low AMH - consider mini-IVF or natural cycle protocols")
+        elif amh_value > 5.0:
+            recommendations.append("High AMH - monitor for OHSS risk")
+
+    # Clinical factor recommendations
+    if result.get("polycystic"):
+        recommendations.append("PCOS - monitor for ovarian hyperstimulation syndrome")
+
+    if result.get("low_ovarian_reserve"):
+        recommendations.append("Low ovarian reserve - may require multiple cycles")
+
+    return recommendations
+
+
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
     """

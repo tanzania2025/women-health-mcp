@@ -1,0 +1,140 @@
+WOMEN'S HEALTH MCP: USER QUERY FLOW DIAGRAM
+===========================================
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    1. FRONTEND LAYER (Streamlit)                       │
+│           demos/doct_her_stdio.py                                      │
+│   User Input → handle_user_input() → MultiServerMCPClient.process()    │
+└─────────────────────────┬───────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    2. MULTI-SERVER MCP CLIENT                          │
+│  MultiServerMCPClient → Route to appropriate server → session.call()   │
+└─────────────────────────┬───────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                   3. CLAUDE AI INTEGRATION                             │
+│   anthropic.messages.create() → Decides which medical tools to call    │
+└─────────────────────────┬───────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│            4. FASTMCP MULTI-SERVER ARCHITECTURE                         │
+│              Three domain-specific FastMCP servers                     │
+└─────────────────────────┬───────────────────────────────────────────────┘
+                          │
+         ┌────────────────┼──────────────────┬─────────────┬─────────────┐
+         │                │                  │             │             │
+         ▼                ▼                  ▼             ▼             ▼
+┌─────────────────────────┐ ┌─────────────────────────┐ ┌─────────────────────────┐
+│    DATABASE SERVER       │ │       API SERVER        │ │    CALCULATOR SERVER    │
+│                         │ │                         │ │                         │
+│mcp_servers/database_    │ │mcp_servers/api_         │ │mcp_servers/calculator_  │
+│server.py (FastMCP)      │ │server.py (FastMCP)      │ │server.py (FastMCP)      │
+│                         │ │                         │ │                         │
+│ELSA TOOLS:              │ │EXTERNAL API TOOLS:      │ │CLINICAL CALC TOOLS:     │
+│- list_elsa_waves()      │ │- search_pubmed()        │ │- calculate_ivf_success()│
+│- get_wave_details()     │ │- get_article()          │ │- predict_ivf_success()  │
+│- search_data_modules()  │ │- list_eshre_guidelines()│ │- generate_recommend-    │
+│- get_access_info()      │ │- search_asrm_guidelines()│ │  ations()              │
+│- get_study_metadata()   │ │- list_nams_protocols()  │ │- compare_success_rates()│
+└─────────────────────────┘ └─────────────────────────┘ └─────────────────────────┘
+        │                           │                           │
+        ▼                           ▼                           ▼
+┌─────────────────────────┐ ┌─────────────────────────┐ ┌─────────────────────────┐
+│   ELSA LONGITUDINAL     │ │   EXTERNAL MEDICAL      │ │    SART IVF             │
+│   AGING DATASETS        │ │   APIS & DATABASES      │ │    CALCULATOR           │
+│                         │ │                         │ │                         │
+│• Local data processing  │ │• NCBI E-utilities       │ │• w3.abdn.ac.uk/        │
+│• Research metadata      │ │  (PubMed search)        │ │  clsm/SARTIVF          │
+│• Wave documentation     │ │• ESHRE Guidelines       │ │• Statistical model      │
+│                         │ │• ASRM Practice Docs     │ │• Live birth predictions │
+│                         │ │• NAMS Position Stmts    │ │• Validated algorithms   │
+└─────────────────────────┘ └─────────────────────────┘ └─────────────────────────┘
+        │                           │                           │
+        └─────────────────────┬─────────────────────┘
+                              │
+                              ▲ AGENTIC LOOP (Up to 15 iterations)
+                              │
+┌─────────────────────────┴───────────────────────────────────────────────┐
+│                 7. RESPONSE ASSEMBLY & RETURN                          │
+│   Data Aggregation → Claude Synthesis → Tool Log + Final Response      │
+│                          → Streamlit UI Display                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+KEY COMPONENTS:
+═══════════════
+
+ENTRY POINTS:
+• Primary: demos/doct_her_stdio.py (Streamlit app)
+• MCP Servers: mcp_servers/ (3 FastMCP servers)
+
+COMMUNICATION PROTOCOL:
+• Stdio-based MCP communication
+• JSON-RPC for tool calls
+• Anthropic Claude API integration
+
+MEDICAL DATA SOURCES:
+• SART: Real IVF success rate calculations
+• PubMed: 35M+ peer-reviewed articles
+• ESHRE: European fertility guidelines
+• ASRM: American reproductive medicine guidelines
+• NAMS: Menopause clinical protocols  
+• ELSA: Longitudinal aging study data
+
+ARCHITECTURE PATTERNS:
+• Model Context Protocol (MCP) for AI tool integration
+• Multi-server FastMCP architecture (mcp_servers/ directory)
+• Domain-specific server separation (database, api, calculator)
+• MultiServerMCPClient for tool routing
+• Agentic loop for multi-step reasoning
+• Progressive UI feedback with tool chain display
+
+FLOW DETAILS:
+═════════════
+
+1. USER INTERACTION:
+   └─ Streamlit form captures medical query
+   └─ File upload support (PNG, JPG, PDF, TXT)
+   └─ Submit triggers async processing
+
+2. MULTI-SERVER MCP CONNECTION:
+   └─ MultiServerMCPClient connects to 3 FastMCP servers
+   └─ Discovers tools from database, api, calculator servers
+   └─ Routes tools to appropriate server sessions
+   └─ Formats combined tool schemas for Claude API
+
+3. CLAUDE AI REASONING:
+   └─ Receives query + available medical tools
+   └─ Decides which tools to call based on context
+   └─ Iterative tool use for complex queries
+
+4. TOOL EXECUTION:
+   └─ MultiServerMCPClient routes to appropriate FastMCP server
+   └─ Database server: ELSA longitudinal data processing
+   └─ API server: PubMed, ESHRE, ASRM, NAMS external calls
+   └─ Calculator server: SART IVF success predictions
+   └─ Results formatted and returned to Claude
+
+5. RESPONSE SYNTHESIS:
+   └─ Claude combines multi-source medical data
+   └─ Generates clinical recommendations
+   └─ Returns final response + tool usage log
+
+6. UI FEEDBACK:
+   └─ Progressive tool chain display
+   └─ Expandable tool logs with result counts
+   └─ Chat interface with medical context
+
+TECHNICAL STACK:
+════════════════
+• Python 3.x + Streamlit (Frontend)
+• Anthropic Claude API (AI Reasoning)
+• FastMCP Multi-Server Architecture (3 domain servers)
+• MultiServerMCPClient (Tool routing & session management)
+• External Medical APIs (PubMed, ESHRE, ASRM, NAMS)
+• SART IVF Calculator (Clinical predictions)
+• ELSA Datasets (Longitudinal aging research)
+• Healthcare-specific data processing

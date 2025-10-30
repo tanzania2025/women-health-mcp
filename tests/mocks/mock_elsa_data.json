@@ -1,0 +1,46 @@
+{
+  "waves": [
+    {
+      "name": "Wave 1",
+      "year": "1998-1999",
+      "sample_size": 11826,
+      "description": "Baseline interviews and health assessments"
+    },
+    {
+      "name": "Wave 2", 
+      "year": "2002-2003",
+      "sample_size": 9432,
+      "description": "Second wave follow-up with health and lifestyle data"
+    },
+    {
+      "name": "Wave 3",
+      "year": "2006-2007", 
+      "sample_size": 8780,
+      "description": "Third wave with expanded biomarker collection"
+    }
+  ],
+  "data_modules": [
+    {
+      "name": "Demographics",
+      "description": "Age, gender, marital status, household composition"
+    },
+    {
+      "name": "Health",
+      "description": "Self-reported health, chronic conditions, medications"
+    },
+    {
+      "name": "Lifestyle",
+      "description": "Physical activity, smoking, alcohol consumption, diet"
+    },
+    {
+      "name": "Biomarkers",
+      "description": "Blood samples, genetic markers, inflammatory markers"
+    }
+  ],
+  "access_information": {
+    "data_archive": "UK Data Service",
+    "registration_required": true,
+    "approval_process": "Research proposal review",
+    "typical_approval_time": "4-6 weeks"
+  }
+}
