@@ -277,6 +277,39 @@ st.markdown("""
         line-height: 1.4 !important;
     }
 
+    /* Capabilities Hint */
+    .capabilities-hint {
+        text-align: center;
+        margin-top: 2.5rem;
+        padding: 1.25rem 2rem;
+        font-family: 'Crimson Text', Georgia, serif;
+        font-size: 1rem;
+        font-style: italic;
+        color: var(--text-sage);
+        line-height: 1.6;
+        opacity: 0.85;
+        max-width: 750px;
+        margin-left: auto;
+        margin-right: auto;
+        border-top: 1px solid var(--border-sepia);
+        border-bottom: 1px solid var(--border-sepia);
+    }
+
+    /* Privacy Disclaimer */
+    .privacy-disclaimer {
+        text-align: center;
+        margin-top: 2rem;
+        padding: 0.75rem 2rem;
+        font-family: 'Crimson Text', Georgia, serif;
+        font-size: 0.8rem;
+        color: var(--text-sage);
+        line-height: 1.6;
+        opacity: 0.6;
+        max-width: 650px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
         .logo { font-size: 3.5rem; }
@@ -284,6 +317,8 @@ st.markdown("""
         .chat-container { padding: 0 1.5rem 120px 1.5rem; }
         .user-message, .assistant-message { padding: 1.2rem 1.5rem; }
         .debug-logs, .error-details { font-size: 0.75rem !important; }
+        .capabilities-hint { font-size: 0.9rem; padding: 1rem 1.5rem; }
+        .privacy-disclaimer { font-size: 0.75rem; }
     }
 </style>
 """, unsafe_allow_html=True)
