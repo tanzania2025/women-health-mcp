@@ -87,8 +87,8 @@ st.markdown("""
     .landing-container {
         max-width: 820px;
         margin: 0 auto;
-        padding-top: 15vh;
-        padding-bottom: 4rem;
+        padding-top: 8vh;
+        padding-bottom: 2rem;
         text-align: center;
     }
 
@@ -113,7 +113,7 @@ st.markdown("""
         font-size: 1.4rem;
         font-style: italic;
         color: var(--text-sage);
-        margin-bottom: 3rem;
+        margin-bottom: 1.5rem;
         font-weight: 400;
         letter-spacing: 0.3px;
         line-height: 1.6;
@@ -280,8 +280,8 @@ st.markdown("""
     /* Capabilities Hint */
     .capabilities-hint {
         text-align: center;
-        margin-top: 2.5rem;
-        padding: 1.25rem 2rem;
+        margin-top: 1.5rem;
+        padding: 1rem 2rem;
         font-family: 'Crimson Text', Georgia, serif;
         font-size: 1rem;
         font-style: italic;
@@ -298,7 +298,7 @@ st.markdown("""
     /* Privacy Disclaimer */
     .privacy-disclaimer {
         text-align: center;
-        margin-top: 2rem;
+        margin-top: 1rem;
         padding: 0.75rem 2rem;
         font-family: 'Crimson Text', Georgia, serif;
         font-size: 0.8rem;
@@ -312,13 +312,30 @@ st.markdown("""
 
     /* Responsive Design */
     @media (max-width: 768px) {
-        .logo { font-size: 3.5rem; }
-        .tagline { font-size: 1.2rem; }
+        .landing-container {
+            padding-top: 5vh;
+            padding-bottom: 1rem;
+        }
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .tagline {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
         .chat-container { padding: 0 1.5rem 120px 1.5rem; }
         .user-message, .assistant-message { padding: 1.2rem 1.5rem; }
         .debug-logs, .error-details { font-size: 0.75rem !important; }
-        .capabilities-hint { font-size: 0.9rem; padding: 1rem 1.5rem; }
-        .privacy-disclaimer { font-size: 0.75rem; }
+        .capabilities-hint {
+            font-size: 0.9rem;
+            padding: 0.75rem 1.5rem;
+            margin-top: 1rem;
+        }
+        .privacy-disclaimer {
+            font-size: 0.75rem;
+            margin-top: 0.75rem;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
