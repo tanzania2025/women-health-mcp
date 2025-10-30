@@ -131,7 +131,7 @@ st.markdown("""
 
     /* Input Styling */
     .input-container.centered {
-        max-width: 150px;
+        max-width: 25px;
         margin: 0 auto 2rem auto;
         padding: 0 2.5rem;
     }
@@ -528,6 +528,12 @@ class MultiServerMCPClient:
         system_prompt = f"""You are DoctHER, an AI-powered women's health assistant specializing in reproductive health and fertility.
 
 You have access to clinical research and calculator tools via MCP (Model Context Protocol) servers. Use these tools to provide evidence-based guidance.
+
+**IMPORTANT FORMATTING RULES:**
+- Do NOT use emojis in your responses (no 🌸, ❤️, 💊, etc.)
+- Use professional medical journal formatting
+- Use markdown for structure (headings, bullet points, bold text)
+- Maintain a warm but professional tone without decorative symbols
 
 **Your Role:**
 You are an agent to give scientific answers to women's health questions.
@@ -939,7 +945,7 @@ def main():
         # Privacy disclaimer
         st.markdown("""
             <div class="privacy-disclaimer">
-                None of the text or data used in the prompts is saved or used to train any models. All data is in your browser and deleted as soon as you refresh or move away from the page.
+                None of the text or data used in the prompts is saved or used to train any models. 
             </div>
         """, unsafe_allow_html=True)
 
