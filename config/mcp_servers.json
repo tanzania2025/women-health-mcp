@@ -1,0 +1,81 @@
+{
+  "mcpServers": {
+    "women-health-database": {
+      "command": "python",
+      "args": ["-m", "fastmcp", "run", "mcp_servers/database_server.py"],
+      "description": "ELSA longitudinal aging datasets and metadata",
+      "domain": "database",
+      "tools": [
+        "list_elsa_waves",
+        "get_wave_details", 
+        "search_data_modules",
+        "get_data_module_info",
+        "get_access_information",
+        "get_study_metadata",
+        "get_documentation_links",
+        "compare_waves",
+        "get_research_examples"
+      ]
+    },
+    "women-health-api": {
+      "command": "python",
+      "args": ["-m", "fastmcp", "run", "mcp_servers/api_server.py"],
+      "env": {
+        "NCBI_API_KEY": "${NCBI_API_KEY}",
+        "ESHRE_CREDENTIALS": "${ESHRE_CREDENTIALS}",
+        "ASRM_TOKEN": "${ASRM_TOKEN}",
+        "NAMS_TOKEN": "${NAMS_TOKEN}"
+      },
+      "description": "PubMed, ESHRE, ASRM, NAMS external medical APIs",
+      "domain": "api",
+      "tools": [
+        "search_pubmed",
+        "get_article",
+        "get_multiple_articles",
+        "list_eshre_guidelines",
+        "search_eshre_guidelines", 
+        "get_eshre_guideline",
+        "list_asrm_practice_documents",
+        "list_asrm_ethics_opinions",
+        "search_asrm_guidelines",
+        "get_asrm_guideline",
+        "list_nams_position_statements",
+        "search_nams_protocols",
+        "get_nams_protocol",
+        "list_nams_topics"
+      ]
+    },
+    "women-health-calculator": {
+      "command": "python",
+      "args": ["-m", "fastmcp", "run", "mcp_servers/calculator_server.py"],
+      "description": "SART IVF success predictions and clinical calculators",
+      "domain": "calculator", 
+      "tools": [
+        "calculate_ivf_success",
+        "predict_ivf_success",
+        "generate_recommendations",
+        "get_sart_calculator_info",
+        "compare_success_rates"
+      ]
+    }
+  },
+  "deployment": {
+    "local_development": {
+      "method": "Multi-process FastMCP servers",
+      "supports_concurrent": true,
+      "resource_requirements": "Medium (3 Python processes)"
+    },
+    "streamlit_cloud": {
+      "method": "Remote MCP servers (Railway, Fly.io, Render)",
+      "limitation": "Cannot run multiple processes on Streamlit Cloud",
+      "recommendation": "Deploy servers separately and connect via network"
+    }
+  },
+  "metadata": {
+    "total_servers": 3,
+    "total_tools": 28,
+    "created": "2024-10-30",
+    "architecture": "FastMCP multi-server",
+    "previous_architecture": "Single FastMCP router with traditional MCP servers"
+  }
+}

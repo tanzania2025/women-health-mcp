@@ -1,0 +1,29 @@
+{
+  "sample_search_result": {
+    "pmids": ["12345678", "87654321", "11223344"],
+    "count": 3,
+    "query": "endometriosis treatment"
+  },
+  "sample_articles": [
+    {
+      "pmid": "12345678",
+      "title": "Novel approaches to endometriosis treatment: A systematic review",
+      "authors": ["Smith J", "Johnson A", "Williams B"],
+      "journal": "Fertility and Sterility",
+      "pubdate": "2024-01-15",
+      "abstract": "This systematic review examines novel therapeutic approaches for endometriosis treatment, including hormonal and surgical interventions. Results show promising outcomes for combined therapy approaches.",
+      "doi": "10.1016/j.fertnstert.2024.001",
+      "keywords": ["endometriosis", "treatment", "hormone therapy", "laparoscopy"]
+    },
+    {
+      "pmid": "87654321", 
+      "title": "Long-term outcomes of IVF in patients with endometriosis",
+      "authors": ["Brown C", "Davis M", "Wilson K"],
+      "journal": "Human Reproduction",
+      "pubdate": "2023-12-20",
+      "abstract": "This retrospective study analyzes long-term IVF success rates in patients with varying degrees of endometriosis. Data from 1,250 patients over 5 years shows stage-dependent outcomes.",
+      "doi": "10.1093/humrep/der023",
+      "keywords": ["IVF", "endometriosis", "success rates", "pregnancy outcomes"]
+    }
+  ]
+}

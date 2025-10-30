@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-Women's Health MCP Server - FastMCP Implementation
-Provides clinical calculator and research tools via Model Context Protocol over stdio
+Women's Health API Server - FastMCP Implementation
+Provides access to external medical APIs and clinical guidelines:
+- PubMed (NCBI E-utilities)
+- ESHRE (European Society of Human Reproduction and Embryology)
+- ASRM (American Society for Reproductive Medicine)
+- NAMS (North American Menopause Society)
 """
 
 import asyncio
@@ -13,126 +17,13 @@ from typing import Optional
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fastmcp import FastMCP
-from core.clinical_calculators import ClinicalCalculators
-from core.research_database_integration import ResearchDatabaseIntegration
-from core.fhir_integration import ReproductiveHealthFHIR
-import json
 
-# Import research server modules
+# Import server modules
 sys.path.insert(0, str(Path(__file__).parent.parent / "servers"))
-from servers import pubmed_server, eshre_server, nams_server, elsa_server
-
-# Initialize calculators and services
-calc = ClinicalCalculators()
-research = ResearchDatabaseIntegration()
-fhir = ReproductiveHealthFHIR()
+from servers import pubmed_server, eshre_server, asrm_server, nams_server
 
 # Create FastMCP server
-mcp = FastMCP("women-health-mcp")
-
-
-# ==================== Clinical Calculator Tools ====================
-
-@mcp.tool()
-async def predict_ivf_success(
-    age: int,
-    amh: float,
-    height_cm: Optional[float] = None,
-    weight_kg: Optional[float] = None,
-    height_ft: Optional[int] = None,
-    height_in: Optional[int] = None,
-    weight_lbs: Optional[float] = None,
-    prior_pregnancies: int = 0,
-    male_factor: bool = False,
-    polycystic: bool = False,
-    uterine_problems: bool = False,
-    unexplained_infertility: bool = False,
-    low_ovarian_reserve: bool = False,
-    bmi: Optional[float] = None
-) -> str:
-    """
-    Predict IVF success rates using SART Calculator API.
-
-    Calculates live birth probability for 1, 2, and 3 complete IVF cycles based on patient characteristics.
-
-    Args:
-        age: Patient age in years (18-45)
-        amh: Anti-Müllerian Hormone level in ng/mL
-        height_cm: Height in centimeters (120-220). Use this OR height_ft/height_in
-        weight_kg: Weight in kilograms (30-160). Use this OR weight_lbs
-        height_ft: Height in feet (4-7). Use with height_in if not using height_cm
-        height_in: Height in inches (0-11). Use with height_ft if not using height_cm
-        weight_lbs: Weight in pounds (70-350). Use if not using weight_kg
-        prior_pregnancies: Number of prior full-term pregnancies (>37 weeks)
-        male_factor: Does partner have sperm problems?
-        polycystic: Does patient have PCOS?
-        uterine_problems: Does patient have uterine problems?
-        unexplained_infertility: Diagnosed with unexplained infertility?
-        low_ovarian_reserve: Diagnosed with low ovarian reserve?
-        bmi: Body Mass Index (optional, for internal calculations)
-    """
-    # Build parameters for SART calculator
-    calc_params = {
-        "age": age,
-        "amh_available": True,
-        "amh_value": amh,
-        "previous_full_term": prior_pregnancies > 0,
-        "male_factor": male_factor,
-        "polycystic": polycystic,
-        "uterine_problems": uterine_problems,
-        "unexplained_infertility": unexplained_infertility,
-        "low_ovarian_reserve": low_ovarian_reserve,
-    }
-
-    # Add height/weight if provided
-    if height_cm:
-        calc_params["height_cm"] = height_cm
-    if weight_kg:
-        calc_params["weight_kg"] = weight_kg
-    if height_ft:
-        calc_params["height_ft"] = height_ft
-    if height_in:
-        calc_params["height_in"] = height_in
-    if weight_lbs:
-        calc_params["weight_lbs"] = weight_lbs
-
-    # Calculate BMI-based weight if only BMI provided
-    if bmi and not weight_kg and not weight_lbs:
-        height_m = 1.65  # Assume average height
-        calc_params["weight_kg"] = bmi * (height_m ** 2)
-
-    result = await calc.calculate_ivf_success(**calc_params)
-
-    # Format response
-    response = {
-        "tool": "predict-ivf-success",
-        "patient_info": {
-            "age": result.age,
-            "height_cm": result.height_cm,
-            "weight_kg": result.weight_kg,
-            "height_ft": result.height_ft,
-            "height_in": result.height_in,
-            "weight_lbs": result.weight_lbs,
-        },
-        "clinical_factors": {
-            "previous_full_term": result.previous_full_term,
-            "male_factor": result.male_factor,
-            "polycystic": result.polycystic,
-            "uterine_problems": result.uterine_problems,
-            "unexplained_infertility": result.unexplained_infertility,
-            "low_ovarian_reserve": result.low_ovarian_reserve,
-            "amh_value": result.amh_value,
-        },
-        "success_rates": {
-            "1_cycle": result.success_rate_1_cycle,
-            "2_cycles": result.success_rate_2_cycles,
-            "3_cycles": result.success_rate_3_cycles,
-        },
-        "recommendations": calc._generate_recommendations(result),
-        "data_source": "SART IVF Calculator API (University of Aberdeen)",
-    }
-
-    return json.dumps(response, indent=2)
+mcp = FastMCP("women-health-api")
 
 
 # ==================== PubMed Tools ====================
@@ -140,10 +31,11 @@ async def predict_ivf_success(
 @mcp.tool()
 async def search_pubmed(query: str, max_results: int = 10) -> str:
     """
-    Search PubMed for scientific articles.
-
-    Returns a list of article PMIDs and basic information matching the search query.
-
+    Search PubMed for peer-reviewed medical literature (35M+ articles).
+    
+    Uses NCBI E-utilities API to search biomedical literature. Essential for
+    evidence-based clinical decision support and research validation.
+    
     Args:
         query: Search query (e.g., 'breast cancer treatment', 'PCOS polycystic ovary syndrome')
         max_results: Maximum number of results to return (default: 10, max: 100)
@@ -178,8 +70,11 @@ async def search_pubmed(query: str, max_results: int = 10) -> str:
 @mcp.tool()
 async def get_article(pmid: str) -> str:
     """
-    Retrieve full article details including title, abstract, authors, journal, publication date, DOI, and keywords.
-
+    Retrieve full PubMed article details by PMID.
+    
+    Returns complete article metadata including title, abstract, authors,
+    journal, publication date, DOI, and keywords.
+    
     Args:
         pmid: PubMed ID (PMID) of the article to retrieve
     """
@@ -211,9 +106,10 @@ async def get_article(pmid: str) -> str:
 async def get_multiple_articles(pmids: list[str]) -> str:
     """
     Retrieve full details for multiple PubMed articles at once.
-
+    
     Returns abstracts, titles, authors, and metadata for all specified PMIDs.
-
+    Useful for batch processing of search results.
+    
     Args:
         pmids: List of PubMed IDs to retrieve
     """
@@ -257,6 +153,9 @@ async def get_multiple_articles(pmids: list[str]) -> str:
 async def list_eshre_guidelines() -> str:
     """
     List all available ESHRE clinical guidelines and recommendations.
+    
+    ESHRE (European Society of Human Reproduction and Embryology) provides
+    evidence-based fertility treatment guidelines used across Europe.
     """
     guidelines = await eshre_server.parse_guidelines_list()
 
@@ -275,8 +174,8 @@ async def list_eshre_guidelines() -> str:
 @mcp.tool()
 async def search_eshre_guidelines(query: str) -> str:
     """
-    Search ESHRE guidelines by keyword or topic.
-
+    Search ESHRE clinical practice guidelines by keyword or topic.
+    
     Args:
         query: Search query (e.g., 'endometriosis', 'IVF', 'PCOS', 'fertility preservation')
     """
@@ -302,7 +201,7 @@ async def search_eshre_guidelines(query: str) -> str:
 async def get_eshre_guideline(url: str) -> str:
     """
     Retrieve the full content and download links for a specific ESHRE guideline.
-
+    
     Args:
         url: Full URL of the guideline document
     """
@@ -326,12 +225,120 @@ async def get_eshre_guideline(url: str) -> str:
     return result
 
 
-# ==================== NAMS Tools ====================
+# ==================== ASRM Guidelines Tools ====================
+
+@mcp.tool()
+async def list_asrm_practice_documents() -> str:
+    """
+    List available ASRM practice committee documents and guidelines.
+    
+    ASRM (American Society for Reproductive Medicine) provides US-based
+    reproductive medicine practice guidelines and committee opinions.
+    """
+    documents = await asrm_server.parse_practice_documents()
+
+    result = "# ASRM Practice Documents\n\n"
+    result += f"Found {len(documents)} practice documents:\n\n"
+
+    for i, doc in enumerate(documents[:15], 1):  # Limit for readability
+        result += f"{i}. **{doc['title']}**\n"
+        if doc['description']:
+            result += f"   {doc['description']}\n"
+        result += f"   URL: {doc['url']}\n\n"
+
+    if len(documents) > 15:
+        result += f"\n...and {len(documents) - 15} more documents.\n"
+
+    return result
+
+
+@mcp.tool()
+async def list_asrm_ethics_opinions() -> str:
+    """
+    List available ASRM ethics committee opinions.
+    
+    Provides bioethical guidance on reproductive medicine practices
+    and emerging technologies.
+    """
+    opinions = await asrm_server.parse_ethics_opinions()
+
+    result = "# ASRM Ethics Opinions\n\n"
+    result += f"Found {len(opinions)} ethics opinions:\n\n"
+
+    for i, op in enumerate(opinions[:15], 1):
+        result += f"{i}. **{op['title']}**\n"
+        if op['description']:
+            result += f"   {op['description']}\n"
+        result += f"   URL: {op['url']}\n\n"
+
+    if len(opinions) > 15:
+        result += f"\n...and {len(opinions) - 15} more opinions.\n"
+
+    return result
+
+
+@mcp.tool()
+async def search_asrm_guidelines(query: str, category: Optional[str] = None) -> str:
+    """
+    Search ASRM guidelines by keyword.
+    
+    Args:
+        query: Search query (e.g., 'IVF', 'endometriosis', 'genetic testing')
+        category: Optional category filter ('practice' or 'ethics')
+    """
+    results = await asrm_server.search_guidelines(query, category)
+
+    result = f"# Search Results for '{query}'\n\n"
+
+    if category:
+        result += f"Category: {category}\n\n"
+
+    result += f"Found {len(results)} matching documents:\n\n"
+
+    for i, doc in enumerate(results, 1):
+        result += f"{i}. **{doc['title']}**\n"
+        result += f"   Type: {doc['type']}\n"
+        if doc['description']:
+            result += f"   {doc['description']}\n"
+        result += f"   URL: {doc['url']}\n\n"
+
+    if not results:
+        result += "No documents found matching your query.\n"
+        result += "Try different keywords or browse all documents using list_asrm_practice_documents or list_asrm_ethics_opinions.\n"
+
+    return result
+
+
+@mcp.tool()
+async def get_asrm_guideline(url: str) -> str:
+    """
+    Retrieve the full content of a specific ASRM guideline document.
+    
+    Args:
+        url: Full URL of the guideline document
+    """
+    content = await asrm_server.get_guideline_content(url)
+
+    result = f"# {content['title']}\n\n"
+    result += f"**URL:** {content['url']}\n"
+    if content['date']:
+        result += f"**Date:** {content['date']}\n"
+    result += f"**Word Count:** {content['word_count']}\n\n"
+    result += "---\n\n"
+    result += content['content']
+
+    return result
+
+
+# ==================== NAMS Position Statements Tools ====================
 
 @mcp.tool()
 async def list_nams_position_statements() -> str:
     """
     List available NAMS position statements and clinical guidelines on menopause management.
+    
+    NAMS (The Menopause Society, formerly North American Menopause Society) provides
+    evidence-based menopause management guidelines and hormone therapy recommendations.
     """
     statements = await nams_server.parse_position_statements()
 
@@ -362,7 +369,7 @@ async def list_nams_position_statements() -> str:
 async def search_nams_protocols(query: str, topic: Optional[str] = None) -> str:
     """
     Search NAMS position statements and protocols by keyword or topic.
-
+    
     Args:
         query: Search query (e.g., 'hormone therapy', 'hot flashes', 'bone health')
         topic: Optional topic filter (e.g., 'hormone therapy', 'cardiovascular', 'genitourinary')
@@ -397,7 +404,7 @@ async def search_nams_protocols(query: str, topic: Optional[str] = None) -> str:
 async def get_nams_protocol(url: str) -> str:
     """
     Retrieve the full content of a specific NAMS protocol or position statement.
-
+    
     Args:
         url: Full URL of the protocol or position statement
     """
@@ -416,70 +423,49 @@ async def get_nams_protocol(url: str) -> str:
     return result
 
 
-# ==================== ELSA Tools ====================
-
 @mcp.tool()
-async def list_elsa_waves(include_details: bool = False) -> str:
+async def list_nams_topics() -> str:
     """
-    List all available ELSA waves with basic information.
-
-    Args:
-        include_details: Include detailed information about each wave
+    List common topics covered by NAMS position statements.
+    
+    Helps users discover relevant position statements for specific menopause-related topics.
     """
-    if include_details:
-        result = {
-            "study": "English Longitudinal Study of Ageing",
-            "study_number": "5050",
-            "total_waves": len(elsa_server.ELSA_WAVES),
-            "waves": elsa_server.ELSA_WAVES
-        }
-    else:
-        result = {
-            "study": "English Longitudinal Study of Ageing",
-            "total_waves": len(elsa_server.ELSA_WAVES),
-            "waves": [
-                {
-                    "wave": v["wave"],
-                    "name": v["name"],
-                    "year": v["year"]
-                }
-                for v in elsa_server.ELSA_WAVES.values()
-            ]
-        }
+    topics = [
+        "Hormone Therapy",
+        "Vasomotor Symptoms (hot flashes, night sweats)",
+        "Genitourinary Syndrome of Menopause",
+        "Osteoporosis and Bone Health",
+        "Cardiovascular Health",
+        "Sexual Health",
+        "Mood and Cognitive Function",
+        "Sleep Disorders",
+        "Weight Management",
+        "Breast Health",
+        "Nonhormonal Therapies",
+        "Bioidentical Hormones",
+        "Premature Menopause",
+        "Complementary and Alternative Medicine"
+    ]
 
-    return json.dumps(result, indent=2)
+    result = "# Common Topics in NAMS Position Statements\n\n"
+    result += "The following topics are commonly addressed in NAMS position statements:\n\n"
+
+    for i, topic in enumerate(topics, 1):
+        result += f"{i}. {topic}\n"
+
+    result += "\nUse these topics to search for specific position statements with the search_nams_protocols tool.\n"
+
+    return result
 
 
-@mcp.tool()
-async def search_elsa_data(query: str, module: Optional[str] = None) -> str:
-    """
-    Search ELSA data modules and variables by topic or keyword.
+# Environment variables for API connections
+import os
 
-    Args:
-        query: Search term (e.g., 'cognitive', 'depression', 'wealth', 'menopause')
-        module: Specific module to search (optional)
-    """
-    query_lower = query.lower()
-    results = []
-
-    modules_to_search = {module: elsa_server.ELSA_DATA_MODULES[module]} if module else elsa_server.ELSA_DATA_MODULES
-
-    for mod_id, mod_data in modules_to_search.items():
-        searchable_text = f"{mod_data['name']} {mod_data['description']} {' '.join(mod_data['variables'])}".lower()
-
-        if query_lower in searchable_text:
-            results.append({
-                "module_id": mod_id,
-                "module_name": mod_data["name"],
-                "description": mod_data["description"],
-                "relevant_variables": [v for v in mod_data["variables"] if query_lower in v.lower()]
-            })
-
-    return json.dumps({
-        "query": query,
-        "results_found": len(results),
-        "modules": results
-    }, indent=2)
+# Environment variables that may be needed
+NCBI_API_KEY = os.getenv("NCBI_API_KEY", "")
+ESHRE_CREDENTIALS = os.getenv("ESHRE_CREDENTIALS", "")  
+ASRM_TOKEN = os.getenv("ASRM_TOKEN", "")
+NAMS_TOKEN = os.getenv("NAMS_TOKEN", "")
 
 
 # Run the server

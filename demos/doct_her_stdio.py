@@ -33,8 +33,15 @@ st.set_page_config(
 # Anthropic Configuration
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
-# MCP Server Script Path
-MCP_SERVER_SCRIPT = str(Path(__file__).parent.parent / "scripts" / "mcp_stdio_server.py")
+# MCP Server Paths - New Multi-Server Architecture
+MCP_SERVERS = {
+    "database": str(Path(__file__).parent.parent / "mcp_servers" / "database_server.py"),
+    "api": str(Path(__file__).parent.parent / "mcp_servers" / "api_server.py"),
+    "calculator": str(Path(__file__).parent.parent / "mcp_servers" / "calculator_server.py")
+}
+
+# Fallback to legacy router if new servers don't exist
+LEGACY_MCP_SERVER = str(Path(__file__).parent.parent / "scripts" / "mcp_stdio_server.py")
 
 # Custom CSS
 st.markdown("""
@@ -628,30 +635,130 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-class MCPClient:
-    """MCP Client for connecting to stdio-based MCP servers."""
+class MultiServerMCPClient:
+    """MCP Client for connecting to multiple FastMCP servers."""
 
     def __init__(self):
-        self.session = None
+        self.sessions = {}  # server_name -> ClientSession
+        self.tool_registry = {}  # tool_name -> server_name
         self.exit_stack = AsyncExitStack()
         self.anthropic = Anthropic(api_key=ANTHROPIC_API_KEY)
+        self.use_legacy = False
 
-    async def connect_to_server(self, server_script_path: str):
-        """Connect to an MCP server via stdio."""
+    async def connect_to_servers(self, server_paths: dict, status_container=None):
+        """Connect to multiple MCP servers."""
+        
+        # Check if new servers exist, otherwise fallback to legacy
+        servers_exist = all(Path(path).exists() for path in server_paths.values())
+        
+        if not servers_exist:
+            if status_container:
+                status_container.warning("⚠️ New multi-server architecture not found, using legacy server")
+            self.use_legacy = True
+            await self.connect_to_legacy_server()
+            return
+            
+        if status_container:
+            status_container.info("🔄 Connecting to multi-server architecture...")
+
+        # Connect to each server
+        for server_name, server_path in server_paths.items():
+            try:
+                if status_container:
+                    status_container.info(f"🔄 Connecting to {server_name} server...")
+                    
+                server_params = StdioServerParameters(
+                    command="fastmcp",
+                    args=["run", server_path, "--transport", "stdio", "--no-banner"]
+                )
+
+                stdio_transport = await self.exit_stack.enter_async_context(
+                    stdio_client(server_params)
+                )
+                stdio, write = stdio_transport
+                session = await self.exit_stack.enter_async_context(
+                    ClientSession(stdio, write)
+                )
+
+                await session.initialize()
+                self.sessions[server_name] = session
+                
+                if status_container:
+                    status_container.success(f"✅ Connected to {server_name} server")
+                    
+            except Exception as e:
+                if status_container:
+                    status_container.error(f"❌ Failed to connect to {server_name} server: {str(e)}")
+                # Fall back to legacy if any server fails
+                if not self.use_legacy:
+                    self.use_legacy = True
+                    await self.connect_to_legacy_server()
+                    return
+
+        # Build tool registry
+        await self._discover_tools(status_container)
+        
+    async def connect_to_legacy_server(self):
+        """Fallback to legacy single-server architecture."""
+        if not Path(LEGACY_MCP_SERVER).exists():
+            raise FileNotFoundError("Neither new multi-server nor legacy server found")
+            
         server_params = StdioServerParameters(
             command=sys.executable,
-            args=[server_script_path]
+            args=[LEGACY_MCP_SERVER]
         )
 
         stdio_transport = await self.exit_stack.enter_async_context(
             stdio_client(server_params)
         )
-        self.stdio, self.write = stdio_transport
-        self.session = await self.exit_stack.enter_async_context(
-            ClientSession(self.stdio, self.write)
+        stdio, write = stdio_transport
+        self.sessions["legacy"] = await self.exit_stack.enter_async_context(
+            ClientSession(stdio, write)
         )
+        await self.sessions["legacy"].initialize()
 
-        await self.session.initialize()
+    async def _discover_tools(self, status_container=None):
+        """Build registry of which tool belongs to which server."""
+        total_tools = 0
+        
+        for server_name, session in self.sessions.items():
+            tools = await session.list_tools()
+            server_tool_count = len(tools.tools)
+            total_tools += server_tool_count
+
+            for tool in tools.tools:
+                self.tool_registry[tool.name] = server_name
+
+            if status_container:
+                tool_names = [tool.name for tool in tools.tools]
+                status_container.info(f"📋 {server_name}: {server_tool_count} tools ({', '.join(tool_names[:3])}{'...' if len(tool_names) > 3 else ''})")  
+
+        if status_container:
+            status_container.success(f"✅ Total: {total_tools} tools discovered across {len(self.sessions)} server(s)")
+
+    async def call_tool(self, tool_name: str, arguments: dict):
+        """Route tool call to appropriate server."""
+        if self.use_legacy:
+            session = self.sessions["legacy"]
+        else:
+            server_name = self.tool_registry.get(tool_name)
+            if not server_name:
+                raise ValueError(f"Unknown tool: {tool_name}")
+            session = self.sessions[server_name]
+        
+        return await session.call_tool(tool_name, arguments)
+
+    async def get_all_tools_for_claude(self):
+        """Aggregate tools from all servers for Claude API."""
+        all_tools = []
+        for session in self.sessions.values():
+            tools = await session.list_tools()
+            all_tools.extend([{
+                "name": tool.name,
+                "description": tool.description,
+                "input_schema": tool.inputSchema
+            } for tool in tools.tools])
+        return all_tools
 
     async def process_query(self, query: str, status_container=None, tool_chain_container=None) -> str:
         """Process a query using Claude and available MCP tools."""
@@ -659,13 +766,17 @@ class MCPClient:
         if status_container:
             status_container.info("🔧 Loading MCP tools...")
 
-        # Get available tools from MCP server
-        response = await self.session.list_tools()
-        available_tools = [{
-            "name": tool.name,
-            "description": tool.description,
-            "input_schema": tool.inputSchema
-        } for tool in response.tools]
+        # Get available tools from all MCP servers (or legacy)
+        if self.use_legacy and "legacy" in self.sessions:
+            response = await self.sessions["legacy"].list_tools()
+            available_tools = [{
+                "name": tool.name,
+                "description": tool.description,
+                "input_schema": tool.inputSchema
+            } for tool in response.tools]
+        else:
+            # Use multi-server approach
+            available_tools = await self.get_all_tools_for_claude()
 
         if status_container:
             tool_names = [t["name"] for t in available_tools]
@@ -680,44 +791,27 @@ class MCPClient:
         # System prompt
         system_prompt = f"""You are DoctHER, an AI-powered women's health assistant specializing in reproductive health and fertility.
 
-You have access to clinical calculator tools from MCP (Model Context Protocol) servers. Use these tools to provide evidence-based guidance.
+You have access to clinical research and calculator tools via MCP (Model Context Protocol) servers. Use these tools to provide evidence-based guidance.
 
 **Your Role:**
-
 You are an agent to give scientific answers to women's health questions.
 
-Use ESHRE, ASRM, NAMS guidelines first if they are relevant, then look in PubMed or ELSA for relevant papers. Use the IVF calculator or other clinical tools if they are relevant.
+**Your Approach:**
+1. Use clinical guidelines first (ESHRE for fertility/IVF, ASRM for reproductive medicine, NAMS for menopause)
+2. Search PubMed for latest scientific evidence to supplement guidelines
+3. Use ELSA database for population health and aging data when relevant
+4. Use clinical calculators when patients provide specific data (age, AMH, etc.)
 
-**IMPORTANT: You have access to comprehensive research tools:**
+**Available Tool Categories:**
+- **Clinical Guidelines**: ESHRE, ASRM, NAMS position statements and protocols
+- **Research Database**: PubMed search and article retrieval  
+- **Population Data**: ELSA (English Longitudinal Study of Ageing) datasets
+- **Clinical Calculators**: SART IVF success predictions and recommendations
 
-**Clinical Guidelines:**
-- `list_eshre_guidelines` - List all ESHRE (European Society of Human Reproduction) clinical guidelines
-- `search_eshre_guidelines` - Search ESHRE guidelines by keyword (IVF, PCOS, endometriosis, etc.)
-- `get_eshre_guideline` - Get full ESHRE guideline content
-- `list_nams_position_statements` - List NAMS (Menopause Society) position statements
-- `search_nams_protocols` - Search NAMS protocols (hormone therapy, vasomotor symptoms, etc.)
-- `get_nams_protocol` - Get full NAMS protocol content
-
-**Research Databases:**
-- `search_pubmed` - Search PubMed for scientific articles on any topic
-- `get_article` - Retrieve full abstract for a specific PMID
-- `get_multiple_articles` - Fetch multiple PubMed articles at once
-- `list_elsa_waves` - List ELSA (English Longitudinal Study of Ageing) waves
-- `search_elsa_data` - Search ELSA data on aging, menopause, cognitive health, biomarkers
-
-**Clinical Calculators:**
-- `predict-ivf-success` - Calculate IVF success rates using real SART data
-
-**How to use these tools:**
-1. Start with clinical guidelines (ESHRE for fertility/IVF, NAMS for menopause)
-2. Supplement with PubMed research for latest scientific evidence
-3. Use ELSA database for population health and aging data
-4. Use calculators when patient provides specific clinical data (age, AMH, etc.)
-
-**IMPORTANT: Use tools in parallel whenever possible**
-- When multiple searches are needed, make tool calls in parallel for efficiency
-- Example: If searching both ESHRE guidelines AND PubMed, call both tools simultaneously
-- This significantly speeds up response time and provides comprehensive answers faster
+**IMPORTANT: Use tools efficiently**
+- Make multiple tool calls in parallel when searching different sources
+- Always check tool parameters carefully before calling
+- Use the exact tool names and parameters as provided in the tool schemas
 
 ---
 
@@ -837,7 +931,7 @@ Remember: You're providing educational information, not medical advice. Always c
                         update_tool_chain()
 
                         # Execute tool via MCP
-                        result = await self.session.call_tool(
+                        result = await self.call_tool(
                             content.name,
                             content.input
                         )
@@ -982,13 +1076,16 @@ To enable AI-powered consultations, please:
 2. Restart the application"""
 
     # Create a new MCP client for each request to avoid event loop issues
-    client = MCPClient()
+    client = MultiServerMCPClient()
 
     try:
-        # Connect to MCP server
-        status_container.info("🔄 Connecting to MCP server...")
-        await client.connect_to_server(MCP_SERVER_SCRIPT)
-        status_container.success("✅ Connected to MCP server")
+        # Connect to MCP servers
+        status_container.info("🔄 Connecting to MCP servers...")
+        await client.connect_to_servers(MCP_SERVERS, status_container)
+        if not client.use_legacy:
+            status_container.success("✅ Connected to multi-server architecture")
+        else:
+            status_container.success("✅ Connected to legacy server")
 
         # Process query - returns (response, tool_log)
         result = await client.process_query(user_input, status_container, tool_chain_container)
