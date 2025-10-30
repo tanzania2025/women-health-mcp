@@ -771,9 +771,9 @@ def handle_user_input(user_input: str):
     # Just add empty tool log for user message
     st.session_state.tool_logs.append([])
 
-    # Create containers for status and tool chain
-    tool_chain_container = st.empty()
-    status_container = st.empty()
+    # Use persistent containers from session state (created in chat layout)
+    status_container = st.session_state.get('status_container', st.empty())
+    tool_chain_container = st.session_state.get('tool_chain_container', st.empty())
 
     # Process with MCP - returns (response, tool_log)
     result = asyncio.run(handle_user_input_async(user_input, status_container, tool_chain_container))
@@ -877,6 +877,16 @@ def main():
                 <div class="logo" style="font-size: 2rem; margin-bottom: 0.25rem;">DoctHER</div>
             </div>
         """, unsafe_allow_html=True)
+
+        # Create persistent status containers at top (for processing state)
+        if 'status_container' not in st.session_state:
+            st.session_state.status_container = st.empty()
+        if 'tool_chain_container' not in st.session_state:
+            st.session_state.tool_chain_container = st.empty()
+
+        # Display status containers
+        st.session_state.status_container.empty()
+        st.session_state.tool_chain_container.empty()
 
         # Show chat history in scrollable container
         st.markdown('<div class="chat-container">', unsafe_allow_html=True)
