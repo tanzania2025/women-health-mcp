@@ -767,13 +767,8 @@ To enable AI-powered consultations, please:
 
 def handle_user_input(user_input: str):
     """Handle user input."""
-    # Add user message to chat
-    st.session_state.messages.append({
-        "role": "user",
-        "content": user_input
-    })
-
-    # Add empty tool log for user message
+    # User message already added before processing started
+    # Just add empty tool log for user message
     st.session_state.tool_logs.append([])
 
     # Create containers for status and tool chain
@@ -948,6 +943,12 @@ def main():
         if uploaded_file is not None:
             message_content += f"\n\n[Attachment: {uploaded_file.name}]"
 
+        # Add user message immediately to switch layout to chat mode
+        st.session_state.messages.append({
+            "role": "user",
+            "content": message_content
+        })
+
         # Store the input and set processing state
         st.session_state.pending_input = user_input
         st.session_state.pending_message = message_content
@@ -956,7 +957,7 @@ def main():
         # Reset upload menu state
         st.session_state.show_upload_menu = False
 
-        # Rerun to show processing state
+        # Rerun to show processing state (now in chat mode with logo at top)
         st.rerun()
 
     # Process the pending input if we're in processing state
