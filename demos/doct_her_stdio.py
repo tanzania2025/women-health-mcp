@@ -131,8 +131,9 @@ st.markdown("""
 
     /* Input Styling */
     .input-container.centered {
-        max-width: 750px;
+        max-width: 600px;
         margin: 0 auto 2rem auto;
+        padding: 0 1rem;
     }
 
     .input-container-bottom {
@@ -369,6 +370,19 @@ st.markdown("""
         margin-right: auto;
     }
 
+    /* Prevent column stacking - keep buttons side-by-side */
+    div[data-testid="column"] {
+        flex: 0 0 auto !important;
+        min-width: fit-content !important;
+    }
+
+    /* Button container layout */
+    div[data-testid="column"]:has(button) {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
         .landing-container {
@@ -394,6 +408,11 @@ st.markdown("""
         .privacy-disclaimer {
             font-size: 0.75rem;
             margin-top: 0.75rem;
+        }
+
+        /* Keep columns inline on mobile */
+        div[data-testid="column"] {
+            flex-shrink: 0 !important;
         }
     }
 </style>
@@ -717,11 +736,10 @@ def initialize_session_state():
 
 
 def render_landing_page():
-    """Render the landing page with logo and tagline."""
+    """Render the landing page with logo."""
     st.markdown("""
         <div class="landing-container">
             <div class="logo">DoctHER</div>
-            <div class="tagline">How can I help?</div>
         </div>
     """, unsafe_allow_html=True)
 
