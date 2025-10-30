@@ -12,8 +12,8 @@ from pathlib import Path
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
-# Add project root to path (app.py is now in the project root)
-project_root = Path(__file__).parent
+# Add project root to path - go up one level from demos/ to the actual project root
+project_root = Path(__file__).parent.parent
 load_dotenv(project_root / ".env")
 
 # Import MCP client
