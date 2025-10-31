@@ -951,16 +951,17 @@ def main():
         # Centered input container
         st.markdown('<div class="input-container centered">', unsafe_allow_html=True)
 
-        # Plus button outside form
-        col_plus, col_rest = st.columns([0.08, 0.92])
+        # Three column layout: plus button and form (input + send)
+        col_plus, col_form = st.columns([0.04, 0.96])
 
         with col_plus:
+            # Plus button outside form
             plus_clicked = st.button("➕", key="plus_button", help="Add attachments")
             if plus_clicked:
                 st.session_state.show_upload_menu = not st.session_state.show_upload_menu
                 st.rerun()
 
-        with col_rest:
+        with col_form:
             # Form for input and send button (enables Enter key submission)
             with st.form(key=f"input_form_{st.session_state.form_counter}", clear_on_submit=False):
                 col_input, col_send = st.columns([0.91, 0.09])
@@ -1018,16 +1019,17 @@ def main():
         # Fixed bottom input
         st.markdown('<div class="input-container-bottom">', unsafe_allow_html=True)
 
-        # Plus button outside form
-        col_plus, col_rest = st.columns([0.08, 0.92])
+        # Three column layout: plus button and form (input + send)
+        col_plus, col_form = st.columns([0.04, 0.96])
 
         with col_plus:
+            # Plus button outside form
             plus_clicked = st.button("➕", key="plus_button_chat", help="Add attachments")
             if plus_clicked:
                 st.session_state.show_upload_menu = not st.session_state.show_upload_menu
                 st.rerun()
 
-        with col_rest:
+        with col_form:
             # Form for input and send button (enables Enter key submission)
             with st.form(key=f"input_form_chat_{st.session_state.form_counter}", clear_on_submit=False):
                 col_input, col_send = st.columns([0.91, 0.09])
