@@ -44,355 +44,229 @@ MCP_SERVERS = {
 LEGACY_MCP_SERVER = str(Path(__file__).parent.parent / "scripts" / "mcp_stdio_server.py")
 
 # Custom CSS
-st.markdown("""
+css = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
+    /* Hide Streamlit default elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stTextInput > label {display: none !important;}
 
-    /* Force light mode only - no dark mode support */
+    /* Design System Colors */
     :root {
-        color-scheme: light only !important;
-        --primary-rose: #ff6b9d;
-        --secondary-coral: #ff8e72;
-        --accent-gold: #ffd89b;
-        --bg-cream: #fef8f4;
-        --bg-rose: #fff5f8;
+        --deep-teal: #0a4d4e;
+        --warm-terracotta: #c85a3e;
+        --neutral-ink: #1a1a1a;
+        --soft-sage: #8ba888;
+        --warm-sand: #e8ddd3;
+        --clinical-blue: #4a7c8e;
+        --research-red: #c14953;
+        --analysis-amber: #d4a24c;
+        --evidence-green: #6b8e7f;
+        --canvas: #fdfcfb;
+        --surface: #f5f3f0;
+        --border-color: #d4cec6;
+        --text-secondary: #5a5550;
     }
 
+    /* Global Styles */
     html, body, .stApp {
-        color-scheme: light only !important;
-        background: var(--bg-cream) !important;
-    }
-
-    * {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-    }
-
-    @keyframes gradient-shift {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-    }
-
-    @keyframes shimmer {
-        0% { background-position: -1000px 0; }
-        100% { background-position: 1000px 0; }
+        background: var(--canvas) !important;
+        color: var(--neutral-ink) !important;
+        font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     }
 
     .main {
-        background:
-            radial-gradient(ellipse at 10% 20%, rgba(255, 107, 157, 0.08) 0%, transparent 45%),
-            radial-gradient(ellipse at 90% 70%, rgba(255, 142, 114, 0.08) 0%, transparent 45%),
-            radial-gradient(ellipse at 50% 50%, rgba(255, 216, 155, 0.06) 0%, transparent 50%),
-            linear-gradient(180deg, #fef8f4 0%, #fff5f8 50%, #fef8f4 100%);
-        padding: 0;
-        position: relative;
-        overflow: hidden;
+        background: var(--canvas) !important;
+        padding: 0 !important;
     }
 
-    .main::before {
-        content: '';
-        position: fixed;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background:
-            radial-gradient(circle at 20% 80%, rgba(255, 107, 157, 0.03) 0%, transparent 25%),
-            radial-gradient(circle at 80% 20%, rgba(255, 142, 114, 0.03) 0%, transparent 25%),
-            radial-gradient(circle at 40% 40%, rgba(255, 216, 155, 0.02) 0%, transparent 25%);
-        animation: float 20s ease-in-out infinite;
-        pointer-events: none;
-        z-index: 0;
+    .main .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 3rem !important;
+        max-width: 1200px !important;
+        padding-left: 24px !important;
+        padding-right: 24px !important;
     }
 
-    .main::after {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-image:
-            url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ff6b9d' fill-opacity='0.02'%3E%3Ccircle cx='50' cy='50' r='1'/%3E%3Ccircle cx='25' cy='25' r='1'/%3E%3Ccircle cx='75' cy='75' r='1'/%3E%3Ccircle cx='25' cy='75' r='1'/%3E%3Ccircle cx='75' cy='25' r='1'/%3E%3C/g%3E%3C/svg%3E");
-        pointer-events: none;
-        opacity: 0.5;
-        z-index: 0;
-    }
-
-    .block-container {
-        padding-top: 3rem;
-        max-width: 900px;
-    }
-
+    /* Landing Page Styles */
     .landing-container {
         max-width: 800px;
         margin: 0 auto;
-        padding-top: 20vh;
-        padding-bottom: 3rem;
+        padding-top: 15vh;
+        padding-bottom: 4rem;
         text-align: center;
     }
 
-    /* Hide streamlit default elements for cleaner UI */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-
-    /* Ensure body has proper height */
-    .main .block-container {
-        padding-top: 0.5rem;
-        padding-bottom: 2rem;
-        max-width: 100%;
-    }
-
-    /* Remove default streamlit padding when chat is active */
-    .stApp {
-        margin: 0;
-        padding: 0;
-    }
-
     .logo {
-        font-family: 'Playfair Display', serif;
-        font-size: 5.5rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #c2185b 0%, #ff6b9d 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 1.5rem;
-        letter-spacing: -1px;
-        position: relative;
-        display: inline-block;
-        filter: drop-shadow(0 8px 32px rgba(255, 107, 157, 0.15));
-    }
-
-    .logo::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 110%;
-        height: 110%;
-        background: radial-gradient(circle, rgba(255, 107, 157, 0.1) 0%, transparent 70%);
-        border-radius: 50%;
-        z-index: -1;
-        filter: blur(40px);
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-size: 48px;
+        font-weight: 600;
+        color: var(--deep-teal);
+        margin-bottom: 1rem;
+        line-height: 56px;
     }
 
     .tagline {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.8rem;
-        background: linear-gradient(135deg, #c2185b 0%, #ff6b9d 50%, #ff8e72 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 2.5rem;
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-size: 24px;
         font-weight: 500;
-        font-style: italic;
-        letter-spacing: 0.5px;
-        opacity: 0.9;
+        color: var(--text-secondary);
+        margin-bottom: 3rem;
+        line-height: 32px;
     }
 
-    .powered-by {
-        font-size: 0.75rem;
-        color: #94a3b8;
-        opacity: 0.6;
-        margin-top: -1rem;
-        font-weight: 400;
-        letter-spacing: 0.3px;
-    }
-
-    /* Chat container - scrollable area */
+    /* Chat Messages */
     .chat-container {
-        max-width: 1680px;
+        max-width: 1200px;
         margin: 0 auto;
-        padding: 0 2rem 120px 2rem;
+        padding: 0 24px 120px 24px;
         min-height: auto;
         overflow-y: auto;
     }
 
-    /* Input container - centered on landing page */
-    .input-container.centered {
-        max-width: 700px;
-        margin: 0 auto 1.5rem auto;
+    .chat-message {
+        padding: 24px;
+        margin: 16px 0;
+        border-radius: 12px;
+        font-size: 16px;
+        line-height: 24px;
+        max-width: 100%;
+        position: relative;
+        background: var(--surface);
+        border: 1px solid var(--border-color);
+        color: var(--neutral-ink);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
-    /* Input container - fixed at bottom after first message */
+    .user-message {
+        background: white !important;
+        border-left: 4px solid var(--deep-teal) !important;
+    }
+
+    .assistant-message {
+        background: var(--surface) !important;
+        border-left: 4px solid var(--warm-terracotta) !important;
+    }
+
+    .chat-message strong {
+        color: var(--neutral-ink);
+        font-weight: 600;
+    }
+
+    /* Input Styling */
+    .input-container.centered {
+        max-width: 700px;
+        margin: 0 auto 2rem auto;
+    }
+
     .input-container-bottom {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 20%, rgba(255,255,255,1) 100%);
-        padding: 1.5rem 1rem 1.5rem 1rem;
+        background: var(--canvas);
+        padding: 24px;
         z-index: 1000;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        border-top: 1px solid var(--border-color);
     }
 
     .input-container-bottom > div {
-        max-width: 1680px;
+        max-width: 1200px;
         margin: 0 auto;
     }
 
     .stTextInput > div > div > input {
-        border-radius: 28px !important;
-        border: 2px solid transparent !important;
-        background:
-            linear-gradient(#ffffff, #ffffff) padding-box,
-            linear-gradient(135deg, #ff6b9d20 0%, #ff8e7220 50%, #ffd89b20 100%) border-box !important;
-        padding: 1.2rem 1.8rem !important;
-        font-size: 1.05rem !important;
+        border-radius: 6px !important;
+        border: 1.5px solid var(--border-color) !important;
+        background: white !important;
+        padding: 12px 16px !important;
+        font-size: 16px !important;
         font-weight: 400 !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        box-shadow:
-            0 8px 32px rgba(255, 107, 157, 0.06),
-            0 2px 8px rgba(255, 142, 114, 0.04),
-            inset 0 2px 4px rgba(255, 255, 255, 0.9),
-            inset 0 -1px 2px rgba(255, 107, 157, 0.05) !important;
-        color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
-        -webkit-appearance: none !important;
-        letter-spacing: 0.3px !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        color: var(--neutral-ink) !important;
+        height: 52px !important;
+        transition: all 0.15s ease !important;
     }
 
     .stTextInput > div > div > input::placeholder {
-        color: #000000 !important;
-        opacity: 0.35 !important;
-        font-style: italic !important;
-        font-weight: 400 !important;
+        color: var(--text-secondary) !important;
+        opacity: 0.7 !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
     }
 
     .stTextInput > div > div > input:focus {
-        border-color: transparent !important;
-        background:
-            linear-gradient(#ffffff, #ffffff) padding-box,
-            linear-gradient(135deg, #ff6b9d 0%, #ff8e72 50%, #ffd89b 100%) border-box !important;
-        box-shadow:
-            0 12px 48px rgba(255, 107, 157, 0.12),
-            0 4px 16px rgba(255, 142, 114, 0.08),
-            0 0 0 6px rgba(255, 107, 157, 0.08),
-            inset 0 2px 4px rgba(255, 255, 255, 0.95),
-            inset 0 -1px 2px rgba(255, 107, 157, 0.08) !important;
+        border-color: var(--deep-teal) !important;
+        box-shadow: 0 0 0 3px rgba(10, 77, 78, 0.1) !important;
         outline: none !important;
     }
 
-    /* Plus button styling */
-    .stButton > button:not([kind="primary"]) {
-        background: transparent !important;
-        color: #64748b !important;
-        font-size: 20px !important;
-        border: none !important;
-        border-radius: 50% !important;
-        width: 36px !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        padding: 0 !important;
-        line-height: 36px !important;
-        transition: all 0.2s ease !important;
-    }
-
-    .stButton > button:not([kind="primary"]):hover {
-        background: #f1f5f9 !important;
-        color: #475569 !important;
-    }
-
-    /* Primary button (send button) styling */
-    .stButton > button[kind="primary"],
-    .stButton > button[data-testid="baseButton-primary"] {
-        background: linear-gradient(135deg,
-            #ff6b9d 0%,
-            #ff8e72 25%,
-            #ffd89b 50%,
-            #ff8e72 75%,
-            #ff6b9d 100%) !important;
-        background-size: 200% auto !important;
+    /* Button Styling */
+    .stButton > button {
+        background: var(--deep-teal) !important;
         color: white !important;
-        font-size: 26px !important;
-        font-weight: 700 !important;
         border: none !important;
+        border-radius: 6px !important;
+        padding: 12px 24px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        transition: all 0.15s ease !important;
+        height: 52px !important;
+    }
+
+    .stButton > button:hover {
+        background: rgba(10, 77, 78, 0.9) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 2px 8px rgba(10, 77, 78, 0.15) !important;
+    }
+
+    .stButton > button:active {
+        transform: translateY(0px) !important;
+    }
+
+    /* Primary send button */
+    .stButton > button[kind="primary"],
+    .stForm button[kind="formSubmit"] {
+        background: var(--deep-teal) !important;
+        width: 52px !important;
+        height: 52px !important;
         border-radius: 50% !important;
-        width: 60px !important;
-        height: 60px !important;
-        min-height: 60px !important;
         padding: 0 !important;
-        line-height: 60px !important;
-        box-shadow:
-            0 8px 32px rgba(255, 107, 157, 0.35),
-            0 4px 16px rgba(255, 142, 114, 0.25),
-            inset 0 2px 4px rgba(255, 255, 255, 0.3),
-            inset 0 -2px 4px rgba(194, 24, 91, 0.2) !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        position: relative !important;
-        animation: gradient-shift 6s ease infinite !important;
+        font-size: 18px !important;
+        line-height: 52px !important;
+        min-height: 52px !important;
+        max-height: 52px !important;
     }
 
-    .stButton > button[kind="primary"]::before,
-    .stButton > button[data-testid="baseButton-primary"]::before {
-        content: '' !important;
-        position: absolute !important;
-        top: -3px !important;
-        left: -3px !important;
-        right: -3px !important;
-        bottom: -3px !important;
-        background: linear-gradient(135deg, #ff6b9d, #ff8e72, #ffd89b, #ff8e72, #ff6b9d) !important;
-        background-size: 200% auto !important;
+    /* Plus button */
+    .stButton > button:not([kind="primary"]):not([data-testid*="log_btn"]) {
+        background: var(--surface) !important;
+        color: var(--text-secondary) !important;
+        border: 1px solid var(--border-color) !important;
+        width: 52px !important;
+        height: 52px !important;
         border-radius: 50% !important;
-        z-index: -1 !important;
-        opacity: 0 !important;
-        transition: opacity 0.4s !important;
-        filter: blur(16px) !important;
-        animation: gradient-shift 6s ease infinite !important;
+        padding: 0 !important;
+        font-size: 18px !important;
+        min-height: 52px !important;
+        max-height: 52px !important;
     }
 
-    .stButton > button[kind="primary"]::after,
-    .stButton > button[data-testid="baseButton-primary"]::after {
-        content: '' !important;
-        position: absolute !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: 0 !important;
-        height: 0 !important;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%) !important;
-        border-radius: 50% !important;
-        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    .stButton > button:not([kind="primary"]):not([data-testid*="log_btn"]):hover {
+        background: white !important;
+        color: var(--neutral-ink) !important;
+        border-color: var(--deep-teal) !important;
     }
 
-    .stButton > button[kind="primary"]:hover,
-    .stButton > button[data-testid="baseButton-primary"]:hover {
-        transform: scale(1.12) translateY(-3px) rotate(5deg) !important;
-        box-shadow:
-            0 16px 48px rgba(255, 107, 157, 0.4),
-            0 8px 24px rgba(255, 142, 114, 0.3),
-            0 0 0 8px rgba(255, 107, 157, 0.1),
-            inset 0 2px 4px rgba(255, 255, 255, 0.4),
-            inset 0 -2px 4px rgba(194, 24, 91, 0.25) !important;
-    }
-
-    .stButton > button[kind="primary"]:hover::before,
-    .stButton > button[data-testid="baseButton-primary"]:hover::before {
-        opacity: 1 !important;
-    }
-
-    .stButton > button[kind="primary"]:hover::after,
-    .stButton > button[data-testid="baseButton-primary"]:hover::after {
-        width: 100% !important;
-        height: 100% !important;
-        opacity: 0 !important;
-    }
-
-    /* Simple file uploader - hide all verbose elements */
+    /* File uploader */
     .stFileUploader {
         background: transparent !important;
         border: none !important;
         padding: 0 !important;
+        margin-top: 8px !important;
     }
 
     .stFileUploader > div {
@@ -401,238 +275,145 @@ st.markdown("""
         padding: 0 !important;
     }
 
-    .stFileUploader label {
-        display: none !important;
-    }
-
     .stFileUploader [data-testid="stFileUploaderDropzone"] {
-        min-height: 50px !important;
-        padding: 0.75rem 1rem !important;
-        background: #f8fafc !important;
-        border: 1px dashed #cbd5e1 !important;
-        border-radius: 8px !important;
-        margin-top: 0.5rem !important;
+        min-height: 60px !important;
+        padding: 16px !important;
+        background: var(--surface) !important;
+        border: 1px dashed var(--border-color) !important;
+        border-radius: 6px !important;
+        margin-top: 8px !important;
     }
 
     .stFileUploader [data-testid="stFileUploaderDropzoneInstructions"] {
-        font-size: 0.9rem !important;
-        color: #64748b !important;
+        font-size: 14px !important;
+        color: var(--text-secondary) !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
     }
 
-    .stFileUploader section {
-        border: none !important;
-        padding: 0 !important;
-        background: transparent !important;
-    }
-
-    .stFileUploader section > div {
-        border: none !important;
-        padding: 0 !important;
-        background: transparent !important;
-    }
-
-    .stFileUploader small {
-        display: none !important;
-    }
-
-    .chat-message {
-        padding: 2rem 2.5rem;
-        margin: 1.5rem 0;
-        border-radius: 24px;
-        font-size: 1.02rem;
-        line-height: 1.8;
-        max-width: 100%;
-        position: relative;
-        backdrop-filter: blur(20px);
-        border: 1px solid transparent;
-        color: #000000;
-    }
-
-    .chat-message::before {
-        content: '';
-        position: absolute;
-        top: -1px;
-        left: -1px;
-        right: -1px;
-        bottom: -1px;
-        border-radius: 24px;
-        background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(255, 142, 114, 0.1), rgba(255, 216, 155, 0.1));
-        z-index: -1;
-        opacity: 0;
-    }
-
-    .chat-message::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        border-radius: 24px 0 0 24px;
-    }
-
-    .chat-message:first-of-type {
-        margin-top: 0;
-    }
-
-    .user-message {
-        background:
-            linear-gradient(135deg,
-                rgba(255, 255, 255, 0.95) 0%,
-                rgba(255, 245, 248, 0.9) 100%);
-        border: 1px solid rgba(255, 107, 157, 0.12);
-        box-shadow:
-            0 8px 32px rgba(255, 107, 157, 0.08),
-            0 2px 8px rgba(255, 142, 114, 0.06),
-            inset 0 2px 0 rgba(255, 255, 255, 0.8),
-            inset 0 -1px 0 rgba(255, 107, 157, 0.06);
-    }
-
-    .user-message::after {
-        background: linear-gradient(180deg, #ff6b9d 0%, #ff8e72 100%);
-    }
-
-    .assistant-message {
-        background:
-            linear-gradient(135deg,
-                rgba(255, 255, 255, 0.98) 0%,
-                rgba(254, 252, 252, 0.95) 100%);
-        border: 1px solid rgba(255, 142, 114, 0.12);
-        box-shadow:
-            0 8px 32px rgba(255, 142, 114, 0.08),
-            0 2px 8px rgba(255, 216, 155, 0.06),
-            inset 0 2px 0 rgba(255, 255, 255, 0.9),
-            inset 0 -1px 0 rgba(255, 142, 114, 0.06);
-    }
-
-    .assistant-message::after {
-        background: linear-gradient(180deg, #ff8e72 0%, #ffd89b 100%);
-    }
-
-    .chat-message strong {
-        color: #000000;
-        font-weight: 600;
-        letter-spacing: 0.2px;
-    }
-
-    /* Log link button styling */
+    /* Tool log button styling */
     button[data-testid*="log_btn"] {
         background: transparent !important;
         border: none !important;
-        color: #64748b !important;
-        font-size: 0.85rem !important;
+        color: var(--text-secondary) !important;
+        font-size: 13px !important;
         text-decoration: underline !important;
-        padding: 0.25rem 0.5rem !important;
+        padding: 4px 8px !important;
         cursor: pointer !important;
-        transition: color 0.2s ease !important;
+        transition: color 0.15s ease !important;
         height: auto !important;
         min-height: auto !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
     }
 
     button[data-testid*="log_btn"]:hover {
-        color: #475569 !important;
+        color: var(--deep-teal) !important;
         background: transparent !important;
     }
 
-    /* Form styling - remove default borders and padding */
+    /* Form styling */
     .stForm {
         border: none !important;
         padding: 0 !important;
         background: transparent !important;
     }
 
-    /* Hide "Press Enter to submit form" text */
     .stForm [data-testid="InputInstructions"] {
         display: none !important;
     }
 
-    /* Form submit button styling (for Enter key support) */
-    .stForm button[kind="formSubmit"] {
-        background: linear-gradient(135deg,
-            #ff6b9d 0%,
-            #ff8e72 25%,
-            #ffd89b 50%,
-            #ff8e72 75%,
-            #ff6b9d 100%) !important;
-        background-size: 200% auto !important;
-        color: white !important;
-        font-size: 26px !important;
-        font-weight: 700 !important;
-        border: none !important;
-        border-radius: 50% !important;
-        width: 60px !important;
-        height: 60px !important;
-        min-height: 60px !important;
-        padding: 0 !important;
-        line-height: 60px !important;
-        display: block !important;
-        box-shadow:
-            0 8px 32px rgba(255, 107, 157, 0.35),
-            0 4px 16px rgba(255, 142, 114, 0.25),
-            inset 0 2px 4px rgba(255, 255, 255, 0.3),
-            inset 0 -2px 4px rgba(194, 24, 91, 0.2) !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        position: relative !important;
-        animation: gradient-shift 6s ease infinite !important;
-    }
-
-    .stForm button[kind="formSubmit"]:hover {
-        transform: scale(1.12) translateY(-3px) rotate(5deg) !important;
-        box-shadow:
-            0 16px 48px rgba(255, 107, 157, 0.4),
-            0 8px 24px rgba(255, 142, 114, 0.3),
-            0 0 0 8px rgba(255, 107, 157, 0.1),
-            inset 0 2px 4px rgba(255, 255, 255, 0.4),
-            inset 0 -2px 4px rgba(194, 24, 91, 0.25) !important;
-    }
-
-    /* Spinner animation for processing state */
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    .stForm button[kind="formSubmit"].processing {
-        animation: spin 1s linear infinite !important;
-    }
-
+    /* Capabilities hint */
     .capabilities-hint {
         text-align: center;
         margin-top: 2rem;
-        padding: 1.5rem 2.5rem;
+        padding: 24px;
         background: transparent;
         border: none;
-        font-family: 'Playfair Display', serif;
-        background: linear-gradient(135deg, #c2185b 0%, #ff6b9d 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 1rem;
-        font-weight: 500;
-        font-style: italic;
-        letter-spacing: 0.3px;
+        font-family: 'IBM Plex Sans', serif;
+        color: var(--text-secondary);
+        font-size: 16px;
+        font-weight: 400;
+        line-height: 24px;
         max-width: 750px;
         margin-left: auto;
         margin-right: auto;
-        opacity: 1;
+        opacity: 0.8;
     }
 
     .privacy-disclaimer {
         text-align: center;
         margin-top: 3rem;
-        padding: 0.75rem 2rem;
+        padding: 16px;
         background: transparent;
         border: none;
-        color: #000000;
-        font-size: 0.75rem;
+        color: var(--text-secondary);
+        font-size: 12px;
         font-weight: 400;
-        line-height: 1.7;
-        opacity: 0.5;
+        line-height: 20px;
+        opacity: 0.6;
         max-width: 650px;
         margin-left: auto;
         margin-right: auto;
+        font-family: 'IBM Plex Sans', sans-serif;
+    }
+
+    /* Trust indicators styling */
+    .trust-indicators {
+        background: var(--surface);
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        padding: 32px 24px;
+        text-align: center;
+        margin: 48px -24px;
+    }
+
+    .trust-stat {
+        color: var(--deep-teal);
+        font-size: 24px;
+        font-weight: 600;
+        font-family: 'IBM Plex Sans', sans-serif;
+    }
+
+    .trust-label {
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 400;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-family: 'IBM Plex Sans', sans-serif;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+        }
+
+        .logo {
+            font-size: 32px;
+            line-height: 40px;
+        }
+
+        .tagline {
+            font-size: 18px;
+            line-height: 28px;
+        }
+
+        .chat-container {
+            padding: 0 16px 120px 16px;
+        }
+
+        .chat-message {
+            padding: 16px;
+        }
+
+        .input-container-bottom {
+            padding: 16px;
+        }
     }
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(css, unsafe_allow_html=True)
 
 
 class MultiServerMCPClient:
@@ -647,17 +428,17 @@ class MultiServerMCPClient:
 
     async def connect_to_servers(self, server_paths: dict, status_container=None):
         """Connect to multiple MCP servers."""
-        
+
         # Check if new servers exist, otherwise fallback to legacy
         servers_exist = all(Path(path).exists() for path in server_paths.values())
-        
+
         if not servers_exist:
             if status_container:
                 status_container.warning("⚠️ New multi-server architecture not found, using legacy server")
             self.use_legacy = True
             await self.connect_to_legacy_server()
             return
-            
+
         if status_container:
             status_container.info("🔄 Connecting to multi-server architecture...")
 
@@ -666,7 +447,7 @@ class MultiServerMCPClient:
             try:
                 if status_container:
                     status_container.info(f"🔄 Connecting to {server_name} server...")
-                    
+
                 server_params = StdioServerParameters(
                     command="fastmcp",
                     args=["run", server_path, "--transport", "stdio", "--no-banner"]
@@ -682,10 +463,10 @@ class MultiServerMCPClient:
 
                 await session.initialize()
                 self.sessions[server_name] = session
-                
+
                 if status_container:
                     status_container.success(f"✅ Connected to {server_name} server")
-                    
+
             except Exception as e:
                 if status_container:
                     status_container.error(f"❌ Failed to connect to {server_name} server: {str(e)}")
@@ -697,12 +478,12 @@ class MultiServerMCPClient:
 
         # Build tool registry
         await self._discover_tools(status_container)
-        
+
     async def connect_to_legacy_server(self):
         """Fallback to legacy single-server architecture."""
         if not Path(LEGACY_MCP_SERVER).exists():
             raise FileNotFoundError("Neither new multi-server nor legacy server found")
-            
+
         server_params = StdioServerParameters(
             command=sys.executable,
             args=[LEGACY_MCP_SERVER]
@@ -720,7 +501,7 @@ class MultiServerMCPClient:
     async def _discover_tools(self, status_container=None):
         """Build registry of which tool belongs to which server."""
         total_tools = 0
-        
+
         for server_name, session in self.sessions.items():
             tools = await session.list_tools()
             server_tool_count = len(tools.tools)
@@ -731,7 +512,7 @@ class MultiServerMCPClient:
 
             if status_container:
                 tool_names = [tool.name for tool in tools.tools]
-                status_container.info(f"📋 {server_name}: {server_tool_count} tools ({', '.join(tool_names[:3])}{'...' if len(tool_names) > 3 else ''})")  
+                status_container.info(f"📋 {server_name}: {server_tool_count} tools ({', '.join(tool_names[:3])}{'...' if len(tool_names) > 3 else ''})")
 
         if status_container:
             status_container.success(f"✅ Total: {total_tools} tools discovered across {len(self.sessions)} server(s)")
@@ -745,7 +526,7 @@ class MultiServerMCPClient:
             if not server_name:
                 raise ValueError(f"Unknown tool: {tool_name}")
             session = self.sessions[server_name]
-        
+
         return await session.call_tool(tool_name, arguments)
 
     async def get_all_tools_for_claude(self):
@@ -804,7 +585,7 @@ You are an agent to give scientific answers to women's health questions.
 
 **Available Tool Categories:**
 - **Clinical Guidelines**: ESHRE, ASRM, NAMS position statements and protocols
-- **Research Database**: PubMed search and article retrieval  
+- **Research Database**: PubMed search and article retrieval
 - **Population Data**: ELSA (English Longitudinal Study of Ageing) datasets
 - **Clinical Calculators**: SART IVF success predictions and recommendations
 
@@ -1004,7 +785,7 @@ def render_landing_page():
     st.markdown("""
         <div class="landing-container">
             <div class="logo">DoctHER</div>
-            <div class="tagline">How can I help?</div>
+            <div class="tagline">Research-Grade AI for Women's Health Topics</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -1013,7 +794,8 @@ def render_capabilities_hint():
     """Render capabilities hint."""
     st.markdown("""
         <div class="capabilities-hint">
-            Some of the things I can do: Search ESHRE & NAMS guidelines, PubMed research, ELSA aging data, and calculate IVF success rates
+            Access 35M+ peer-reviewed articles, clinical calculators, and evidence-based
+            guidelines from ESHRE, ASRM, NAMS, and ELSA.
         </div>
     """, unsafe_allow_html=True)
 
@@ -1170,7 +952,7 @@ def main():
         st.markdown('<div class="input-container centered">', unsafe_allow_html=True)
 
         # Plus button outside form
-        col_plus, col_rest = st.columns([0.07, 0.93])
+        col_plus, col_rest = st.columns([0.08, 0.92])
 
         with col_plus:
             plus_clicked = st.button("➕", key="plus_button", help="Add attachments")
@@ -1181,7 +963,7 @@ def main():
         with col_rest:
             # Form for input and send button (enables Enter key submission)
             with st.form(key=f"input_form_{st.session_state.form_counter}", clear_on_submit=False):
-                col_input, col_send = st.columns([0.92, 0.08])
+                col_input, col_send = st.columns([0.91, 0.09])
 
                 with col_input:
                     # Use pending_input if processing, otherwise empty
@@ -1237,7 +1019,7 @@ def main():
         st.markdown('<div class="input-container-bottom">', unsafe_allow_html=True)
 
         # Plus button outside form
-        col_plus, col_rest = st.columns([0.07, 0.93])
+        col_plus, col_rest = st.columns([0.08, 0.92])
 
         with col_plus:
             plus_clicked = st.button("➕", key="plus_button_chat", help="Add attachments")
@@ -1248,7 +1030,7 @@ def main():
         with col_rest:
             # Form for input and send button (enables Enter key submission)
             with st.form(key=f"input_form_chat_{st.session_state.form_counter}", clear_on_submit=False):
-                col_input, col_send = st.columns([0.92, 0.08])
+                col_input, col_send = st.columns([0.91, 0.09])
 
                 with col_input:
                     # Use pending_input if processing, otherwise empty
