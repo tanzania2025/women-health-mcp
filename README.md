@@ -1,4 +1,4 @@
-# Women's Health MCP - Multi-Modal Context Protocol
+# Women's Health MCP - Model Context Protocol
 
 🚀 **Production-Ready Model Context Protocol for Women's Health AI**
 
