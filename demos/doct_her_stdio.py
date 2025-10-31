@@ -33,107 +33,133 @@ st.set_page_config(
 # Anthropic Configuration
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
-# MCP Server Paths - FastMCP unified servers
+# MCP Server Paths - New Multi-Server Architecture
 MCP_SERVERS = {
-    "api": str(Path(__file__).parent.parent / "mcp_servers" / "api_server.py"),
     "database": str(Path(__file__).parent.parent / "mcp_servers" / "database_server.py"),
+    "api": str(Path(__file__).parent.parent / "mcp_servers" / "api_server.py"),
     "calculator": str(Path(__file__).parent.parent / "mcp_servers" / "calculator_server.py")
 }
 
-# Sophisticated Medical Journal Aesthetic CSS
-st.markdown("""
+# Fallback to legacy router if new servers don't exist
+LEGACY_MCP_SERVER = str(Path(__file__).parent.parent / "scripts" / "mcp_stdio_server.py")
+
+# Custom CSS
+css = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Fira+Code:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
-    /* Root Variables - Medical Journal Palette */
+    /* Hide Streamlit default elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stTextInput > label {display: none !important;}
+
+    /* Design System Colors */
     :root {
-        --primary-forest: #1B3B36;
-        --secondary-sage: #4A6741;
-        --accent-amber: #D4AF37;
-        --accent-copper: #B87333;
-        --text-charcoal: #2C2C2C;
-        --text-sage: #5A6B57;
-        --bg-parchment: #FAF7F2;
-        --bg-cream: #F7F4EF;
-        --bg-ivory: #FEFCF8;
-        --border-sepia: #E5D5B7;
-        --shadow-warm: rgba(180, 115, 51, 0.15);
-        --shadow-cool: rgba(27, 59, 54, 0.12);
+        --deep-teal: #0a4d4e;
+        --warm-terracotta: #c85a3e;
+        --neutral-ink: #1a1a1a;
+        --soft-sage: #8ba888;
+        --warm-sand: #e8ddd3;
+        --clinical-blue: #4a7c8e;
+        --research-red: #c14953;
+        --analysis-amber: #d4a24c;
+        --evidence-green: #6b8e7f;
+        --canvas: #fdfcfb;
+        --surface: #f5f3f0;
+        --border-color: #d4cec6;
+        --text-secondary: #5a5550;
     }
 
-    /* Force consistent theming */
+    /* Global Styles */
     html, body, .stApp {
-        color-scheme: light only !important;
-        background: var(--bg-parchment) !important;
-        font-family: 'Crimson Text', Georgia, serif;
+        background: var(--canvas) !important;
+        color: var(--neutral-ink) !important;
+        font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     }
 
-    /* Hide Streamlit defaults */
-    #MainMenu, footer, header { visibility: hidden; }
-    .stTextInput > label { display: none !important; }
-
-    /* Atmospheric Background Layers */
     .main {
-        background:
-            /* Paper texture overlay */
-            url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='discrete' tableValues='0 0.01 0.02 0.01 0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E"),
-            /* Gradient foundation */
-            linear-gradient(135deg, var(--bg-ivory) 0%, var(--bg-parchment) 30%, var(--bg-cream) 70%, var(--bg-parchment) 100%);
-        position: relative;
-        padding: 0;
+        background: var(--canvas) !important;
+        padding: 0 !important;
     }
 
-    /* Landing Page Styling */
+    .main .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 3rem !important;
+        max-width: 1200px !important;
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+    }
+
+    /* Landing Page Styles */
     .landing-container {
-        max-width: 820px;
+        max-width: 800px;
         margin: 0 auto;
-        padding-top: 8vh;
-        padding-bottom: 2rem;
+        padding-top: 15vh;
+        padding-bottom: 4rem;
         text-align: center;
     }
 
-    /* Logo - Sophisticated Medical Typography */
     .logo {
-        font-family: 'Cormorant Garamond', 'Crimson Text', Georgia, serif;
-        font-size: 4.5rem;
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-size: 48px;
         font-weight: 600;
-        color: var(--primary-forest);
-        margin-bottom: 1.8rem;
-        letter-spacing: -0.5px;
-        position: relative;
-        display: inline-block;
-        text-shadow:
-            0 2px 4px rgba(27, 59, 54, 0.1),
-            0 8px 16px rgba(27, 59, 54, 0.06);
+        color: var(--deep-teal);
+        margin-bottom: 1rem;
+        line-height: 56px;
     }
 
-    /* Tagline - Editorial styling */
     .tagline {
-        font-family: 'Crimson Text', Georgia, serif;
-        font-size: 1.4rem;
-        font-style: italic;
-        color: var(--text-sage);
-        margin-bottom: 1.5rem;
-        font-weight: 400;
-        letter-spacing: 0.3px;
-        line-height: 1.6;
-        opacity: 0.9;
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-size: 24px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-bottom: 3rem;
+        line-height: 32px;
     }
 
-    /* Chat Container */
+    /* Chat Messages */
     .chat-container {
-        max-width: 1400px;
+        max-width: 1200px;
         margin: 0 auto;
-        padding: 0 2.5rem 140px 2.5rem;
+        padding: 0 24px 120px 24px;
         min-height: auto;
         overflow-y: auto;
     }
 
+    .chat-message {
+        padding: 24px;
+        margin: 16px 0;
+        border-radius: 12px;
+        font-size: 16px;
+        line-height: 24px;
+        max-width: 100%;
+        position: relative;
+        background: var(--surface);
+        border: 1px solid var(--border-color);
+        color: var(--neutral-ink);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-message {
+        background: white !important;
+        border-left: 4px solid var(--deep-teal) !important;
+    }
+
+    .assistant-message {
+        background: var(--surface) !important;
+        border-left: 4px solid var(--warm-terracotta) !important;
+    }
+
+    .chat-message strong {
+        color: var(--neutral-ink);
+        font-weight: 600;
+    }
+
     /* Input Styling */
     .input-container.centered {
-        max-width: 25px;
+        max-width: 700px;
         margin: 0 auto 2rem auto;
-        padding: 0 2.5rem;
     }
 
     .input-container-bottom {
@@ -141,282 +167,253 @@ st.markdown("""
         bottom: 0;
         left: 0;
         right: 0;
-        background:
-            linear-gradient(to bottom,
-                rgba(250, 247, 242, 0) 0%,
-                rgba(250, 247, 242, 0.8) 15%,
-                rgba(250, 247, 242, 0.95) 35%,
-                rgba(250, 247, 242, 1) 50%);
-        padding: 2rem 1rem 2rem 1rem;
+        background: var(--canvas);
+        padding: 24px;
         z-index: 1000;
-        backdrop-filter: blur(12px);
-        border-top: 1px solid var(--border-sepia);
-        box-shadow:
-            0 -8px 32px var(--shadow-warm),
-            0 -2px 8px var(--shadow-cool);
+        border-top: 1px solid var(--border-color);
     }
 
     .input-container-bottom > div {
-        max-width: 1400px;
+        max-width: 1200px;
         margin: 0 auto;
     }
 
-    /* Sophisticated Input Field */
     .stTextInput > div > div > input {
-        border-radius: 8px !important;
-        border: 2px solid var(--border-sepia) !important;
-        background: var(--bg-ivory) !important;
-        padding: 1.4rem 2rem !important;
-        font-family: 'Crimson Text', Georgia, serif !important;
-        font-size: 1.1rem !important;
+        border-radius: 6px !important;
+        border: 1.5px solid var(--border-color) !important;
+        background: white !important;
+        padding: 12px 16px !important;
+        font-size: 16px !important;
         font-weight: 400 !important;
-        color: var(--text-charcoal) !important;
-        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-        box-shadow:
-            inset 0 2px 4px rgba(27, 59, 54, 0.05),
-            0 4px 12px var(--shadow-warm),
-            0 0 0 0 rgba(212, 175, 55, 0) !important;
-        letter-spacing: 0.2px !important;
-        line-height: 1.5 !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        color: var(--neutral-ink) !important;
+        height: 52px !important;
+        transition: all 0.15s ease !important;
     }
 
     .stTextInput > div > div > input::placeholder {
-        color: var(--text-sage) !important;
-        opacity: 0.6 !important;
-        font-style: italic !important;
-        font-weight: 400 !important;
+        color: var(--text-secondary) !important;
+        opacity: 0.7 !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
     }
 
     .stTextInput > div > div > input:focus {
-        border-color: var(--accent-amber) !important;
-        background: var(--bg-ivory) !important;
-        box-shadow:
-            inset 0 2px 4px rgba(27, 59, 54, 0.05),
-            0 8px 24px var(--shadow-warm),
-            0 0 0 3px rgba(212, 175, 55, 0.15) !important;
+        border-color: var(--deep-teal) !important;
+        box-shadow: 0 0 0 3px rgba(10, 77, 78, 0.1) !important;
         outline: none !important;
     }
 
-    /* Message Styling */
-    .user-message {
-        background: linear-gradient(135deg, var(--bg-ivory) 0%, var(--bg-cream) 100%);
-        border-left: 4px solid var(--accent-amber);
-        border-radius: 8px;
-        padding: 1.5rem 2rem;
-        margin: 1.5rem 0;
-        font-family: 'Crimson Text', Georgia, serif;
-        font-size: 1.05rem;
-        line-height: 1.6;
-        color: var(--text-charcoal);
-        box-shadow:
-            0 4px 12px var(--shadow-warm),
-            inset 0 1px 2px rgba(255, 255, 255, 0.8);
-    }
-
-    .assistant-message {
-        background: linear-gradient(135deg, var(--bg-cream) 0%, var(--bg-parchment) 100%);
-        border-left: 4px solid var(--primary-forest);
-        border-radius: 8px;
-        padding: 1.8rem 2rem;
-        margin: 1.5rem 0;
-        font-family: 'Crimson Text', Georgia, serif;
-        font-size: 1.05rem;
-        line-height: 1.7;
-        color: var(--text-charcoal);
-        box-shadow:
-            0 6px 18px var(--shadow-cool),
-            inset 0 1px 2px rgba(255, 255, 255, 0.7);
-    }
-
-    /* Button Styling - Default */
+    /* Button Styling */
     .stButton > button {
-        background: linear-gradient(135deg, var(--primary-forest) 0%, var(--secondary-sage) 100%) !important;
-        color: var(--bg-ivory) !important;
+        background: var(--deep-teal) !important;
+        color: white !important;
         border: none !important;
         border-radius: 6px !important;
-        font-family: 'Crimson Text', Georgia, serif !important;
-        font-size: 1rem !important;
-        font-weight: 600 !important;
-        padding: 0.8rem 2rem !important;
-        transition: all 0.3s ease !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.8px !important;
-        box-shadow:
-            0 4px 12px var(--shadow-cool),
-            inset 0 1px 2px rgba(255, 255, 255, 0.1) !important;
+        padding: 12px 24px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        transition: all 0.15s ease !important;
+        height: 52px !important;
     }
 
     .stButton > button:hover {
-        background: linear-gradient(135deg, var(--secondary-sage) 0%, var(--primary-forest) 100%) !important;
-        transform: translateY(-2px) !important;
-        box-shadow:
-            0 6px 18px var(--shadow-cool),
-            inset 0 1px 2px rgba(255, 255, 255, 0.15) !important;
+        background: rgba(10, 77, 78, 0.9) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 2px 8px rgba(10, 77, 78, 0.15) !important;
     }
 
-    /* Plus Button (Attachment) - Circular, subtle */
-    .stButton > button:first-child {
-        width: 40px !important;
-        height: 40px !important;
-        min-height: 40px !important;
-        padding: 0 !important;
+    .stButton > button:active {
+        transform: translateY(0px) !important;
+    }
+
+    /* Primary send button */
+    .stButton > button[kind="primary"],
+    .stForm button[kind="formSubmit"] {
+        background: var(--deep-teal) !important;
+        width: 52px !important;
+        height: 52px !important;
         border-radius: 50% !important;
-        background: var(--bg-cream) !important;
-        border: 1px solid var(--border-sepia) !important;
-        color: var(--text-sage) !important;
-        font-size: 1.2rem !important;
-        text-transform: none !important;
-        letter-spacing: 0 !important;
-        box-shadow: 0 2px 4px var(--shadow-warm) !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-
-    .stButton > button:first-child:hover {
-        background: var(--bg-ivory) !important;
-        border-color: var(--accent-amber) !important;
-        transform: none !important;
-        box-shadow: 0 2px 8px var(--shadow-warm) !important;
-    }
-
-    /* Send Button (Form Submit) - Circular, prominent */
-    button[kind="primary"],
-    button[type="submit"] {
-        width: 48px !important;
-        height: 48px !important;
-        min-height: 48px !important;
         padding: 0 !important;
+        font-size: 18px !important;
+        line-height: 52px !important;
+        min-height: 52px !important;
+        max-height: 52px !important;
+    }
+
+    /* Plus button */
+    .stButton > button:not([kind="primary"]):not([data-testid*="log_btn"]) {
+        background: var(--surface) !important;
+        color: var(--text-secondary) !important;
+        border: 1px solid var(--border-color) !important;
+        width: 52px !important;
+        height: 52px !important;
         border-radius: 50% !important;
-        background: linear-gradient(135deg, var(--accent-amber) 0%, var(--accent-copper) 100%) !important;
-        color: white !important;
-        font-size: 1.5rem !important;
-        font-weight: 700 !important;
-        text-transform: none !important;
-        letter-spacing: 0 !important;
+        padding: 0 !important;
+        font-size: 18px !important;
+        min-height: 52px !important;
+        max-height: 52px !important;
+    }
+
+    .stButton > button:not([kind="primary"]):not([data-testid*="log_btn"]):hover {
+        background: white !important;
+        color: var(--neutral-ink) !important;
+        border-color: var(--deep-teal) !important;
+    }
+
+    /* File uploader */
+    .stFileUploader {
+        background: transparent !important;
         border: none !important;
-        box-shadow:
-            0 4px 12px rgba(212, 175, 55, 0.3),
-            inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
-        transition: all 0.3s ease !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        padding: 0 !important;
+        margin-top: 8px !important;
     }
 
-    button[kind="primary"]:hover,
-    button[type="submit"]:hover {
-        background: linear-gradient(135deg, var(--accent-copper) 0%, var(--accent-amber) 100%) !important;
-        transform: translateY(-2px) scale(1.05) !important;
-        box-shadow:
-            0 6px 16px rgba(212, 175, 55, 0.4),
-            inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+    .stFileUploader > div {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
     }
 
-    /* Technical Logs Styling */
-    .debug-logs {
-        font-family: 'Fira Code', 'Monaco', 'Courier New', monospace !important;
-        background: #f8f9fa !important;
-        border-left: 4px solid var(--secondary-sage) !important;
-        padding: 1rem !important;
-        margin: 1rem 0 !important;
-        border-radius: 4px !important;
-        font-size: 0.85rem !important;
-        line-height: 1.4 !important;
-        white-space: pre-wrap !important;
+    .stFileUploader [data-testid="stFileUploaderDropzone"] {
+        min-height: 60px !important;
+        padding: 16px !important;
+        background: var(--surface) !important;
+        border: 1px dashed var(--border-color) !important;
+        border-radius: 6px !important;
+        margin-top: 8px !important;
     }
 
-    .error-details {
-        font-family: 'Fira Code', 'Monaco', 'Courier New', monospace !important;
-        background: #fff5f5 !important;
-        border-left: 4px solid #e53e3e !important;
-        padding: 1rem !important;
-        margin: 1rem 0 !important;
-        border-radius: 4px !important;
-        font-size: 0.85rem !important;
-        line-height: 1.4 !important;
+    .stFileUploader [data-testid="stFileUploaderDropzoneInstructions"] {
+        font-size: 14px !important;
+        color: var(--text-secondary) !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
     }
 
-    /* Capabilities Hint */
+    /* Tool log button styling */
+    button[data-testid*="log_btn"] {
+        background: transparent !important;
+        border: none !important;
+        color: var(--text-secondary) !important;
+        font-size: 13px !important;
+        text-decoration: underline !important;
+        padding: 4px 8px !important;
+        cursor: pointer !important;
+        transition: color 0.15s ease !important;
+        height: auto !important;
+        min-height: auto !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
+    }
+
+    button[data-testid*="log_btn"]:hover {
+        color: var(--deep-teal) !important;
+        background: transparent !important;
+    }
+
+    /* Form styling */
+    .stForm {
+        border: none !important;
+        padding: 0 !important;
+        background: transparent !important;
+    }
+
+    .stForm [data-testid="InputInstructions"] {
+        display: none !important;
+    }
+
+    /* Capabilities hint */
     .capabilities-hint {
         text-align: center;
-        margin-top: 1.5rem;
-        padding: 1rem 2rem;
-        font-family: 'Crimson Text', Georgia, serif;
-        font-size: 1rem;
-        font-style: italic;
-        color: var(--text-sage);
-        line-height: 1.6;
-        opacity: 0.85;
+        margin-top: 2rem;
+        padding: 24px;
+        background: transparent;
+        border: none;
+        font-family: 'IBM Plex Sans', serif;
+        color: var(--text-secondary);
+        font-size: 16px;
+        font-weight: 400;
+        line-height: 24px;
         max-width: 750px;
         margin-left: auto;
         margin-right: auto;
-        border-top: 1px solid var(--border-sepia);
-        border-bottom: 1px solid var(--border-sepia);
+        opacity: 0.8;
     }
 
-    /* Privacy Disclaimer */
     .privacy-disclaimer {
         text-align: center;
-        margin-top: 1rem;
-        padding: 0.75rem 2rem;
-        font-family: 'Crimson Text', Georgia, serif;
-        font-size: 0.8rem;
-        color: var(--text-sage);
-        line-height: 1.6;
+        margin-top: 3rem;
+        padding: 16px;
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 20px;
         opacity: 0.6;
         max-width: 650px;
         margin-left: auto;
         margin-right: auto;
+        font-family: 'IBM Plex Sans', sans-serif;
     }
 
-    /* Prevent column stacking - keep buttons side-by-side */
-    div[data-testid="column"] {
-        flex: 0 0 auto !important;
-        min-width: fit-content !important;
+    /* Trust indicators styling */
+    .trust-indicators {
+        background: var(--surface);
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        padding: 32px 24px;
+        text-align: center;
+        margin: 48px -24px;
     }
 
-    /* Button container layout */
-    div[data-testid="column"]:has(button) {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+    .trust-stat {
+        color: var(--deep-teal);
+        font-size: 24px;
+        font-weight: 600;
+        font-family: 'IBM Plex Sans', sans-serif;
     }
 
-    /* Responsive Design */
+    .trust-label {
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 400;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-family: 'IBM Plex Sans', sans-serif;
+    }
+
+    /* Responsive design */
     @media (max-width: 768px) {
-        .landing-container {
-            padding-top: 5vh;
-            padding-bottom: 1rem;
-        }
-        .logo {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-        .tagline {
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-        }
-        .chat-container { padding: 0 1.5rem 120px 1.5rem; }
-        .user-message, .assistant-message { padding: 1.2rem 1.5rem; }
-        .debug-logs, .error-details { font-size: 0.75rem !important; }
-        .capabilities-hint {
-            font-size: 0.9rem;
-            padding: 0.75rem 1.5rem;
-            margin-top: 1rem;
-        }
-        .privacy-disclaimer {
-            font-size: 0.75rem;
-            margin-top: 0.75rem;
+        .main .block-container {
+            padding-left: 16px !important;
+            padding-right: 16px !important;
         }
 
-        /* Keep columns inline on mobile */
-        div[data-testid="column"] {
-            flex-shrink: 0 !important;
+        .logo {
+            font-size: 32px;
+            line-height: 40px;
+        }
+
+        .tagline {
+            font-size: 18px;
+            line-height: 28px;
+        }
+
+        .chat-container {
+            padding: 0 16px 120px 16px;
+        }
+
+        .chat-message {
+            padding: 16px;
+        }
+
+        .input-container-bottom {
+            padding: 16px;
         }
     }
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(css, unsafe_allow_html=True)
 
 
 class MultiServerMCPClient:
@@ -427,11 +424,23 @@ class MultiServerMCPClient:
         self.tool_registry = {}  # tool_name -> server_name
         self.exit_stack = AsyncExitStack()
         self.anthropic = Anthropic(api_key=ANTHROPIC_API_KEY)
+        self.use_legacy = False
 
     async def connect_to_servers(self, server_paths: dict, status_container=None):
-        """Connect to multiple FastMCP servers."""
+        """Connect to multiple MCP servers."""
+
+        # Check if new servers exist, otherwise fallback to legacy
+        servers_exist = all(Path(path).exists() for path in server_paths.values())
+
+        if not servers_exist:
+            if status_container:
+                status_container.warning("⚠️ New multi-server architecture not found, using legacy server")
+            self.use_legacy = True
+            await self.connect_to_legacy_server()
+            return
+
         if status_container:
-            status_container.info("🔄 Connecting to FastMCP servers...")
+            status_container.info("🔄 Connecting to multi-server architecture...")
 
         # Connect to each server
         for server_name, server_path in server_paths.items():
@@ -441,7 +450,7 @@ class MultiServerMCPClient:
 
                 server_params = StdioServerParameters(
                     command="fastmcp",
-                    args=["run", server_path]
+                    args=["run", server_path, "--transport", "stdio", "--no-banner"]
                 )
 
                 stdio_transport = await self.exit_stack.enter_async_context(
@@ -461,15 +470,38 @@ class MultiServerMCPClient:
             except Exception as e:
                 if status_container:
                     status_container.error(f"❌ Failed to connect to {server_name} server: {str(e)}")
-                raise
+                # Fall back to legacy if any server fails
+                if not self.use_legacy:
+                    self.use_legacy = True
+                    await self.connect_to_legacy_server()
+                    return
 
         # Build tool registry
         await self._discover_tools(status_container)
 
+    async def connect_to_legacy_server(self):
+        """Fallback to legacy single-server architecture."""
+        if not Path(LEGACY_MCP_SERVER).exists():
+            raise FileNotFoundError("Neither new multi-server nor legacy server found")
+
+        server_params = StdioServerParameters(
+            command=sys.executable,
+            args=[LEGACY_MCP_SERVER]
+        )
+
+        stdio_transport = await self.exit_stack.enter_async_context(
+            stdio_client(server_params)
+        )
+        stdio, write = stdio_transport
+        self.sessions["legacy"] = await self.exit_stack.enter_async_context(
+            ClientSession(stdio, write)
+        )
+        await self.sessions["legacy"].initialize()
+
     async def _discover_tools(self, status_container=None):
         """Build registry of which tool belongs to which server."""
         total_tools = 0
-        
+
         for server_name, session in self.sessions.items():
             tools = await session.list_tools()
             server_tool_count = len(tools.tools)
@@ -480,17 +512,21 @@ class MultiServerMCPClient:
 
             if status_container:
                 tool_names = [tool.name for tool in tools.tools]
-                status_container.info(f"📋 {server_name}: {server_tool_count} tools ({', '.join(tool_names[:3])}{'...' if len(tool_names) > 3 else ''})")  
+                status_container.info(f"📋 {server_name}: {server_tool_count} tools ({', '.join(tool_names[:3])}{'...' if len(tool_names) > 3 else ''})")
 
         if status_container:
             status_container.success(f"✅ Total: {total_tools} tools discovered across {len(self.sessions)} server(s)")
 
     async def call_tool(self, tool_name: str, arguments: dict):
         """Route tool call to appropriate server."""
-        server_name = self.tool_registry.get(tool_name)
-        if not server_name:
-            raise ValueError(f"Unknown tool: {tool_name}")
-        session = self.sessions[server_name]
+        if self.use_legacy:
+            session = self.sessions["legacy"]
+        else:
+            server_name = self.tool_registry.get(tool_name)
+            if not server_name:
+                raise ValueError(f"Unknown tool: {tool_name}")
+            session = self.sessions[server_name]
+
         return await session.call_tool(tool_name, arguments)
 
     async def get_all_tools_for_claude(self):
@@ -511,8 +547,17 @@ class MultiServerMCPClient:
         if status_container:
             status_container.info("🔧 Loading MCP tools...")
 
-        # Get available tools from all FastMCP servers
-        available_tools = await self.get_all_tools_for_claude()
+        # Get available tools from all MCP servers (or legacy)
+        if self.use_legacy and "legacy" in self.sessions:
+            response = await self.sessions["legacy"].list_tools()
+            available_tools = [{
+                "name": tool.name,
+                "description": tool.description,
+                "input_schema": tool.inputSchema
+            } for tool in response.tools]
+        else:
+            # Use multi-server approach
+            available_tools = await self.get_all_tools_for_claude()
 
         if status_container:
             tool_names = [t["name"] for t in available_tools]
@@ -529,12 +574,6 @@ class MultiServerMCPClient:
 
 You have access to clinical research and calculator tools via MCP (Model Context Protocol) servers. Use these tools to provide evidence-based guidance.
 
-**IMPORTANT FORMATTING RULES:**
-- Do NOT use emojis in your responses (no 🌸, ❤️, 💊, etc.)
-- Use professional medical journal formatting
-- Use markdown for structure (headings, bullet points, bold text)
-- Maintain a warm but professional tone without decorative symbols
-
 **Your Role:**
 You are an agent to give scientific answers to women's health questions.
 
@@ -546,7 +585,7 @@ You are an agent to give scientific answers to women's health questions.
 
 **Available Tool Categories:**
 - **Clinical Guidelines**: ESHRE, ASRM, NAMS position statements and protocols
-- **Research Database**: PubMed search and article retrieval  
+- **Research Database**: PubMed search and article retrieval
 - **Population Data**: ELSA (English Longitudinal Study of Ageing) datasets
 - **Clinical Calculators**: SART IVF success predictions and recommendations
 
@@ -742,10 +781,11 @@ def initialize_session_state():
 
 
 def render_landing_page():
-    """Render the landing page with logo."""
+    """Render the landing page with logo and tagline."""
     st.markdown("""
         <div class="landing-container">
             <div class="logo">DoctHER</div>
+            <div class="tagline">Research-Grade AI for Women's Health Topics</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -754,7 +794,8 @@ def render_capabilities_hint():
     """Render capabilities hint."""
     st.markdown("""
         <div class="capabilities-hint">
-            Some of the things I can do: Search ESHRE & NAMS guidelines, PubMed research, ELSA aging data, and calculate IVF success rates
+            Access 35M+ peer-reviewed articles, clinical calculators, and evidence-based
+            guidelines from ESHRE, ASRM, NAMS, and ELSA.
         </div>
     """, unsafe_allow_html=True)
 
@@ -823,7 +864,10 @@ To enable AI-powered consultations, please:
         # Connect to MCP servers
         status_container.info("🔄 Connecting to MCP servers...")
         await client.connect_to_servers(MCP_SERVERS, status_container)
-        status_container.success("✅ Connected to FastMCP servers")
+        if not client.use_legacy:
+            status_container.success("✅ Connected to multi-server architecture")
+        else:
+            status_container.success("✅ Connected to legacy server")
 
         # Process query - returns (response, tool_log)
         result = await client.process_query(user_input, status_container, tool_chain_container)
@@ -850,13 +894,18 @@ To enable AI-powered consultations, please:
 
 def handle_user_input(user_input: str):
     """Handle user input."""
-    # User message already added before processing started
-    # Just add empty tool log for user message
+    # Add user message to chat
+    st.session_state.messages.append({
+        "role": "user",
+        "content": user_input
+    })
+
+    # Add empty tool log for user message
     st.session_state.tool_logs.append([])
 
-    # Use persistent containers from session state (created in chat layout)
-    status_container = st.session_state.get('status_container', st.empty())
-    tool_chain_container = st.session_state.get('tool_chain_container', st.empty())
+    # Create containers for status and tool chain
+    tool_chain_container = st.empty()
+    status_container = st.empty()
 
     # Process with MCP - returns (response, tool_log)
     result = asyncio.run(handle_user_input_async(user_input, status_container, tool_chain_container))
@@ -902,31 +951,36 @@ def main():
         # Centered input container
         st.markdown('<div class="input-container centered">', unsafe_allow_html=True)
 
-        # Form with input on top, buttons below
-        with st.form(key=f"input_form_{st.session_state.form_counter}", clear_on_submit=False):
-            # Text input takes full width
-            default_value = st.session_state.pending_input if st.session_state.is_processing else ""
-            user_input = st.text_input(
-                "message",
-                value=default_value,
-                placeholder="e.g. I'm 38 with AMH 0.8, should I consider IVF?",
-                key=f"user_input_{st.session_state.form_counter}",
-                label_visibility="collapsed",
-                disabled=st.session_state.is_processing
-            )
+        # Three column layout: plus button and form (input + send)
+        col_plus, col_form = st.columns([0.04, 0.96])
 
-            # Buttons below input
-            col_plus, col_spacer, col_send = st.columns([0.1, 0.8, 0.1])
+        with col_plus:
+            # Plus button outside form
+            plus_clicked = st.button("➕", key="plus_button", help="Add attachments")
+            if plus_clicked:
+                st.session_state.show_upload_menu = not st.session_state.show_upload_menu
+                st.rerun()
 
-            with col_plus:
-                plus_clicked = st.form_submit_button("➕", help="Add attachments")
-                if plus_clicked:
-                    st.session_state.show_upload_menu = not st.session_state.show_upload_menu
-                    st.rerun()
+        with col_form:
+            # Form for input and send button (enables Enter key submission)
+            with st.form(key=f"input_form_{st.session_state.form_counter}", clear_on_submit=False):
+                col_input, col_send = st.columns([0.91, 0.09])
 
-            with col_send:
-                button_text = "⟳" if st.session_state.is_processing else "↑"
-                send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing)
+                with col_input:
+                    # Use pending_input if processing, otherwise empty
+                    default_value = st.session_state.pending_input if st.session_state.is_processing else ""
+                    user_input = st.text_input(
+                        "message",
+                        value=default_value,
+                        placeholder="e.g. I'm 38 with AMH 0.8, should I consider IVF?",
+                        key=f"user_input_{st.session_state.form_counter}",
+                        label_visibility="collapsed",
+                        disabled=st.session_state.is_processing
+                    )
+
+                with col_send:
+                    button_text = "⟳" if st.session_state.is_processing else "↑"
+                    send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing)
 
         # Show compact file uploader if toggled
         if st.session_state.show_upload_menu:
@@ -945,7 +999,7 @@ def main():
         # Privacy disclaimer
         st.markdown("""
             <div class="privacy-disclaimer">
-                None of the text or data used in the prompts is saved or used to train any models. 
+                None of the text or data used in the prompts is saved or used to train any models. All data is in your browser and deleted as soon as you refresh or move away from the page.
             </div>
         """, unsafe_allow_html=True)
 
@@ -957,16 +1011,6 @@ def main():
             </div>
         """, unsafe_allow_html=True)
 
-        # Create persistent status containers at top (for processing state)
-        if 'status_container' not in st.session_state:
-            st.session_state.status_container = st.empty()
-        if 'tool_chain_container' not in st.session_state:
-            st.session_state.tool_chain_container = st.empty()
-
-        # Display status containers
-        st.session_state.status_container.empty()
-        st.session_state.tool_chain_container.empty()
-
         # Show chat history in scrollable container
         st.markdown('<div class="chat-container">', unsafe_allow_html=True)
         render_chat_history()
@@ -975,31 +1019,36 @@ def main():
         # Fixed bottom input
         st.markdown('<div class="input-container-bottom">', unsafe_allow_html=True)
 
-        # Form with input on top, buttons below
-        with st.form(key=f"input_form_chat_{st.session_state.form_counter}", clear_on_submit=False):
-            # Text input takes full width
-            default_value = st.session_state.pending_input if st.session_state.is_processing else ""
-            user_input = st.text_input(
-                "message",
-                value=default_value,
-                placeholder="e.g. I'm 38 with AMH 0.8, should I consider IVF?",
-                key=f"user_input_chat_{st.session_state.form_counter}",
-                label_visibility="collapsed",
-                disabled=st.session_state.is_processing
-            )
+        # Three column layout: plus button and form (input + send)
+        col_plus, col_form = st.columns([0.04, 0.96])
 
-            # Buttons below input
-            col_plus, col_spacer, col_send = st.columns([0.1, 0.8, 0.1])
+        with col_plus:
+            # Plus button outside form
+            plus_clicked = st.button("➕", key="plus_button_chat", help="Add attachments")
+            if plus_clicked:
+                st.session_state.show_upload_menu = not st.session_state.show_upload_menu
+                st.rerun()
 
-            with col_plus:
-                plus_clicked = st.form_submit_button("➕", help="Add attachments")
-                if plus_clicked:
-                    st.session_state.show_upload_menu = not st.session_state.show_upload_menu
-                    st.rerun()
+        with col_form:
+            # Form for input and send button (enables Enter key submission)
+            with st.form(key=f"input_form_chat_{st.session_state.form_counter}", clear_on_submit=False):
+                col_input, col_send = st.columns([0.91, 0.09])
 
-            with col_send:
-                button_text = "⟳" if st.session_state.is_processing else "↑"
-                send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing)
+                with col_input:
+                    # Use pending_input if processing, otherwise empty
+                    default_value = st.session_state.pending_input if st.session_state.is_processing else ""
+                    user_input = st.text_input(
+                        "message",
+                        value=default_value,
+                        placeholder="e.g. I'm 38 with AMH 0.8, should I consider IVF?",
+                        key=f"user_input_chat_{st.session_state.form_counter}",
+                        label_visibility="collapsed",
+                        disabled=st.session_state.is_processing
+                    )
+
+                with col_send:
+                    button_text = "⟳" if st.session_state.is_processing else "↑"
+                    send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing)
 
         # Show compact file uploader if toggled (for chat mode)
         if st.session_state.show_upload_menu:
@@ -1028,12 +1077,6 @@ def main():
         if uploaded_file is not None:
             message_content += f"\n\n[Attachment: {uploaded_file.name}]"
 
-        # Add user message immediately to switch layout to chat mode
-        st.session_state.messages.append({
-            "role": "user",
-            "content": message_content
-        })
-
         # Store the input and set processing state
         st.session_state.pending_input = user_input
         st.session_state.pending_message = message_content
@@ -1042,7 +1085,7 @@ def main():
         # Reset upload menu state
         st.session_state.show_upload_menu = False
 
-        # Rerun to show processing state (now in chat mode with logo at top)
+        # Rerun to show processing state
         st.rerun()
 
     # Process the pending input if we're in processing state
