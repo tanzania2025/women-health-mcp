@@ -903,9 +903,13 @@ def handle_user_input(user_input: str):
     # Add empty tool log for user message
     st.session_state.tool_logs.append([])
 
-    # Create containers for status and tool chain
-    tool_chain_container = st.empty()
-    status_container = st.empty()
+    # Use session state containers if they exist, otherwise create new ones
+    if hasattr(st.session_state, 'tool_chain_container') and hasattr(st.session_state, 'status_container'):
+        tool_chain_container = st.session_state.tool_chain_container
+        status_container = st.session_state.status_container
+    else:
+        tool_chain_container = st.empty()
+        status_container = st.empty()
 
     # Process with MCP - returns (response, tool_log)
     result = asyncio.run(handle_user_input_async(user_input, status_container, tool_chain_container))
@@ -919,6 +923,12 @@ def handle_user_input(user_input: str):
     # Clear status and tool chain containers
     status_container.empty()
     tool_chain_container.empty()
+
+    # Clean up session state containers
+    if hasattr(st.session_state, 'tool_chain_container'):
+        del st.session_state.tool_chain_container
+    if hasattr(st.session_state, 'status_container'):
+        del st.session_state.status_container
 
     # Add assistant response
     st.session_state.messages.append({
@@ -1014,6 +1024,12 @@ def main():
         # Show chat history in scrollable container
         st.markdown('<div class="chat-container">', unsafe_allow_html=True)
         render_chat_history()
+
+        # Show processing status if currently processing
+        if st.session_state.is_processing:
+            st.session_state.tool_chain_container = st.empty()
+            st.session_state.status_container = st.empty()
+
         st.markdown('</div>', unsafe_allow_html=True)
 
         # Fixed bottom input
