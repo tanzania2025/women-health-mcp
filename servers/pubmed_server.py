@@ -54,9 +54,23 @@ async def search_pubmed(query: str, max_results: int = 10) -> dict[str, Any]:
         response.raise_for_status()
         data = response.json()
 
+        # Check if the response has the expected structure
+        if "esearchresult" not in data:
+            raise ValueError(f"Unexpected API response structure: {data}")
+
+        esearch_result = data["esearchresult"]
+
+        # Check for API errors
+        if "ERROR" in esearch_result:
+            raise ValueError(f"PubMed API error: {esearch_result['ERROR']}")
+
+        # Get count and idlist with defaults
+        count = int(esearch_result.get("count", 0))
+        pmids = esearch_result.get("idlist", [])
+
         return {
-            "count": int(data["esearchresult"]["count"]),
-            "pmids": data["esearchresult"]["idlist"],
+            "count": count,
+            "pmids": pmids,
             "query": query
         }
 
@@ -88,10 +102,21 @@ async def get_article_summaries(pmids: list[str]) -> list[dict[str, Any]]:
         response.raise_for_status()
         data = response.json()
 
+        # Check if the response has the expected structure
+        if "result" not in data:
+            raise ValueError(f"Unexpected API response structure: {data}")
+
+        # Check for API errors
+        if "error" in data:
+            raise ValueError(f"PubMed API error: {data['error']}")
+
         summaries = []
         for pmid in pmids:
             if pmid in data["result"]:
                 article = data["result"][pmid]
+                # Skip error entries
+                if isinstance(article, dict) and "error" in article:
+                    continue
                 summaries.append({
                     "pmid": pmid,
                     "title": article.get("title", ""),

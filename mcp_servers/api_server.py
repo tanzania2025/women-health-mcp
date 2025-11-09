@@ -32,99 +32,60 @@ mcp = FastMCP("women-health-api")
 async def search_pubmed(query: str, max_results: int = 10) -> str:
     """
     Search PubMed for peer-reviewed medical literature (35M+ articles).
-    
+
     Uses NCBI E-utilities API to search biomedical literature. Essential for
     evidence-based clinical decision support and research validation.
-    
+
     Args:
         query: Search query (e.g., 'breast cancer treatment', 'PCOS polycystic ovary syndrome')
         max_results: Maximum number of results to return (default: 10, max: 100)
     """
-    max_results = min(max_results, 100)
+    try:
+        max_results = min(max_results, 100)
 
-    # Search PubMed
-    search_results = await pubmed_server.search_pubmed(query, max_results)
-    summaries = await pubmed_server.get_article_summaries(search_results["pmids"])
+        # Search PubMed
+        search_results = await pubmed_server.search_pubmed(query, max_results)
+        summaries = await pubmed_server.get_article_summaries(search_results["pmids"])
 
-    # Format the response
-    response = f"Found {search_results['count']} articles for query: '{query}'\n\n"
-    response += f"Showing top {len(summaries)} results:\n\n"
+        # Format the response
+        response = f"Found {search_results['count']} articles for query: '{query}'\n\n"
+        response += f"Showing top {len(summaries)} results:\n\n"
 
-    for i, summary in enumerate(summaries, 1):
-        response += f"{i}. **{summary['title']}**\n"
-        response += f"   - PMID: {summary['pmid']}\n"
-        response += f"   - Authors: {', '.join(summary['authors'][:3])}"
-        if len(summary['authors']) > 3:
-            response += f" et al."
-        response += f"\n   - Journal: {summary['journal']}\n"
-        response += f"   - Published: {summary['pubdate']}\n"
-        if summary['doi']:
-            response += f"   - DOI: {summary['doi']}\n"
-        response += "\n"
+        for i, summary in enumerate(summaries, 1):
+            response += f"{i}. **{summary['title']}**\n"
+            response += f"   - PMID: {summary['pmid']}\n"
+            response += f"   - Authors: {', '.join(summary['authors'][:3])}"
+            if len(summary['authors']) > 3:
+                response += f" et al."
+            response += f"\n   - Journal: {summary['journal']}\n"
+            response += f"   - Published: {summary['pubdate']}\n"
+            if summary['doi']:
+                response += f"   - DOI: {summary['doi']}\n"
+            response += "\n"
 
-    response += "\nUse the 'get_article' tool with a PMID to retrieve the full abstract and details."
+        response += "\nUse the 'get_article' tool with a PMID to retrieve the full abstract and details."
 
-    return response
+        return response
+    except Exception as e:
+        return f"Error searching PubMed: {str(e)}\n\nPlease try again or check your query."
 
 
 @mcp.tool()
 async def get_article(pmid: str) -> str:
     """
     Retrieve full PubMed article details by PMID.
-    
+
     Returns complete article metadata including title, abstract, authors,
     journal, publication date, DOI, and keywords.
-    
+
     Args:
         pmid: PubMed ID (PMID) of the article to retrieve
     """
-    article = await pubmed_server.fetch_article_abstract(pmid)
-
-    # Format the response
-    response = f"# {article['title']}\n\n"
-    response += f"**PMID:** {article['pmid']}\n"
-    if article['doi']:
-        response += f"**DOI:** {article['doi']}\n"
-    response += f"**Journal:** {article['journal']}\n"
-    response += f"**Published:** {article['pubdate']}\n\n"
-
-    if article['authors']:
-        response += f"**Authors:** {', '.join(article['authors'])}\n\n"
-
-    if article['keywords']:
-        response += f"**Keywords:** {', '.join(article['keywords'])}\n\n"
-
-    if article['abstract']:
-        response += f"## Abstract\n\n{article['abstract']}\n"
-    else:
-        response += "**Note:** Abstract not available for this article.\n"
-
-    return response
-
-
-@mcp.tool()
-async def get_multiple_articles(pmids: list[str]) -> str:
-    """
-    Retrieve full details for multiple PubMed articles at once.
-    
-    Returns abstracts, titles, authors, and metadata for all specified PMIDs.
-    Useful for batch processing of search results.
-    
-    Args:
-        pmids: List of PubMed IDs to retrieve
-    """
-    articles = []
-    for pmid in pmids:
+    try:
         article = await pubmed_server.fetch_article_abstract(pmid)
-        articles.append(article)
-        await asyncio.sleep(0.34)  # Rate limiting
 
-    # Format the response
-    response = f"Retrieved {len(articles)} articles:\n\n"
-    response += "=" * 80 + "\n\n"
-
-    for article in articles:
-        response += f"# {article['title']}\n\n"
+        # Format the response
+        response = f"# {article['title']}\n\n"
         response += f"**PMID:** {article['pmid']}\n"
         if article['doi']:
             response += f"**DOI:** {article['doi']}\n"
@@ -142,9 +103,57 @@ async def get_multiple_articles(pmids: list[str]) -> str:
         else:
             response += "**Note:** Abstract not available for this article.\n"
 
-        response += "\n" + "=" * 80 + "\n\n"
+        return response
+    except Exception as e:
+        return f"Error retrieving article {pmid}: {str(e)}\n\nPlease verify the PMID is correct."
 
-    return response
+
+@mcp.tool()
+async def get_multiple_articles(pmids: list[str]) -> str:
+    """
+    Retrieve full details for multiple PubMed articles at once.
+
+    Returns abstracts, titles, authors, and metadata for all specified PMIDs.
+    Useful for batch processing of search results.
+
+    Args:
+        pmids: List of PubMed IDs to retrieve
+    """
+    try:
+        articles = []
+        for pmid in pmids:
+            article = await pubmed_server.fetch_article_abstract(pmid)
+            articles.append(article)
+            await asyncio.sleep(0.34)  # Rate limiting
+
+        # Format the response
+        response = f"Retrieved {len(articles)} articles:\n\n"
+        response += "=" * 80 + "\n\n"
+
+        for article in articles:
+            response += f"# {article['title']}\n\n"
+            response += f"**PMID:** {article['pmid']}\n"
+            if article['doi']:
+                response += f"**DOI:** {article['doi']}\n"
+            response += f"**Journal:** {article['journal']}\n"
+            response += f"**Published:** {article['pubdate']}\n\n"
+
+            if article['authors']:
+                response += f"**Authors:** {', '.join(article['authors'])}\n\n"
+
+            if article['keywords']:
+                response += f"**Keywords:** {', '.join(article['keywords'])}\n\n"
+
+            if article['abstract']:
+                response += f"## Abstract\n\n{article['abstract']}\n"
+            else:
+                response += "**Note:** Abstract not available for this article.\n"
+
+            response += "\n" + "=" * 80 + "\n\n"
+
+        return response
+    except Exception as e:
+        return f"Error retrieving articles: {str(e)}\n\nPlease verify the PMIDs are correct."
 
 
 # ==================== ESHRE Guidelines Tools ====================
