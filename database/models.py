@@ -118,7 +118,7 @@ class Symptom(Base):
     symptom_type = Column(String(100), nullable=False, index=True)  # e.g., 'pain', 'bleeding', 'mood'
     body_part = Column(String(100), nullable=True)  # e.g., 'abdomen', 'lower back', 'head'
     duration = Column(String(100), nullable=True)  # e.g., '2 hours', '3 days', 'ongoing'
-    symptom_time = Column(DateTime, nullable=False)  # When symptom occurred (defaults to recorded_at)
+    symptom_time = Column(DateTime, nullable=False, index=True)  # When symptom occurred - indexed for date queries
 
     # Extended fields
     severity = Column(Integer, nullable=True)  # 1-10 scale
@@ -156,13 +156,17 @@ def get_engine(database_url: str = "sqlite:///./womens_health_mcp.db"):
         SQLAlchemy engine instance
     """
     if database_url.startswith("postgresql"):
-        # Production PostgreSQL configuration with connection pooling
+        # Production PostgreSQL configuration optimized for Streamlit Cloud
         return create_engine(
             database_url,
-            pool_size=5,  # Number of persistent connections
-            max_overflow=10,  # Additional connections beyond pool_size
+            pool_size=2,  # Reduced for Streamlit Cloud's architecture
+            max_overflow=3,  # Smaller overflow for faster connection reuse
             pool_pre_ping=True,  # Verify connections are alive before using
-            pool_recycle=3600,  # Recycle connections after 1 hour
+            pool_recycle=300,  # Recycle connections every 5 minutes (faster refresh)
+            connect_args={
+                "connect_timeout": 10,  # 10 second connection timeout
+                "options": "-c statement_timeout=30000"  # 30 second query timeout
+            },
             echo=False,
         )
     else:
