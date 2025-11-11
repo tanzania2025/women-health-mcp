@@ -22,16 +22,34 @@ sys.path.append(str(Path(__file__).parent.parent))
 from dotenv import load_dotenv
 load_dotenv()
 
+# Import database and auth modules
+from database import init_db, get_session_maker, crud
+from auth import Authenticator
+from components import (
+    show_login_signup_page,
+    show_sidebar,
+    init_chat_session,
+    show_symptom_recording_form,
+    show_symptom_dashboard,
+)
+
 # Page configuration
 st.set_page_config(
     page_title="DoctHER - Your AI Women's Health Assistant",
     page_icon="🩺",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"  # Enable sidebar for navigation
 )
 
 # Anthropic Configuration
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+
+# Database Configuration
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./womens_health_mcp.db")
+
+# Initialize database (creates tables if they don't exist)
+engine = init_db(DATABASE_URL)
+SessionLocal = get_session_maker(engine)
 
 # MCP Server Paths - New Multi-Server Architecture
 MCP_SERVERS = {
@@ -45,8 +63,8 @@ LEGACY_MCP_SERVER = str(Path(__file__).parent.parent / "scripts" / "mcp_stdio_se
 
 # Custom CSS
 css = """
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
     /* Hide Streamlit default elements */
     #MainMenu {visibility: hidden;}
@@ -122,9 +140,9 @@ css = """
     .chat-container {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 0 24px 120px 24px;
-        min-height: auto;
-        overflow-y: auto;
+        padding: 0 24px 140px 24px;
+        min-height: 300px;
+        overflow-y: visible;
     }
 
     .chat-message {
@@ -203,62 +221,88 @@ css = """
         outline: none !important;
     }
 
-    /* Button Styling */
+    /* Button Styling - Minimal outlined design */
     .stButton > button {
-        background: var(--deep-teal) !important;
-        color: white !important;
+        background: transparent !important;
+        color: var(--text-secondary) !important;
         border: none !important;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
         padding: 12px 24px !important;
         font-size: 14px !important;
-        font-weight: 500 !important;
+        font-weight: 400 !important;
         font-family: 'IBM Plex Sans', sans-serif !important;
-        transition: all 0.15s ease !important;
+        transition: all 0.2s ease !important;
         height: 52px !important;
     }
 
     .stButton > button:hover {
-        background: rgba(10, 77, 78, 0.9) !important;
+        background: rgba(10, 77, 78, 0.08) !important;
+        color: var(--deep-teal) !important;
         transform: translateY(-1px) !important;
-        box-shadow: 0 2px 8px rgba(10, 77, 78, 0.15) !important;
     }
 
     .stButton > button:active {
         transform: translateY(0px) !important;
+        background: rgba(10, 77, 78, 0.12) !important;
     }
 
-    /* Primary send button */
+    /* Primary send button - outlined style */
     .stButton > button[kind="primary"],
     .stForm button[kind="formSubmit"] {
-        background: var(--deep-teal) !important;
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+        border: none !important;
         width: 52px !important;
         height: 52px !important;
         border-radius: 50% !important;
         padding: 0 !important;
-        font-size: 18px !important;
+        font-size: 20px !important;
         line-height: 52px !important;
         min-height: 52px !important;
         max-height: 52px !important;
+        transition: all 0.2s ease !important;
     }
 
-    /* Plus button */
+    .stButton > button[kind="primary"]:hover,
+    .stForm button[kind="formSubmit"]:hover {
+        background: rgba(10, 77, 78, 0.1) !important;
+        color: var(--deep-teal) !important;
+        transform: scale(1.05) !important;
+    }
+
+    /* Plus button and other icon buttons - outlined style */
     .stButton > button:not([kind="primary"]):not([data-testid*="log_btn"]) {
-        background: var(--surface) !important;
+        background: transparent !important;
         color: var(--text-secondary) !important;
-        border: 1px solid var(--border-color) !important;
+        border: none !important;
         width: 52px !important;
         height: 52px !important;
         border-radius: 50% !important;
         padding: 0 !important;
-        font-size: 18px !important;
+        font-size: 20px !important;
         min-height: 52px !important;
         max-height: 52px !important;
+        transition: all 0.2s ease !important;
     }
 
     .stButton > button:not([kind="primary"]):not([data-testid*="log_btn"]):hover {
-        background: white !important;
-        color: var(--neutral-ink) !important;
-        border-color: var(--deep-teal) !important;
+        background: rgba(10, 77, 78, 0.1) !important;
+        color: var(--deep-teal) !important;
+        transform: scale(1.05) !important;
+    }
+
+    /* Minimal Icon Styling */
+    /* Using clean SVG icons with minimal design */
+
+    /* Style for inline SVG icons */
+    .icon-btn-svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
     }
 
     /* File uploader */
@@ -382,6 +426,63 @@ css = """
         font-family: 'IBM Plex Sans', sans-serif;
     }
 
+    /* Sidebar styling for icon-only mode */
+    [data-testid="stSidebar"] {
+        min-width: 60px !important;
+        max-width: 120px !important;
+        width: 70px !important;
+    }
+
+    [data-testid="stSidebar"] > div:first-child {
+        padding: 0.75rem 0.25rem !important;
+    }
+
+    /* Icon buttons in sidebar - minimal outlined design */
+    [data-testid="stSidebar"] .stButton > button {
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+        border: none !important;
+        padding: 8px !important;
+        font-size: 20px !important;
+        border-radius: 8px !important;
+        transition: all 0.2s ease !important;
+        min-height: 40px !important;
+    }
+
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background: rgba(10, 77, 78, 0.1) !important;
+        color: var(--deep-teal) !important;
+        transform: scale(1.08) !important;
+    }
+
+    [data-testid="stSidebar"] .stButton > button:active {
+        background: rgba(10, 77, 78, 0.15) !important;
+        transform: scale(1.0) !important;
+    }
+
+    /* Disabled sidebar buttons */
+    [data-testid="stSidebar"] .stButton > button:disabled {
+        background: rgba(10, 77, 78, 0.15) !important;
+        color: var(--deep-teal) !important;
+        opacity: 0.7 !important;
+    }
+
+    /* Compact spacing for sidebar */
+    [data-testid="stSidebar"] .element-container {
+        margin-bottom: 0.25rem !important;
+    }
+
+
+    /* Export button icon */
+    button:has(.stDownloadButton):not([kind="primary"]) {
+        font-size: 0 !important;
+    }
+
+    /* Symptom form Save button - checkmark icon */
+    button[kind="primary"]:not(.stForm button) {
+        position: relative;
+    }
+
     /* Responsive design */
     @media (max-width: 768px) {
         .main .block-container {
@@ -409,6 +510,10 @@ css = """
 
         .input-container-bottom {
             padding: 16px;
+        }
+
+        [data-testid="stSidebar"] {
+            min-width: 60px !important;
         }
     }
 </style>
@@ -762,6 +867,14 @@ Remember: You're providing educational information, not medical advice. Always c
 
 def initialize_session_state():
     """Initialize session state variables."""
+    # Authentication state
+    Authenticator.init_session_state()
+
+    # Database session
+    if 'db_session' not in st.session_state:
+        st.session_state.db_session = SessionLocal()
+
+    # Chat state
     if 'messages' not in st.session_state:
         st.session_state.messages = []
     if 'show_chat' not in st.session_state:
@@ -778,6 +891,24 @@ def initialize_session_state():
         st.session_state.pending_input = ""
     if 'pending_message' not in st.session_state:
         st.session_state.pending_message = ""
+
+    # Chat session tracking
+    if 'current_session_id' not in st.session_state:
+        st.session_state.current_session_id = None
+
+    # Symptom tracker state
+    if 'show_symptom_tracker' not in st.session_state:
+        st.session_state.show_symptom_tracker = False
+    if 'show_symptom_form' not in st.session_state:
+        st.session_state.show_symptom_form = False
+    if 'show_chat_window' not in st.session_state:
+        st.session_state.show_chat_window = False
+    if 'current_input_text' not in st.session_state:
+        st.session_state.current_input_text = ""
+    if 'symptom_extraction_cache' not in st.session_state:
+        st.session_state.symptom_extraction_cache = None
+    if 'symptom_text_to_record' not in st.session_state:
+        st.session_state.symptom_text_to_record = None
 
 
 def render_landing_page():
@@ -845,6 +976,15 @@ def render_chat_history():
                         for i, tool_name in enumerate(tool_log, 1):
                             st.markdown(f"<div style='padding: 0.25rem 0 0.25rem 1rem; color: #475569; font-size: 0.9rem;'><strong>{i}.</strong> {tool_name}</div>", unsafe_allow_html=True)
 
+    # Show AI thinking placeholder if processing
+    if st.session_state.is_processing:
+        st.markdown("""
+            <div class="chat-message assistant-message" style="opacity: 0.7;">
+                <strong>🩺 DoctHER</strong><br>
+                <em>Thinking...</em>
+            </div>
+        """, unsafe_allow_html=True)
+
 
 
 async def handle_user_input_async(user_input: str, status_container, tool_chain_container):
@@ -892,16 +1032,81 @@ To enable AI-powered consultations, please:
         return (f"❌ Error: {str(e)}", [])
 
 
-def handle_user_input(user_input: str):
-    """Handle user input."""
-    # Add user message to chat
+def add_user_message(user_input: str):
+    """Add user message immediately to UI and database."""
+    # Get database session
+    db = st.session_state.db_session
+
+    # Ensure we have a chat session
+    session_id = st.session_state.get('current_session_id')
+    if not session_id:
+        user_id = st.session_state.get('user_id')
+        if user_id:
+            chat_session = crud.create_chat_session(db, user_id, title="New Chat")
+            st.session_state.current_session_id = chat_session.id
+            session_id = chat_session.id
+
+    # Add user message to chat immediately
     st.session_state.messages.append({
         "role": "user",
         "content": user_input
     })
 
+    # Save user message to database
+    if session_id:
+        crud.create_message(db, session_id, "user", user_input)
+
     # Add empty tool log for user message
     st.session_state.tool_logs.append([])
+
+    # Set chat mode
+    st.session_state.show_chat = True
+
+
+def generate_chat_title(user_message: str) -> str:
+    """
+    Generate a concise chat title using LLM based on the first user message.
+
+    Args:
+        user_message: The first message from the user
+
+    Returns:
+        A concise title (3-6 words)
+    """
+    try:
+        client = Anthropic(api_key=ANTHROPIC_API_KEY)
+
+        prompt = f"""Generate a very concise title (3-6 words maximum) for a chat conversation that starts with this user message:
+
+"{user_message}"
+
+The title should:
+- Be 3-6 words maximum
+- Capture the main topic or question
+- Be clear and descriptive
+- Use title case
+
+Return ONLY the title, nothing else."""
+
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=50,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        title = response.content[0].text.strip()
+        # Limit to 60 chars just in case
+        return title[:60] if len(title) > 60 else title
+    except Exception as e:
+        # Fallback to truncated message if LLM fails
+        return user_message[:47] + "..." if len(user_message) > 50 else user_message
+
+
+def process_assistant_response(user_input: str):
+    """Process AI response after user message is displayed."""
+    # Get database session
+    db = st.session_state.db_session
+    session_id = st.session_state.get('current_session_id')
 
     # Use session state containers if they exist, otherwise create new ones
     if hasattr(st.session_state, 'tool_chain_container') and hasattr(st.session_state, 'status_container'):
@@ -936,61 +1141,102 @@ def handle_user_input(user_input: str):
         "content": assistant_response
     })
 
+    # Save assistant message to database
+    if session_id:
+        assistant_message = crud.create_message(db, session_id, "assistant", assistant_response)
+
+        # Save tool logs for this message
+        if tool_log:
+            for tool_name in tool_log:
+                crud.create_tool_log(db, assistant_message.id, tool_name)
+
+        # Generate chat title using LLM on first message
+        chat_session = crud.get_chat_session(db, session_id)
+        if chat_session and chat_session.title in ["New Chat", "First Chat", "Untitled"]:
+            # Generate title using LLM
+            title = generate_chat_title(user_input)
+            crud.update_chat_session_title(db, session_id, title)
+
     # Store tool log for this response
     st.session_state.tool_logs.append(tool_log)
-
-    st.session_state.show_chat = True
 
 
 def main():
     """Main application."""
     initialize_session_state()
 
+    # Check authentication
+    if not Authenticator.is_authenticated():
+        # Show login/signup page
+        show_login_signup_page(st.session_state.db_session)
+        return
+
+    # User is authenticated - initialize chat session if needed
+    init_chat_session(st.session_state.db_session)
+
+    # Show sidebar with chat history and navigation
+    show_sidebar(st.session_state.db_session)
+
+    # Check if user wants to view chat selection window
+    if st.session_state.get('show_chat_window', False):
+        from components.sidebar import show_chat_selection_window
+        show_chat_selection_window(st.session_state.db_session)
+
+    # Check if user wants to view symptom tracker
+    if st.session_state.get('show_symptom_tracker', False):
+        show_symptom_dashboard(st.session_state.db_session)
+        return
+
+    # Check if user wants to record a symptom
+    if st.session_state.get('show_symptom_form', False):
+        show_symptom_recording_form(st.session_state.db_session, Anthropic(api_key=ANTHROPIC_API_KEY))
+        return
+
     # Initialize variables
     uploaded_file = None
     user_input = ""
     send_clicked = False
+    attach_clicked = False
+    record_clicked = False
 
-    # Check if this is the first interaction
-    is_first_interaction = len(st.session_state.messages) == 0
+    # Check if we should show chat mode (any messages exist OR currently processing)
+    show_chat_mode = len(st.session_state.messages) > 0 or st.session_state.is_processing
 
-    if is_first_interaction:
+    if not show_chat_mode:
         # Show centered landing page for first interaction
         render_landing_page()
 
         # Centered input container
         st.markdown('<div class="input-container centered">', unsafe_allow_html=True)
 
-        # Three column layout: plus button and form (input + send)
-        col_plus, col_form = st.columns([0.04, 0.96])
+        # Form with text input and buttons below
+        with st.form(key=f"input_form_{st.session_state.form_counter}", clear_on_submit=False):
+            # Full-width text input
+            default_value = st.session_state.pending_input if st.session_state.is_processing else ""
+            user_input = st.text_input(
+                "message",
+                value=default_value,
+                placeholder="e.g. I'm 38 with AMH 0.8, should I consider IVF?",
+                key=f"user_input_{st.session_state.form_counter}",
+                label_visibility="collapsed",
+                disabled=st.session_state.is_processing
+            )
 
-        with col_plus:
-            # Plus button outside form
-            plus_clicked = st.button("➕", key="plus_button", help="Add attachments")
-            if plus_clicked:
-                st.session_state.show_upload_menu = not st.session_state.show_upload_menu
-                st.rerun()
+            # Three buttons in a row below the input - much narrower than input box
+            # Layout: [📎 left] [large space] [🩺] [➤ right]
+            col1, col2, col3, col4 = st.columns([1, 6, 1, 1])
 
-        with col_form:
-            # Form for input and send button (enables Enter key submission)
-            with st.form(key=f"input_form_{st.session_state.form_counter}", clear_on_submit=False):
-                col_input, col_send = st.columns([0.91, 0.09])
+            with col1:
+                attach_clicked = st.form_submit_button("📎", help="Add attachments", disabled=st.session_state.is_processing, use_container_width=True)
 
-                with col_input:
-                    # Use pending_input if processing, otherwise empty
-                    default_value = st.session_state.pending_input if st.session_state.is_processing else ""
-                    user_input = st.text_input(
-                        "message",
-                        value=default_value,
-                        placeholder="e.g. I'm 38 with AMH 0.8, should I consider IVF?",
-                        key=f"user_input_{st.session_state.form_counter}",
-                        label_visibility="collapsed",
-                        disabled=st.session_state.is_processing
-                    )
+            # col2 is empty space
 
-                with col_send:
-                    button_text = "⟳" if st.session_state.is_processing else "↑"
-                    send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing)
+            with col3:
+                record_clicked = st.form_submit_button("🩺", help="Record Symptom", disabled=st.session_state.is_processing, use_container_width=True)
+
+            with col4:
+                button_text = "⟳" if st.session_state.is_processing else "➤"
+                send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing, use_container_width=True)
 
         # Show compact file uploader if toggled
         if st.session_state.show_upload_menu:
@@ -1014,10 +1260,10 @@ def main():
         """, unsafe_allow_html=True)
 
     else:
-        # Show title at top of chat
+        # Show compact title at top of chat
         st.markdown("""
-            <div style="text-align: center; padding: 0.5rem 0 1rem 0;">
-                <div class="logo" style="font-size: 2rem; margin-bottom: 0.25rem;">DoctHER</div>
+            <div style="text-align: center; padding: 0.25rem 0 0.5rem 0;">
+                <div class="logo" style="font-size: 1.5rem; margin-bottom: 0;">DoctHER</div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -1035,36 +1281,34 @@ def main():
         # Fixed bottom input
         st.markdown('<div class="input-container-bottom">', unsafe_allow_html=True)
 
-        # Three column layout: plus button and form (input + send)
-        col_plus, col_form = st.columns([0.04, 0.96])
+        # Form with text input and buttons below
+        with st.form(key=f"input_form_chat_{st.session_state.form_counter}", clear_on_submit=False):
+            # Full-width text input
+            default_value = st.session_state.pending_input if st.session_state.is_processing else ""
+            user_input = st.text_input(
+                "message",
+                value=default_value,
+                placeholder="e.g. I'm 38 with AMH 0.8, should I consider IVF?",
+                key=f"user_input_chat_{st.session_state.form_counter}",
+                label_visibility="collapsed",
+                disabled=st.session_state.is_processing
+            )
 
-        with col_plus:
-            # Plus button outside form
-            plus_clicked = st.button("➕", key="plus_button_chat", help="Add attachments")
-            if plus_clicked:
-                st.session_state.show_upload_menu = not st.session_state.show_upload_menu
-                st.rerun()
+            # Three buttons in a row below the input - much narrower than input box
+            # Layout: [📎 left] [large space] [🩺] [➤ right]
+            col1, col2, col3, col4 = st.columns([1, 6, 1, 1])
 
-        with col_form:
-            # Form for input and send button (enables Enter key submission)
-            with st.form(key=f"input_form_chat_{st.session_state.form_counter}", clear_on_submit=False):
-                col_input, col_send = st.columns([0.91, 0.09])
+            with col1:
+                attach_clicked = st.form_submit_button("📎", help="Add attachments", disabled=st.session_state.is_processing, use_container_width=True)
 
-                with col_input:
-                    # Use pending_input if processing, otherwise empty
-                    default_value = st.session_state.pending_input if st.session_state.is_processing else ""
-                    user_input = st.text_input(
-                        "message",
-                        value=default_value,
-                        placeholder="e.g. I'm 38 with AMH 0.8, should I consider IVF?",
-                        key=f"user_input_chat_{st.session_state.form_counter}",
-                        label_visibility="collapsed",
-                        disabled=st.session_state.is_processing
-                    )
+            # col2 is empty space
 
-                with col_send:
-                    button_text = "⟳" if st.session_state.is_processing else "↑"
-                    send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing)
+            with col3:
+                record_clicked = st.form_submit_button("🩺", help="Record Symptom", disabled=st.session_state.is_processing, use_container_width=True)
+
+            with col4:
+                button_text = "⟳" if st.session_state.is_processing else "➤"
+                send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing, use_container_width=True)
 
         # Show compact file uploader if toggled (for chat mode)
         if st.session_state.show_upload_menu:
@@ -1086,6 +1330,21 @@ def main():
             unsafe_allow_html=True
         )
 
+    # Handle attach button click
+    if attach_clicked:
+        st.session_state.show_upload_menu = not st.session_state.show_upload_menu
+        st.rerun()
+
+    # Handle record symptom button click
+    if record_clicked:
+        if user_input and user_input.strip():
+            st.session_state.symptom_text_to_record = user_input
+            st.session_state.show_symptom_form = True
+            st.session_state.show_chat_window = False
+            st.rerun()
+        else:
+            st.warning("Please enter symptom description in the text box first")
+
     # Handle send button click
     if send_clicked and user_input and user_input.strip() and not st.session_state.is_processing:
         # Include file info in the message if there's an attachment
@@ -1093,28 +1352,32 @@ def main():
         if uploaded_file is not None:
             message_content += f"\n\n[Attachment: {uploaded_file.name}]"
 
-        # Store the input and set processing state
-        st.session_state.pending_input = user_input
+        # Store the input for processing
         st.session_state.pending_message = message_content
+
+        # Add user message immediately (shows in UI right away)
+        add_user_message(message_content)
+
+        # Set processing state
         st.session_state.is_processing = True
+        st.session_state.pending_input = ""
 
         # Reset upload menu state
         st.session_state.show_upload_menu = False
 
-        # Rerun to show processing state
+        # Rerun to show user message and processing state
         st.rerun()
 
-    # Process the pending input if we're in processing state
+    # Process the assistant response if we're in processing state
     if st.session_state.is_processing and st.session_state.pending_message:
         message_to_process = st.session_state.pending_message
         st.session_state.pending_message = ""  # Clear it immediately
 
-        # Process the input
-        handle_user_input(message_to_process)
+        # Process the AI response
+        process_assistant_response(message_to_process)
 
-        # Clear processing state and input after completion
+        # Clear processing state
         st.session_state.is_processing = False
-        st.session_state.pending_input = ""
 
         # Increment form counter to reset form with new key
         st.session_state.form_counter += 1
