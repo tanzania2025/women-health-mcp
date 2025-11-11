@@ -47,9 +47,24 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 # Database Configuration
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./womens_health_mcp.db")
 
-# Initialize database (creates tables if they don't exist)
-engine = init_db(DATABASE_URL)
-SessionLocal = get_session_maker(engine)
+# Lazy database initialization - only connects when needed
+@st.cache_resource
+def get_database_engine():
+    """Initialize database engine (cached, runs once per app instance)."""
+    return init_db(DATABASE_URL)
+
+@st.cache_resource
+def get_database_session_maker():
+    """Get database session maker (cached, runs once per app instance)."""
+    engine = get_database_engine()
+    return get_session_maker(engine)
+
+def get_db_session():
+    """Get or create database session for current user (lazy initialization)."""
+    if 'db_session' not in st.session_state:
+        SessionLocal = get_database_session_maker()
+        st.session_state.db_session = SessionLocal()
+    return st.session_state.db_session
 
 # MCP Server Paths - New Multi-Server Architecture
 MCP_SERVERS = {
@@ -870,9 +885,8 @@ def initialize_session_state():
     # Authentication state
     Authenticator.init_session_state()
 
-    # Database session
-    if 'db_session' not in st.session_state:
-        st.session_state.db_session = SessionLocal()
+    # Database session - NOT initialized here, only when needed
+    # Call get_db_session() when you need database access
 
     # Chat state
     if 'messages' not in st.session_state:
@@ -1035,7 +1049,7 @@ To enable AI-powered consultations, please:
 def add_user_message(user_input: str):
     """Add user message immediately to UI and database."""
     # Get database session
-    db = st.session_state.db_session
+    db = get_db_session()
 
     # Ensure we have a chat session
     session_id = st.session_state.get('current_session_id')
@@ -1105,7 +1119,7 @@ Return ONLY the title, nothing else."""
 def process_assistant_response(user_input: str):
     """Process AI response after user message is displayed."""
     # Get database session
-    db = st.session_state.db_session
+    db = get_db_session()
     session_id = st.session_state.get('current_session_id')
 
     # Use session state containers if they exist, otherwise create new ones
@@ -1167,29 +1181,29 @@ def main():
 
     # Check authentication
     if not Authenticator.is_authenticated():
-        # Show login/signup page
-        show_login_signup_page(st.session_state.db_session)
+        # Show login/signup page - lazy load DB only when needed
+        show_login_signup_page(get_db_session())
         return
 
     # User is authenticated - initialize chat session if needed
-    init_chat_session(st.session_state.db_session)
+    init_chat_session(get_db_session())
 
     # Show sidebar with chat history and navigation
-    show_sidebar(st.session_state.db_session)
+    show_sidebar(get_db_session())
 
     # Check if user wants to view chat selection window
     if st.session_state.get('show_chat_window', False):
         from components.sidebar import show_chat_selection_window
-        show_chat_selection_window(st.session_state.db_session)
+        show_chat_selection_window(get_db_session())
 
     # Check if user wants to view symptom tracker
     if st.session_state.get('show_symptom_tracker', False):
-        show_symptom_dashboard(st.session_state.db_session)
+        show_symptom_dashboard(get_db_session())
         return
 
     # Check if user wants to record a symptom
     if st.session_state.get('show_symptom_form', False):
-        show_symptom_recording_form(st.session_state.db_session, Anthropic(api_key=ANTHROPIC_API_KEY))
+        show_symptom_recording_form(get_db_session(), Anthropic(api_key=ANTHROPIC_API_KEY))
         return
 
     # Initialize variables
