@@ -25,8 +25,11 @@ def test_database_connection():
         return False
 
     print(f"\n1. Database URL loaded:")
-    # Mask password for security
-    masked_url = database_url.split('@')[0].rsplit(':', 1)[0] + ':****@' + database_url.split('@')[1]
+    # Mask password for security (only for PostgreSQL URLs)
+    if '@' in database_url:
+        masked_url = database_url.split('@')[0].rsplit(':', 1)[0] + ':****@' + database_url.split('@')[1]
+    else:
+        masked_url = database_url  # SQLite URLs don't have passwords
     print(f"   {masked_url}")
 
     # Determine database type
