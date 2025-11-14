@@ -32,55 +32,44 @@ def show_symptom_recorder(db_session: Session, client):
         </div>
     """, unsafe_allow_html=True)
 
-    # Voice Agent UI styling
+    # Voice Agent UI styling - targeting the actual button elements
     st.markdown("""
         <style>
-        /* Make audio input button larger */
-        [data-testid="stAudioInput"] button {
-            width: 120px !important;
-            height: 120px !important;
+        /* Increase recording button size */
+        button[kind="icon"] {
+            width: 150px !important;
+            height: 150px !important;
             border-radius: 50% !important;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
             border: none !important;
-            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4) !important;
-            transition: all 0.3s ease !important;
+            box-shadow: 0 10px 35px rgba(102, 126, 234, 0.5) !important;
         }
-        [data-testid="stAudioInput"] button:hover {
-            transform: scale(1.05) !important;
-            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.6) !important;
+        button[kind="icon"]:hover {
+            transform: scale(1.08) !important;
+            box-shadow: 0 15px 45px rgba(102, 126, 234, 0.7) !important;
         }
-        [data-testid="stAudioInput"] button svg {
-            width: 60px !important;
-            height: 60px !important;
+        button[kind="icon"] svg {
+            width: 70px !important;
+            height: 70px !important;
+            color: white !important;
         }
-        /* Center the audio input */
+        /* Center and reduce spacing */
         [data-testid="stAudioInput"] {
             display: flex;
             justify-content: center;
-            margin: 2rem 0;
+            margin: 1rem 0 0.5rem 0 !important;
         }
-        .voice-prompt {
-            font-size: 1.2rem;
-            color: var(--text-color);
-            text-align: center;
-            opacity: 0.9;
-            margin: 1.5rem 0 2rem 0;
-        }
-        .or-divider {
-            font-size: 1rem;
-            color: var(--text-color);
-            opacity: 0.6;
-            margin: 2rem 0 1.5rem 0;
-            text-align: center;
+        .stAudioInput {
+            margin-bottom: 0.5rem !important;
         }
         </style>
+        <div style="text-align: center; margin: 0.5rem 0 0.25rem 0;">
+            <div style="font-size: 1.1rem; opacity: 0.85;">Tell me about your symptoms</div>
+        </div>
     """, unsafe_allow_html=True)
 
-    # Voice prompt
-    st.markdown('<div class="voice-prompt">Tell me about your symptoms</div>', unsafe_allow_html=True)
-
     # Handle voice transcription
-    audio_value = st.audio_input("", key="voice_input", label_visibility="collapsed")
+    audio_value = st.audio_input("🎤 Tap to record", key="voice_input")
 
     if audio_value is not None:
         # Automatically transcribe if not already done
@@ -121,7 +110,7 @@ def show_symptom_recorder(db_session: Session, client):
                     st.session_state.is_transcribing = False
 
     # Add "or type" divider
-    st.markdown('<div class="or-divider">or type your symptoms</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align: center; margin: 0.75rem 0 0.5rem 0; opacity: 0.7; font-size: 0.95rem;">or type your symptoms</div>', unsafe_allow_html=True)
 
     # Form for text input
     with st.form(key="symptom_voice_form", clear_on_submit=False):
