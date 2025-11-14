@@ -39,6 +39,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     last_login = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
+    is_admin = Column(Boolean, default=False, nullable=False)  # Admin access for analytics dashboard
 
     # Relationships
     chat_sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
@@ -139,6 +140,94 @@ class Symptom(Base):
 
     def __repr__(self):
         return f"<Symptom(id={self.id}, user_id={self.user_id}, type={self.symptom_type}, time={self.symptom_time})>"
+
+
+class UserActivity(Base):
+    """Track user login and activity patterns."""
+
+    __tablename__ = "user_activity"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_type = Column(String(50), nullable=False, index=True)  # 'login', 'logout', 'page_view', 'session_start', 'session_end'
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    session_id = Column(String(100), nullable=True, index=True)  # Browser session ID
+    page = Column(String(100), nullable=True)  # Page/view name (e.g., 'chat', 'symptom_tracker', 'symptom_form')
+    metadata = Column(Text, nullable=True)  # JSON for additional data
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<UserActivity(user_id={self.user_id}, event={self.event_type}, time={self.timestamp})>"
+
+
+class APIUsage(Base):
+    """Track Anthropic API usage for cost monitoring and analytics."""
+
+    __tablename__ = "api_usage"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    # API details
+    model = Column(String(100), nullable=False)  # e.g., 'claude-sonnet-4-20250514'
+    operation = Column(String(100), nullable=False)  # e.g., 'chat', 'symptom_extraction'
+
+    # Token usage
+    input_tokens = Column(Integer, nullable=False, default=0)
+    output_tokens = Column(Integer, nullable=False, default=0)
+    total_tokens = Column(Integer, nullable=False, default=0)
+
+    # Cost estimation (in USD)
+    estimated_cost = Column(Float, nullable=True)
+
+    # Request/response details
+    success = Column(Boolean, nullable=False, default=True)
+    error_message = Column(Text, nullable=True)
+    response_time_ms = Column(Integer, nullable=True)  # Response time in milliseconds
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<APIUsage(model={self.model}, tokens={self.total_tokens}, cost=${self.estimated_cost})>"
+
+
+class FeatureUsage(Base):
+    """Track usage of specific application features."""
+
+    __tablename__ = "feature_usage"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    feature_name = Column(String(100), nullable=False, index=True)  # e.g., 'symptom_record', 'chat_message', 'symptom_tracker_view'
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    count = Column(Integer, default=1, nullable=False)  # Number of times used in this event
+    metadata = Column(Text, nullable=True)  # JSON for additional context
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<FeatureUsage(user_id={self.user_id}, feature={self.feature_name}, time={self.timestamp})>"
+
+
+class SystemMetric(Base):
+    """Track system performance and health metrics."""
+
+    __tablename__ = "system_metrics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    metric_type = Column(String(100), nullable=False, index=True)  # e.g., 'db_query', 'page_load', 'error'
+    metric_value = Column(Float, nullable=False)  # e.g., query time in ms, load time in seconds
+    context = Column(String(200), nullable=True)  # e.g., 'get_user_symptoms', 'symptom_dashboard'
+    metadata = Column(Text, nullable=True)  # JSON for additional data
+
+    def __repr__(self):
+        return f"<SystemMetric(type={self.metric_type}, value={self.metric_value}, time={self.timestamp})>"
 
 
 # Database session management

@@ -332,3 +332,219 @@ def update_null_severities_to_default(db: Session, default_severity: int = 5) ->
         db.commit()
 
     return count
+
+# ==================== Analytics Operations ====================
+
+def get_user_activity_stats(db: Session, days: int = 30) -> dict:
+    """Get user activity statistics for the past N days."""
+    from datetime import timedelta
+    from .models import UserActivity
+    
+    start_date = datetime.utcnow() - timedelta(days=days)
+    
+    # Total unique users
+    total_users = db.query(User).count()
+    
+    # Active users (logged in during period)
+    active_users = db.query(func.count(func.distinct(UserActivity.user_id))).filter(
+        UserActivity.timestamp >= start_date,
+        UserActivity.event_type == 'login'
+    ).scalar() or 0
+    
+    # Total logins
+    total_logins = db.query(UserActivity).filter(
+        UserActivity.timestamp >= start_date,
+        UserActivity.event_type == 'login'
+    ).count()
+    
+    return {
+        'total_users': total_users,
+        'active_users': active_users,
+        'total_logins': total_logins,
+        'period_days': days
+    }
+
+
+def get_feature_usage_stats(db: Session, days: int = 30) -> dict:
+    """Get feature usage statistics."""
+    from datetime import timedelta
+    from .models import FeatureUsage
+    
+    start_date = datetime.utcnow() - timedelta(days=days)
+    
+    # Total symptoms recorded
+    symptoms_recorded = db.query(func.sum(FeatureUsage.count)).filter(
+        FeatureUsage.timestamp >= start_date,
+        FeatureUsage.feature_name == 'symptom_record'
+    ).scalar() or 0
+    
+    # Total chat messages
+    chat_messages = db.query(func.sum(FeatureUsage.count)).filter(
+        FeatureUsage.timestamp >= start_date,
+        FeatureUsage.feature_name == 'chat_message'
+    ).scalar() or 0
+    
+    # Symptom tracker views
+    tracker_views = db.query(func.sum(FeatureUsage.count)).filter(
+        FeatureUsage.timestamp >= start_date,
+        FeatureUsage.feature_name == 'symptom_tracker_view'
+    ).scalar() or 0
+    
+    # Most used symptom types
+    top_symptoms = db.query(Symptom.symptom_type, func.count(Symptom.id).label('count')).filter(
+        Symptom.recorded_at >= start_date
+    ).group_by(Symptom.symptom_type).order_by(desc('count')).limit(5).all()
+    
+    return {
+        'symptoms_recorded': int(symptoms_recorded),
+        'chat_messages': int(chat_messages),
+        'tracker_views': int(tracker_views),
+        'top_symptom_types': [(s[0], s[1]) for s in top_symptoms],
+        'period_days': days
+    }
+
+
+def get_api_usage_stats(db: Session, days: int = 30) -> dict:
+    """Get API usage and cost statistics."""
+    from datetime import timedelta
+    from .models import APIUsage
+    
+    start_date = datetime.utcnow() - timedelta(days=days)
+    
+    # Total API calls
+    total_calls = db.query(APIUsage).filter(
+        APIUsage.timestamp >= start_date
+    ).count()
+    
+    # Successful calls
+    successful_calls = db.query(APIUsage).filter(
+        APIUsage.timestamp >= start_date,
+        APIUsage.success == True
+    ).count()
+    
+    # Total tokens
+    total_input_tokens = db.query(func.sum(APIUsage.input_tokens)).filter(
+        APIUsage.timestamp >= start_date
+    ).scalar() or 0
+    
+    total_output_tokens = db.query(func.sum(APIUsage.output_tokens)).filter(
+        APIUsage.timestamp >= start_date
+    ).scalar() or 0
+    
+    # Total cost
+    total_cost = db.query(func.sum(APIUsage.estimated_cost)).filter(
+        APIUsage.timestamp >= start_date
+    ).scalar() or 0.0
+    
+    # Average response time
+    avg_response_time = db.query(func.avg(APIUsage.response_time_ms)).filter(
+        APIUsage.timestamp >= start_date,
+        APIUsage.response_time_ms.isnot(None)
+    ).scalar() or 0
+    
+    # Breakdown by operation
+    operations = db.query(
+        APIUsage.operation,
+        func.count(APIUsage.id).label('count'),
+        func.sum(APIUsage.total_tokens).label('tokens'),
+        func.sum(APIUsage.estimated_cost).label('cost')
+    ).filter(
+        APIUsage.timestamp >= start_date
+    ).group_by(APIUsage.operation).all()
+    
+    return {
+        'total_calls': total_calls,
+        'successful_calls': successful_calls,
+        'failed_calls': total_calls - successful_calls,
+        'success_rate': (successful_calls / total_calls * 100) if total_calls > 0 else 0,
+        'total_input_tokens': int(total_input_tokens),
+        'total_output_tokens': int(total_output_tokens),
+        'total_tokens': int(total_input_tokens + total_output_tokens),
+        'total_cost': round(total_cost, 4),
+        'avg_response_time_ms': round(avg_response_time, 2) if avg_response_time else 0,
+        'operations': [(op[0], op[1], int(op[2] or 0), round(op[3] or 0, 4)) for op in operations],
+        'period_days': days
+    }
+
+
+def get_system_metrics_stats(db: Session, days: int = 30) -> dict:
+    """Get system performance metrics."""
+    from datetime import timedelta
+    from .models import SystemMetric
+    
+    start_date = datetime.utcnow() - timedelta(days=days)
+    
+    # Average DB query time
+    avg_db_query = db.query(func.avg(SystemMetric.metric_value)).filter(
+        SystemMetric.timestamp >= start_date,
+        SystemMetric.metric_type == 'db_query'
+    ).scalar() or 0
+    
+    # Average page load time
+    avg_page_load = db.query(func.avg(SystemMetric.metric_value)).filter(
+        SystemMetric.timestamp >= start_date,
+        SystemMetric.metric_type == 'page_load'
+    ).scalar() or 0
+    
+    # Error count
+    error_count = db.query(SystemMetric).filter(
+        SystemMetric.timestamp >= start_date,
+        SystemMetric.metric_type == 'error'
+    ).count()
+    
+    return {
+        'avg_db_query_ms': round(avg_db_query, 2) if avg_db_query else 0,
+        'avg_page_load_s': round(avg_page_load, 2) if avg_page_load else 0,
+        'error_count': error_count,
+        'period_days': days
+    }
+
+
+def get_user_last_page(db: Session, user_id: int) -> Optional[str]:
+    """Get the last page a user visited."""
+    from .models import UserActivity
+    
+    activity = db.query(UserActivity).filter(
+        UserActivity.user_id == user_id,
+        UserActivity.event_type == 'page_view',
+        UserActivity.page.isnot(None)
+    ).order_by(desc(UserActivity.timestamp)).first()
+    
+    return activity.page if activity else None
+
+
+def get_all_users_activity(db: Session, limit: int = 100) -> List[dict]:
+    """Get recent activity for all users."""
+    from .models import UserActivity
+    
+    users = db.query(User).order_by(desc(User.last_login)).limit(limit).all()
+    
+    result = []
+    for user in users:
+        # Get last page
+        last_page = get_user_last_page(db, user.id)
+        
+        # Get last activity
+        last_activity = db.query(UserActivity).filter(
+            UserActivity.user_id == user.id
+        ).order_by(desc(UserActivity.timestamp)).first()
+        
+        # Count symptoms
+        symptom_count = db.query(Symptom).filter(Symptom.user_id == user.id).count()
+        
+        # Count chat sessions
+        chat_count = db.query(ChatSession).filter(ChatSession.user_id == user.id).count()
+        
+        result.append({
+            'user_id': user.id,
+            'email': user.email,
+            'created_at': user.created_at,
+            'last_login': user.last_login,
+            'last_page': last_page,
+            'last_activity': last_activity.timestamp if last_activity else None,
+            'symptom_count': symptom_count,
+            'chat_count': chat_count,
+            'is_admin': user.is_admin
+        })
+    
+    return result

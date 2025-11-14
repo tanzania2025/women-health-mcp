@@ -31,6 +31,7 @@ from components import (
     init_chat_session,
     show_symptom_recording_form,
     show_symptom_dashboard,
+    show_voice_symptom_recorder,
 )
 
 # Page configuration
@@ -917,6 +918,8 @@ def initialize_session_state():
         st.session_state.show_symptom_form = False
     if 'show_chat_window' not in st.session_state:
         st.session_state.show_chat_window = False
+    if 'show_voice_recorder' not in st.session_state:
+        st.session_state.show_voice_recorder = False
     if 'current_input_text' not in st.session_state:
         st.session_state.current_input_text = ""
     if 'symptom_extraction_cache' not in st.session_state:
@@ -1204,6 +1207,11 @@ def main():
     # Check if user wants to record a symptom
     if st.session_state.get('show_symptom_form', False):
         show_symptom_recording_form(get_db_session(), Anthropic(api_key=ANTHROPIC_API_KEY))
+        return
+
+    # Check if user wants to use voice recorder
+    if st.session_state.get('show_voice_recorder', False):
+        show_voice_symptom_recorder(get_db_session(), Anthropic(api_key=ANTHROPIC_API_KEY))
         return
 
     # Initialize variables

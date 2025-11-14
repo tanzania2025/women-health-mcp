@@ -172,6 +172,7 @@ def show_sidebar(db_session: Session):
             st.session_state.show_chat_window = False
             st.session_state.show_symptom_form = False
             st.session_state.show_symptom_tracker = False
+            st.session_state.show_voice_recorder = False
             st.session_state.is_processing = False
             st.session_state.pending_message = ""
             st.session_state.pending_input = ""
@@ -193,9 +194,19 @@ def show_sidebar(db_session: Session):
         if st.button("📊", use_container_width=True, help="Symptom Tracker", key="symptom_tracker_btn"):
             st.session_state.show_symptom_tracker = True
             st.session_state.show_chat_window = False
+            st.session_state.show_voice_recorder = False
             st.rerun()
 
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+
+        # Voice Recorder Button
+        if st.button("🎤", use_container_width=True, help="Voice Symptom Recorder", key="voice_recorder_btn"):
+            st.session_state.show_voice_recorder = True
+            st.session_state.show_symptom_tracker = False
+            st.session_state.show_chat_window = False
+            st.rerun()
+
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
         # Logout Button
         authenticator = Authenticator(db_session)
