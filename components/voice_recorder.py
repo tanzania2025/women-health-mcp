@@ -47,13 +47,11 @@ def show_voice_symptom_recorder(db_session: Session, client):
         # Show audio player
         st.audio(audio_value)
 
-        # Transcribe button
-        if not st.session_state.is_transcribing and st.session_state.transcribed_text is None:
-            if st.button("📝 Transcribe Recording", type="primary", use_container_width=True):
-                st.session_state.is_transcribing = True
-                st.rerun()
+        # Automatically transcribe if not already done
+        if st.session_state.transcribed_text is None and not st.session_state.is_transcribing:
+            st.session_state.is_transcribing = True
 
-        # Perform transcription
+        # Perform transcription automatically
         if st.session_state.is_transcribing:
             with st.spinner("Transcribing your recording..."):
                 # Get transcription service
