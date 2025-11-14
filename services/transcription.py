@@ -6,6 +6,8 @@ Provides speech-to-text conversion for voice symptom recording.
 
 import os
 import tempfile
+import warnings
+import numpy as np
 from pathlib import Path
 from typing import Optional, Dict, Any
 import streamlit as st
@@ -71,21 +73,36 @@ class TranscriptionService:
             # Save audio to temporary file if it's bytes
             if hasattr(audio_file, 'read'):
                 # It's a file-like object
+                audio_bytes = audio_file.read()
+
+                # Validate audio has content
+                if len(audio_bytes) < 100:  # Too small to be valid audio
+                    return {
+                        'text': '',
+                        'success': False,
+                        'error': 'Audio file is too small or empty',
+                        'segments': []
+                    }
+
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
-                    temp_file.write(audio_file.read())
+                    temp_file.write(audio_bytes)
                     temp_path = temp_file.name
             else:
                 # It's already a file path
                 temp_path = audio_file
 
-            # Transcribe using Faster Whisper
-            segments, info = self.model.transcribe(
-                temp_path,
-                language=language,
-                beam_size=5,
-                vad_filter=True,  # Voice Activity Detection to filter silence
-                vad_parameters=dict(min_silence_duration_ms=500)
-            )
+            # Suppress numpy warnings from faster_whisper
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', category=RuntimeWarning)
+
+                # Transcribe using Faster Whisper
+                segments, info = self.model.transcribe(
+                    temp_path,
+                    language=language,
+                    beam_size=5,
+                    vad_filter=True,  # Voice Activity Detection to filter silence
+                    vad_parameters=dict(min_silence_duration_ms=500)
+                )
 
             # Collect all segments
             segment_list = []
@@ -101,7 +118,16 @@ class TranscriptionService:
                 full_text.append(segment.text.strip())
 
             # Combine all text
-            transcribed_text = " ".join(full_text)
+            transcribed_text = " ".join(full_text).strip()
+
+            # Check if we got any actual text
+            if not transcribed_text:
+                return {
+                    'text': '',
+                    'success': False,
+                    'error': 'No speech detected in audio. Please try recording again.',
+                    'segments': []
+                }
 
             return {
                 'text': transcribed_text,
