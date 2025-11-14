@@ -31,7 +31,7 @@ from components import (
     init_chat_session,
     show_symptom_recording_form,
     show_symptom_dashboard,
-    show_voice_symptom_recorder,
+    show_symptom_recorder,
 )
 
 # Page configuration
@@ -766,7 +766,7 @@ Remember: You're providing educational information, not medical advice. Always c
             elif 'ivf' in name_lower or 'predict' in name_lower:
                 return 'C'
             else:
-                return '🔧'
+                return 'T'  # T for Tool
 
         # Agentic loop
         for iteration in range(15):
@@ -918,8 +918,6 @@ def initialize_session_state():
         st.session_state.show_symptom_form = False
     if 'show_chat_window' not in st.session_state:
         st.session_state.show_chat_window = False
-    if 'show_voice_recorder' not in st.session_state:
-        st.session_state.show_voice_recorder = False
     if 'current_input_text' not in st.session_state:
         st.session_state.current_input_text = ""
     if 'symptom_extraction_cache' not in st.session_state:
@@ -953,12 +951,16 @@ def render_chat_history():
     if st.session_state.messages:
         for idx, message in enumerate(st.session_state.messages):
             message_class = "user-message" if message["role"] == "user" else "assistant-message"
-            role_icon = "👤" if message["role"] == "user" else "🩺"
             role_label = "You" if message["role"] == "user" else "DoctHER"
 
+            # Use st.badge for role indicators with Material Symbols
+            if message["role"] == "user":
+                st.badge(role_label, icon=":material/person:")
+            else:
+                st.badge(role_label, icon=":material/medical_services:")
+
             st.markdown(f"""
-                <div class="chat-message {message_class}">
-                    <strong>{role_icon} {role_label}</strong><br>
+                <div class="chat-message {message_class}" style="margin-top: -8px;">
                     {message["content"]}
                 </div>
             """, unsafe_allow_html=True)
@@ -976,7 +978,8 @@ def render_chat_history():
                     col1, col2 = st.columns([0.3, 0.7])
                     with col1:
                         if st.button(
-                            f"🔍 View log ({len(tool_log)} tool{'s' if len(tool_log) > 1 else ''} used)",
+                            f"View log ({len(tool_log)} tool{'s' if len(tool_log) > 1 else ''} used)",
+                            icon=":material/search:",
                             key=f"log_btn_{idx}",
                             help="Click to view tool usage"
                         ):
@@ -995,9 +998,9 @@ def render_chat_history():
 
     # Show AI thinking placeholder if processing
     if st.session_state.is_processing:
+        st.badge("DoctHER", icon=":material/medical_services:")
         st.markdown("""
-            <div class="chat-message assistant-message" style="opacity: 0.7;">
-                <strong>🩺 DoctHER</strong><br>
+            <div class="chat-message assistant-message" style="opacity: 0.7; margin-top: -8px;">
                 <em>Thinking...</em>
             </div>
         """, unsafe_allow_html=True)
@@ -1209,9 +1212,9 @@ def main():
         show_symptom_recording_form(get_db_session(), Anthropic(api_key=ANTHROPIC_API_KEY))
         return
 
-    # Check if user wants to use voice recorder
-    if st.session_state.get('show_voice_recorder', False):
-        show_voice_symptom_recorder(get_db_session(), Anthropic(api_key=ANTHROPIC_API_KEY))
+    # Check if user wants to use symptom recorder (this is now the main page by default)
+    if not st.session_state.get('show_symptom_tracker', False) and not st.session_state.get('show_symptom_form', False) and not st.session_state.get('show_chat_window', False) and len(st.session_state.messages) == 0:
+        show_symptom_recorder(get_db_session(), Anthropic(api_key=ANTHROPIC_API_KEY))
         return
 
     # Initialize variables
@@ -1245,20 +1248,20 @@ def main():
             )
 
             # Three buttons in a row below the input - much narrower than input box
-            # Layout: [📎 left] [large space] [🩺] [➤ right]
+            # Layout: [attach left] [large space] [record] [send right]
             col1, col2, col3, col4 = st.columns([1, 6, 1, 1])
 
             with col1:
-                attach_clicked = st.form_submit_button("📎", help="Add attachments", disabled=st.session_state.is_processing, use_container_width=True)
+                attach_clicked = st.form_submit_button("", icon=":material/attach_file:", help="Add attachments", disabled=st.session_state.is_processing, use_container_width=True)
 
             # col2 is empty space
 
             with col3:
-                record_clicked = st.form_submit_button("🩺", help="Record Symptom", disabled=st.session_state.is_processing, use_container_width=True)
+                record_clicked = st.form_submit_button("", icon=":material/medical_services:", help="Record Symptom", disabled=st.session_state.is_processing, use_container_width=True)
 
             with col4:
-                button_text = "⟳" if st.session_state.is_processing else "➤"
-                send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing, use_container_width=True)
+                button_icon = ":material/refresh:" if st.session_state.is_processing else ":material/send:"
+                send_clicked = st.form_submit_button("", icon=button_icon, type="primary", disabled=st.session_state.is_processing, use_container_width=True)
 
         # Show compact file uploader if toggled
         if st.session_state.show_upload_menu:
@@ -1317,20 +1320,20 @@ def main():
             )
 
             # Three buttons in a row below the input - much narrower than input box
-            # Layout: [📎 left] [large space] [🩺] [➤ right]
+            # Layout: [attach left] [large space] [record] [send right]
             col1, col2, col3, col4 = st.columns([1, 6, 1, 1])
 
             with col1:
-                attach_clicked = st.form_submit_button("📎", help="Add attachments", disabled=st.session_state.is_processing, use_container_width=True)
+                attach_clicked = st.form_submit_button("", icon=":material/attach_file:", help="Add attachments", disabled=st.session_state.is_processing, use_container_width=True)
 
             # col2 is empty space
 
             with col3:
-                record_clicked = st.form_submit_button("🩺", help="Record Symptom", disabled=st.session_state.is_processing, use_container_width=True)
+                record_clicked = st.form_submit_button("", icon=":material/medical_services:", help="Record Symptom", disabled=st.session_state.is_processing, use_container_width=True)
 
             with col4:
-                button_text = "⟳" if st.session_state.is_processing else "➤"
-                send_clicked = st.form_submit_button(button_text, type="primary", disabled=st.session_state.is_processing, use_container_width=True)
+                button_icon = ":material/refresh:" if st.session_state.is_processing else ":material/send:"
+                send_clicked = st.form_submit_button("", icon=button_icon, type="primary", disabled=st.session_state.is_processing, use_container_width=True)
 
         # Show compact file uploader if toggled (for chat mode)
         if st.session_state.show_upload_menu:

@@ -1,7 +1,7 @@
 """
-Voice symptom recorder component for DoctHER application.
+Symptom recorder component for DoctHER application.
 
-Provides voice recording interface with automatic transcription and symptom extraction.
+Provides voice recording or text input interface with automatic transcription and symptom extraction.
 """
 
 import streamlit as st
@@ -9,9 +9,9 @@ from sqlalchemy.orm import Session
 from services.transcription import get_transcription_service
 
 
-def show_voice_symptom_recorder(db_session: Session, client):
+def show_symptom_recorder(db_session: Session, client):
     """
-    Display voice symptom recording interface.
+    Display symptom recording interface with voice or text input.
 
     Args:
         db_session: SQLAlchemy database session
@@ -32,18 +32,55 @@ def show_voice_symptom_recorder(db_session: Session, client):
         </div>
     """, unsafe_allow_html=True)
 
-    # Show landing-style centered content
+    # Voice Agent UI styling
     st.markdown("""
-        <div class="landing-container">
-            <div class="tagline" style="font-size: 1.1rem; margin-bottom: 2rem;">Record your voice or type your symptoms</div>
-        </div>
+        <style>
+        /* Make audio input button larger */
+        [data-testid="stAudioInput"] button {
+            width: 120px !important;
+            height: 120px !important;
+            border-radius: 50% !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border: none !important;
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4) !important;
+            transition: all 0.3s ease !important;
+        }
+        [data-testid="stAudioInput"] button:hover {
+            transform: scale(1.05) !important;
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.6) !important;
+        }
+        [data-testid="stAudioInput"] button svg {
+            width: 60px !important;
+            height: 60px !important;
+        }
+        /* Center the audio input */
+        [data-testid="stAudioInput"] {
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+        .voice-prompt {
+            font-size: 1.2rem;
+            color: var(--text-color);
+            text-align: center;
+            opacity: 0.9;
+            margin: 1.5rem 0 2rem 0;
+        }
+        .or-divider {
+            font-size: 1rem;
+            color: var(--text-color);
+            opacity: 0.6;
+            margin: 2rem 0 1.5rem 0;
+            text-align: center;
+        }
+        </style>
     """, unsafe_allow_html=True)
 
-    # Centered input container (same as landing page)
-    st.markdown('<div class="input-container centered">', unsafe_allow_html=True)
+    # Voice prompt
+    st.markdown('<div class="voice-prompt">Tell me about your symptoms</div>', unsafe_allow_html=True)
 
     # Handle voice transcription
-    audio_value = st.audio_input("🎤 Tap to record", key="voice_input")
+    audio_value = st.audio_input("", key="voice_input", label_visibility="collapsed")
 
     if audio_value is not None:
         # Automatically transcribe if not already done
@@ -75,7 +112,6 @@ def show_voice_symptom_recorder(db_session: Session, client):
                     # Navigate to symptom form automatically
                     st.session_state.symptom_text_to_record = result['text']
                     st.session_state.symptom_extraction_cache = None
-                    st.session_state.show_voice_recorder = False
                     st.session_state.show_symptom_form = True
                     st.session_state.transcribed_text = None
                     st.session_state.symptom_text_input = ""
@@ -84,9 +120,12 @@ def show_voice_symptom_recorder(db_session: Session, client):
                     st.error(f"Transcription failed: {result['error']}")
                     st.session_state.is_transcribing = False
 
-    # Form for symptom input (same structure as chat)
+    # Add "or type" divider
+    st.markdown('<div class="or-divider">or type your symptoms</div>', unsafe_allow_html=True)
+
+    # Form for text input
     with st.form(key="symptom_voice_form", clear_on_submit=False):
-        # Full-width text input
+        # Text input
         user_input = st.text_input(
             "message",
             value=st.session_state.symptom_text_input,
@@ -96,21 +135,18 @@ def show_voice_symptom_recorder(db_session: Session, client):
         )
 
         # Buttons layout: [← left] [large space] [Submit right]
-        col1, col2, col3 = st.columns([1, 6, 1])
+        btn_col1, btn_col2, btn_col3 = st.columns([1, 6, 1])
 
-        with col1:
+        with btn_col1:
             back_clicked = st.form_submit_button("←", help="Back to Chat", use_container_width=True)
 
-        # col2 is empty space
+        # btn_col2 is empty space
 
-        with col3:
+        with btn_col3:
             submit_clicked = st.form_submit_button("➤", help="Submit", type="primary", use_container_width=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
 
     # Handle form submission
     if back_clicked:
-        st.session_state.show_voice_recorder = False
         st.session_state.transcribed_text = None
         st.session_state.symptom_text_input = ""
         st.rerun()
@@ -121,7 +157,6 @@ def show_voice_symptom_recorder(db_session: Session, client):
         st.session_state.symptom_extraction_cache = None
 
         # Navigate to symptom form
-        st.session_state.show_voice_recorder = False
         st.session_state.show_symptom_form = True
         st.session_state.transcribed_text = None
         st.session_state.symptom_text_input = ""
