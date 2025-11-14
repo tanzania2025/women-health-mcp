@@ -153,7 +153,7 @@ class UserActivity(Base):
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     session_id = Column(String(100), nullable=True, index=True)  # Browser session ID
     page = Column(String(100), nullable=True)  # Page/view name (e.g., 'chat', 'symptom_tracker', 'symptom_form')
-    metadata = Column(Text, nullable=True)  # JSON for additional data
+    meta_data = Column(Text, nullable=True)  # JSON for additional data
 
     # Relationships
     user = relationship("User")
@@ -205,7 +205,7 @@ class FeatureUsage(Base):
     feature_name = Column(String(100), nullable=False, index=True)  # e.g., 'symptom_record', 'chat_message', 'symptom_tracker_view'
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     count = Column(Integer, default=1, nullable=False)  # Number of times used in this event
-    metadata = Column(Text, nullable=True)  # JSON for additional context
+    meta_data = Column(Text, nullable=True)  # JSON for additional context
 
     # Relationships
     user = relationship("User")
@@ -224,7 +224,7 @@ class SystemMetric(Base):
     metric_type = Column(String(100), nullable=False, index=True)  # e.g., 'db_query', 'page_load', 'error'
     metric_value = Column(Float, nullable=False)  # e.g., query time in ms, load time in seconds
     context = Column(String(200), nullable=True)  # e.g., 'get_user_symptoms', 'symptom_dashboard'
-    metadata = Column(Text, nullable=True)  # JSON for additional data
+    meta_data = Column(Text, nullable=True)  # JSON for additional data
 
     def __repr__(self):
         return f"<SystemMetric(type={self.metric_type}, value={self.metric_value}, time={self.timestamp})>"

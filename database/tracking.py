@@ -37,7 +37,7 @@ def track_user_activity(
             event_type=event_type,
             page=page,
             session_id=session_id,
-            metadata=json.dumps(metadata) if metadata else None,
+            meta_data=json.dumps(metadata) if metadata else None,
             timestamp=datetime.utcnow()
         )
         db.add(activity)
@@ -124,7 +124,7 @@ def track_feature_usage(
             user_id=user_id,
             feature_name=feature_name,
             count=count,
-            metadata=json.dumps(metadata) if metadata else None,
+            meta_data=json.dumps(metadata) if metadata else None,
             timestamp=datetime.utcnow()
         )
         db.add(usage)
@@ -156,7 +156,7 @@ def track_system_metric(
             metric_type=metric_type,
             metric_value=metric_value,
             context=context,
-            metadata=json.dumps(metadata) if metadata else None,
+            meta_data=json.dumps(metadata) if metadata else None,
             timestamp=datetime.utcnow()
         )
         db.add(metric)
