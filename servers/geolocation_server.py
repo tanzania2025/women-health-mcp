@@ -3,14 +3,18 @@
 MCP Server for IP Geolocation.
 
 Provides tools to get user's country and location based on IP address.
+Uses ipapi.co for geolocation lookups with fallback to ipify.org for IP detection.
 """
 
 import requests
 from typing import Optional
 from mcp.server.fastmcp import FastMCP
 
-# Initialize FastMCP server
-mcp = FastMCP("Geolocation")
+# Initialize FastMCP server with proper name and description
+mcp = FastMCP(
+    "Geolocation",
+    description="IP-based geolocation service that determines user's country, city, region, and timezone from IP addresses"
+)
 
 
 def get_public_ip() -> Optional[str]:
@@ -29,16 +33,48 @@ def get_public_ip() -> Optional[str]:
     return None
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_country_from_ip",
+    description="Get detailed location information (country, city, region, timezone) for a given IP address or auto-detect current IP"
+)
 def get_country_from_ip(ip_address: Optional[str] = None) -> dict:
     """
     Get country and location information from an IP address.
 
+    This tool retrieves comprehensive geolocation data including country name,
+    country code (ISO 3166-1 alpha-2), city, region, timezone, and coordinates.
+
     Args:
-        ip_address: IP address to lookup (if None, auto-detects current public IP)
+        ip_address: IPv4 address to lookup (e.g., "8.8.8.8"). If None, automatically
+                   detects and uses the current public IP address.
 
     Returns:
-        Dictionary with location information including country, city, region, and country code
+        Dictionary containing:
+            - ip (str): The IP address that was looked up
+            - country (str): Full country name (e.g., "United States")
+            - country_code (str): Two-letter ISO country code (e.g., "US")
+            - city (str): City name
+            - region (str): State/province/region name
+            - latitude (float): Latitude coordinate
+            - longitude (float): Longitude coordinate
+            - timezone (str): IANA timezone identifier (e.g., "America/New_York")
+            - success (bool): Whether the lookup was successful
+            - error (str|None): Error message if lookup failed, None otherwise
+
+    Example:
+        >>> get_country_from_ip("8.8.8.8")
+        {
+            "ip": "8.8.8.8",
+            "country": "United States",
+            "country_code": "US",
+            "city": "Mountain View",
+            "region": "California",
+            "latitude": 37.4056,
+            "longitude": -122.0775,
+            "timezone": "America/Los_Angeles",
+            "success": True,
+            "error": None
+        }
     """
     # Get IP if not provided
     if not ip_address:
@@ -109,29 +145,81 @@ def get_country_from_ip(ip_address: Optional[str] = None) -> dict:
         }
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_user_location",
+    description="Automatically detect the current user's location by looking up their public IP address"
+)
 def get_user_location() -> dict:
     """
     Get the current user's location based on their public IP address.
 
-    This is a convenience function that automatically detects the IP and returns location info.
+    This is a convenience tool that automatically detects the user's public IP address
+    and returns their location information. Useful when you need to know where the user
+    is located without having their IP address.
 
     Returns:
-        Dictionary with location information including country, city, region, and country code
+        Dictionary containing the same fields as get_country_from_ip:
+            - ip: The detected public IP address
+            - country: Full country name
+            - country_code: Two-letter ISO country code
+            - city: City name
+            - region: State/province/region name
+            - latitude: Latitude coordinate
+            - longitude: Longitude coordinate
+            - timezone: IANA timezone identifier
+            - success: Whether the lookup was successful
+            - error: Error message if failed, None otherwise
+
+    Example:
+        >>> get_user_location()
+        {
+            "ip": "203.0.113.42",
+            "country": "United Kingdom",
+            "country_code": "GB",
+            "city": "London",
+            "region": "England",
+            "latitude": 51.5074,
+            "longitude": -0.1278,
+            "timezone": "Europe/London",
+            "success": True,
+            "error": None
+        }
     """
     return get_country_from_ip(None)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_timezone_from_ip",
+    description="Get timezone information for an IP address or auto-detect timezone from current IP"
+)
 def get_timezone_from_ip(ip_address: Optional[str] = None) -> dict:
     """
     Get timezone information for an IP address.
 
+    This tool is useful when you only need timezone data without full location details.
+    It returns the IANA timezone identifier for the given IP address.
+
     Args:
-        ip_address: IP address to lookup (if None, auto-detects current public IP)
+        ip_address: IPv4 address to lookup (e.g., "1.1.1.1"). If None, automatically
+                   detects and uses the current public IP address.
 
     Returns:
-        Dictionary with timezone information
+        Dictionary containing:
+            - ip (str): The IP address that was looked up
+            - timezone (str): IANA timezone identifier (e.g., "America/New_York")
+            - country (str): Country name for context
+            - success (bool): Whether the lookup was successful
+            - error (str|None): Error message if lookup failed, None otherwise
+
+    Example:
+        >>> get_timezone_from_ip("1.1.1.1")
+        {
+            "ip": "1.1.1.1",
+            "timezone": "Australia/Sydney",
+            "country": "Australia",
+            "success": True,
+            "error": None
+        }
     """
     location_data = get_country_from_ip(ip_address)
 
