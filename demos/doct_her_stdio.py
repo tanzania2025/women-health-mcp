@@ -9,11 +9,19 @@ import sys
 import os
 import re
 import asyncio
+import warnings
+import numpy as np
 from pathlib import Path
 from contextlib import AsyncExitStack
 from anthropic import Anthropic
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+
+# Suppress numpy warnings from faster_whisper before any imports
+warnings.filterwarnings('ignore', category=RuntimeWarning, module='faster_whisper')
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*divide by zero.*')
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*overflow.*')
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*invalid value.*')
 
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
