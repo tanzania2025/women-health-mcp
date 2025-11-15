@@ -138,6 +138,7 @@ def show_symptom_recorder(db_session: Session, client):
     if back_clicked:
         st.session_state.transcribed_text = None
         st.session_state.symptom_text_input = ""
+        st.session_state.show_symptom_recorder = False
         st.rerun()
 
     if submit_clicked and user_input.strip():
