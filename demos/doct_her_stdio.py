@@ -1255,16 +1255,16 @@ def main():
             col1, col2, col3, col4 = st.columns([1, 6, 1, 1])
 
             with col1:
-                attach_clicked = st.form_submit_button("", icon=":material/attach_file:", help="Add attachments", disabled=st.session_state.is_processing, use_container_width=True, key=f"attach_btn_{st.session_state.form_counter}")
+                attach_clicked = st.form_submit_button("Attach", icon=":material/attach_file:", help="Add attachments", disabled=st.session_state.is_processing, use_container_width=True)
 
             # col2 is empty space
 
             with col3:
-                record_clicked = st.form_submit_button("", icon=":material/medical_services:", help="Record Symptom", disabled=st.session_state.is_processing, use_container_width=True, key=f"record_btn_{st.session_state.form_counter}")
+                record_clicked = st.form_submit_button("Record", icon=":material/medical_services:", help="Record Symptom", disabled=st.session_state.is_processing, use_container_width=True)
 
             with col4:
                 button_icon = ":material/refresh:" if st.session_state.is_processing else ":material/send:"
-                send_clicked = st.form_submit_button("", icon=button_icon, type="primary", disabled=st.session_state.is_processing, use_container_width=True, key=f"send_btn_{st.session_state.form_counter}")
+                send_clicked = st.form_submit_button("Send", icon=button_icon, type="primary", disabled=st.session_state.is_processing, use_container_width=True)
 
         # Show compact file uploader if toggled
         if st.session_state.show_upload_menu:
@@ -1327,16 +1327,16 @@ def main():
             col1, col2, col3, col4 = st.columns([1, 6, 1, 1])
 
             with col1:
-                attach_clicked = st.form_submit_button("", icon=":material/attach_file:", help="Add attachments", disabled=st.session_state.is_processing, use_container_width=True, key=f"attach_btn_{st.session_state.form_counter}")
+                attach_clicked = st.form_submit_button("Attach", icon=":material/attach_file:", help="Add attachments", disabled=st.session_state.is_processing, use_container_width=True)
 
             # col2 is empty space
 
             with col3:
-                record_clicked = st.form_submit_button("", icon=":material/medical_services:", help="Record Symptom", disabled=st.session_state.is_processing, use_container_width=True, key=f"record_btn_{st.session_state.form_counter}")
+                record_clicked = st.form_submit_button("Record", icon=":material/medical_services:", help="Record Symptom", disabled=st.session_state.is_processing, use_container_width=True)
 
             with col4:
                 button_icon = ":material/refresh:" if st.session_state.is_processing else ":material/send:"
-                send_clicked = st.form_submit_button("", icon=button_icon, type="primary", disabled=st.session_state.is_processing, use_container_width=True, key=f"send_btn_{st.session_state.form_counter}")
+                send_clicked = st.form_submit_button("Send", icon=button_icon, type="primary", disabled=st.session_state.is_processing, use_container_width=True)
 
         # Show compact file uploader if toggled (for chat mode)
         if st.session_state.show_upload_menu:
