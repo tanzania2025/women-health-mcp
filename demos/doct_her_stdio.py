@@ -1220,11 +1220,6 @@ def main():
         show_symptom_recording_form(get_db_session(), Anthropic(api_key=ANTHROPIC_API_KEY))
         return
 
-    # Check if user wants to use symptom recorder (this is now the main page by default)
-    if not st.session_state.get('show_symptom_tracker', False) and not st.session_state.get('show_symptom_form', False) and not st.session_state.get('show_chat_window', False) and len(st.session_state.messages) == 0:
-        show_symptom_recorder(get_db_session(), Anthropic(api_key=ANTHROPIC_API_KEY))
-        return
-
     # Initialize variables
     uploaded_file = None
     user_input = ""
