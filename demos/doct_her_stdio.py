@@ -1006,14 +1006,6 @@ def render_chat_history():
                         for i, tool_name in enumerate(tool_log, 1):
                             st.markdown(f"<div style='padding: 0.25rem 0 0.25rem 1rem; color: #475569; font-size: 0.9rem;'><strong>{i}.</strong> {tool_name}</div>", unsafe_allow_html=True)
 
-    # Show AI thinking placeholder if processing
-    if st.session_state.is_processing:
-        st.badge("DoctHER", icon=":material/medical_services:")
-        st.markdown("""
-            <div class="chat-message assistant-message" style="opacity: 0.7; margin-top: -8px;">
-                <em>Thinking...</em>
-            </div>
-        """, unsafe_allow_html=True)
 
 
 
