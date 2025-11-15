@@ -60,17 +60,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./womens_health_mcp.db")
 @st.cache_resource
 def get_database_engine():
     """Initialize database engine (cached, runs once per app instance)."""
-    engine = init_db(DATABASE_URL)
-
-    # Run migrations automatically on startup
-    try:
-        from scripts.run_migration import add_admin_column
-        add_admin_column()
-    except Exception as e:
-        # Log but don't crash - migration might already be done
-        print(f"Migration warning: {e}")
-
-    return engine
+    return init_db(DATABASE_URL)
 
 @st.cache_resource
 def get_database_session_maker():
