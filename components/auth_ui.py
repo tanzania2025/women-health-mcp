@@ -39,35 +39,39 @@ def show_login_signup_page(db_session: Session):
 
             st.markdown("""
                 <style>
-                /* Fix for iOS Safari button rendering */
+                /* Fix for iOS Safari and general button rendering */
                 div[data-testid="stForm"] button {
                     -webkit-appearance: none !important;
                     appearance: none !important;
-                    color: white !important;
                     font-size: 16px !important;
                     padding: 0.5rem 1rem !important;
                     border-radius: 0.5rem !important;
                     font-weight: 500 !important;
                 }
 
-                /* Primary login button */
+                /* First button (Login) - primary style */
+                div[data-testid="stForm"] button:first-of-type,
                 div[data-testid="stForm"] button[kind="primary"] {
                     background-color: #ff4b4b !important;
+                    color: white !important;
                     border: 1px solid #ff4b4b !important;
                 }
 
+                div[data-testid="stForm"] button:first-of-type:hover,
                 div[data-testid="stForm"] button[kind="primary"]:hover {
                     background-color: #ff2b2b !important;
                     border: 1px solid #ff2b2b !important;
                 }
 
-                /* Secondary demo button with DoctHER brand color */
+                /* Second button (Demo) - DoctHER brand color */
+                div[data-testid="stForm"] button:nth-of-type(2),
                 div[data-testid="stForm"] button[kind="secondary"] {
                     background-color: #2C8C99 !important;
                     color: white !important;
                     border: 1px solid #2C8C99 !important;
                 }
 
+                div[data-testid="stForm"] button:nth-of-type(2):hover,
                 div[data-testid="stForm"] button[kind="secondary"]:hover {
                     background-color: #237680 !important;
                     color: white !important;
