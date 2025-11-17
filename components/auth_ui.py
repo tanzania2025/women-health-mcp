@@ -23,7 +23,7 @@ def show_login_signup_page(db_session: Session):
 
     with col2:
         # App branding
-        st.markdown("<h1 style='text-align: center; color: #2C8C99;'>🏥 DoctHER</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #2C8C99;'>DoctHER</h1>", unsafe_allow_html=True)
         st.markdown(
             "<p style='text-align: center; color: #666; font-size: 1.2em; margin-bottom: 2em;'>"
             "Your Personal Women's Health Assistant</p>",
@@ -36,6 +36,20 @@ def show_login_signup_page(db_session: Session):
         # Login Tab
         with tab1:
             st.subheader("Welcome Back")
+
+            st.markdown("""
+                <style>
+                div[data-testid="stForm"] button[kind="secondary"] {
+                    background-color: #2C8C99;
+                    color: white;
+                    border: none;
+                }
+                div[data-testid="stForm"] button[kind="secondary"]:hover {
+                    background-color: #237680;
+                    color: white;
+                }
+                </style>
+            """, unsafe_allow_html=True)
 
             with st.form("login_form"):
                 email = st.text_input(
@@ -51,6 +65,7 @@ def show_login_signup_page(db_session: Session):
                 )
 
                 submitted = st.form_submit_button("Login", use_container_width=True)
+                demo_submitted = st.form_submit_button("Use Demo Account", use_container_width=True, type="secondary")
 
                 if submitted:
                     if not email or not password:
@@ -64,6 +79,15 @@ def show_login_signup_page(db_session: Session):
                             st.rerun()
                         else:
                             st.error(message)
+
+                if demo_submitted:
+                    success, message, user = authenticator.login_user("demo@docther.com", "demo1234")
+                    if success:
+                        authenticator.set_user_session(user)
+                        st.success("Logged in as demo user!")
+                        st.rerun()
+                    else:
+                        st.error(f"Demo account not available: {message}")
 
         # Signup Tab
         with tab2:
