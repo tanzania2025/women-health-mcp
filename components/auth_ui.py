@@ -39,14 +39,39 @@ def show_login_signup_page(db_session: Session):
 
             st.markdown("""
                 <style>
-                div[data-testid="stForm"] button[kind="secondary"] {
-                    background-color: #2C8C99;
-                    color: white;
-                    border: none;
+                /* Fix for iOS Safari button rendering */
+                div[data-testid="stForm"] button {
+                    -webkit-appearance: none !important;
+                    appearance: none !important;
+                    color: white !important;
+                    font-size: 16px !important;
+                    padding: 0.5rem 1rem !important;
+                    border-radius: 0.5rem !important;
+                    font-weight: 500 !important;
                 }
+
+                /* Primary login button */
+                div[data-testid="stForm"] button[kind="primary"] {
+                    background-color: #ff4b4b !important;
+                    border: 1px solid #ff4b4b !important;
+                }
+
+                div[data-testid="stForm"] button[kind="primary"]:hover {
+                    background-color: #ff2b2b !important;
+                    border: 1px solid #ff2b2b !important;
+                }
+
+                /* Secondary demo button with DoctHER brand color */
+                div[data-testid="stForm"] button[kind="secondary"] {
+                    background-color: #2C8C99 !important;
+                    color: white !important;
+                    border: 1px solid #2C8C99 !important;
+                }
+
                 div[data-testid="stForm"] button[kind="secondary"]:hover {
-                    background-color: #237680;
-                    color: white;
+                    background-color: #237680 !important;
+                    color: white !important;
+                    border: 1px solid #237680 !important;
                 }
                 </style>
             """, unsafe_allow_html=True)
