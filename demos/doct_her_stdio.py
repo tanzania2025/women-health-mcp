@@ -541,28 +541,42 @@ css = """
         }
     }
 
-    /* Force sidebar to be visible */
-    [data-testid="stSidebar"][aria-expanded="false"] {
-        margin-left: 0px !important;
+    /* Force sidebar to always be visible and expanded */
+    section[data-testid="stSidebar"] {
+        transform: none !important;
+        visibility: visible !important;
+        display: block !important;
+        position: relative !important;
+    }
+
+    section[data-testid="stSidebar"] > div {
+        transform: none !important;
+        visibility: visible !important;
+    }
+
+    section[data-testid="stSidebar"][aria-expanded="false"] {
+        transform: none !important;
+        margin-left: 0 !important;
+    }
+
+    section[data-testid="stSidebar"][aria-expanded="false"] > div {
+        transform: translateX(0) !important;
+    }
+
+    /* Hide the sidebar collapse button */
+    button[kind="header"] {
+        display: none !important;
     }
 
     [data-testid="collapsedControl"] {
         display: none !important;
     }
-</style>
 
-<script>
-// Auto-expand sidebar on page load
-window.addEventListener('load', function() {
-    const sidebar = document.querySelector('[data-testid="stSidebar"]');
-    if (sidebar && sidebar.getAttribute('aria-expanded') === 'false') {
-        const collapseButton = document.querySelector('[data-testid="collapsedControl"]');
-        if (collapseButton) {
-            collapseButton.click();
-        }
+    /* Adjust main content to account for always-visible sidebar */
+    .main .block-container {
+        padding-left: 24px !important;
     }
-});
-</script>
+</style>
 """
 st.markdown(css, unsafe_allow_html=True)
 
