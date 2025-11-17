@@ -195,14 +195,14 @@ def show_symptom_recording_form(db_session: Session, client):
         }
 
         .stButton > button[kind="primary"] {
-            background-color: #ff4b4b !important;
+            background-color: #e57373 !important;
             color: white !important;
-            border: 1px solid #ff4b4b !important;
+            border: 1px solid #e57373 !important;
         }
 
         .stButton > button[kind="primary"]:hover {
-            background-color: #ff2b2b !important;
-            border: 1px solid #ff2b2b !important;
+            background-color: #d66565 !important;
+            border: 1px solid #d66565 !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -321,15 +321,15 @@ def show_missing_fields_form(
         /* Primary buttons */
         div[data-testid="stForm"] button:first-of-type,
         div[data-testid="stForm"] button[kind="primary"] {
-            background-color: #ff4b4b !important;
+            background-color: #e57373 !important;
             color: white !important;
-            border: 1px solid #ff4b4b !important;
+            border: 1px solid #e57373 !important;
         }
 
         div[data-testid="stForm"] button:first-of-type:hover,
         div[data-testid="stForm"] button[kind="primary"]:hover {
-            background-color: #ff2b2b !important;
-            border: 1px solid #ff2b2b !important;
+            background-color: #d66565 !important;
+            border: 1px solid #d66565 !important;
         }
 
         /* Secondary buttons */

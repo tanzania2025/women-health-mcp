@@ -82,14 +82,14 @@ def show_symptom_dashboard(db_session: Session):
         }
 
         .stButton > button[kind="primary"] {
-            background-color: #ff4b4b !important;
+            background-color: #e57373 !important;
             color: white !important;
-            border: 1px solid #ff4b4b !important;
+            border: 1px solid #e57373 !important;
         }
 
         .stButton > button[kind="primary"]:hover {
-            background-color: #ff2b2b !important;
-            border: 1px solid #ff2b2b !important;
+            background-color: #d66565 !important;
+            border: 1px solid #d66565 !important;
         }
 
         .stButton > button[kind="secondary"] {

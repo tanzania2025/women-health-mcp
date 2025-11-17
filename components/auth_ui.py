@@ -52,8 +52,8 @@ def show_login_signup_page(db_session: Session):
                 }
 
                 button[data-baseweb="tab"][aria-selected="true"] {
-                    color: #ff4b4b !important;
-                    border-bottom: 2px solid #ff4b4b !important;
+                    color: #e57373 !important;
+                    border-bottom: 2px solid #e57373 !important;
                     font-weight: 600 !important;
                 }
 
@@ -82,15 +82,15 @@ def show_login_signup_page(db_session: Session):
                 /* First button (Login) - primary style */
                 div[data-testid="stForm"] button:first-of-type,
                 div[data-testid="stForm"] button[kind="primary"] {
-                    background-color: #ff4b4b !important;
+                    background-color: #e57373 !important;
                     color: white !important;
-                    border: 1px solid #ff4b4b !important;
+                    border: 1px solid #e57373 !important;
                 }
 
                 div[data-testid="stForm"] button:first-of-type:hover,
                 div[data-testid="stForm"] button[kind="primary"]:hover {
-                    background-color: #ff2b2b !important;
-                    border: 1px solid #ff2b2b !important;
+                    background-color: #d66565 !important;
+                    border: 1px solid #d66565 !important;
                 }
 
                 /* Second button (Demo) - DoctHER brand color */
