@@ -39,6 +39,36 @@ def show_login_signup_page(db_session: Session):
 
             st.markdown("""
                 <style>
+                /* Fix for iOS Safari tab visibility */
+                button[data-baseweb="tab"] {
+                    -webkit-appearance: none !important;
+                    appearance: none !important;
+                    font-size: 16px !important;
+                    padding: 0.5rem 1.5rem !important;
+                    color: #262730 !important;
+                    background-color: transparent !important;
+                    border: none !important;
+                    border-bottom: 2px solid transparent !important;
+                }
+
+                button[data-baseweb="tab"][aria-selected="true"] {
+                    color: #ff4b4b !important;
+                    border-bottom: 2px solid #ff4b4b !important;
+                    font-weight: 600 !important;
+                }
+
+                button[data-baseweb="tab"]:hover {
+                    background-color: rgba(0, 0, 0, 0.05) !important;
+                }
+
+                /* Ensure tabs container is visible */
+                div[data-baseweb="tab-list"] {
+                    display: flex !important;
+                    gap: 0.5rem !important;
+                    border-bottom: 1px solid #e0e0e0 !important;
+                    margin-bottom: 1.5rem !important;
+                }
+
                 /* Fix for iOS Safari and general button rendering */
                 div[data-testid="stForm"] button {
                     -webkit-appearance: none !important;
