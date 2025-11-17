@@ -1,0 +1,21 @@
+# Streamlit Configuration for DoctHER
+
+[client]
+# Show error details
+showErrorDetails = true
+
+[server]
+# Enable CORS
+enableCORS = true
+enableXsrfProtection = true
+
+[browser]
+# Gather usage stats
+gatherUsageStats = false
+
+[ui]
+# Hide the hamburger menu (top right menu)
+hideTopBar = false
+
+# Hide the "Made with Streamlit" footer
+hideSidebarNav = false

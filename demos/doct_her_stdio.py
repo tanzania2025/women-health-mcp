@@ -540,7 +540,29 @@ css = """
             min-width: 60px !important;
         }
     }
+
+    /* Force sidebar to be visible */
+    [data-testid="stSidebar"][aria-expanded="false"] {
+        margin-left: 0px !important;
+    }
+
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
 </style>
+
+<script>
+// Auto-expand sidebar on page load
+window.addEventListener('load', function() {
+    const sidebar = document.querySelector('[data-testid="stSidebar"]');
+    if (sidebar && sidebar.getAttribute('aria-expanded') === 'false') {
+        const collapseButton = document.querySelector('[data-testid="collapsedControl"]');
+        if (collapseButton) {
+            collapseButton.click();
+        }
+    }
+});
+</script>
 """
 st.markdown(css, unsafe_allow_html=True)
 
