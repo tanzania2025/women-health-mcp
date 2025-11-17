@@ -181,6 +181,32 @@ def show_symptom_recording_form(db_session: Session, client):
         db_session: SQLAlchemy database session
         client: Anthropic client instance
     """
+    # iOS Safari button fix for regular buttons (non-form)
+    st.markdown("""
+        <style>
+        /* Fix for iOS Safari regular buttons */
+        .stButton > button {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            font-size: 16px !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 0.5rem !important;
+            font-weight: 500 !important;
+        }
+
+        .stButton > button[kind="primary"] {
+            background-color: #ff4b4b !important;
+            color: white !important;
+            border: 1px solid #ff4b4b !important;
+        }
+
+        .stButton > button[kind="primary"]:hover {
+            background-color: #ff2b2b !important;
+            border: 1px solid #ff2b2b !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     # Check if we have text to record from main input
     symptom_text = st.session_state.get('symptom_text_to_record', '')
 
@@ -278,6 +304,49 @@ def show_missing_fields_form(
         missing_fields: List of missing field names
     """
     st.markdown("#### Complete Missing Information")
+
+    # iOS Safari button fix
+    st.markdown("""
+        <style>
+        /* Fix for iOS Safari and general button rendering */
+        div[data-testid="stForm"] button {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            font-size: 16px !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 0.5rem !important;
+            font-weight: 500 !important;
+        }
+
+        /* Primary buttons */
+        div[data-testid="stForm"] button:first-of-type,
+        div[data-testid="stForm"] button[kind="primary"] {
+            background-color: #ff4b4b !important;
+            color: white !important;
+            border: 1px solid #ff4b4b !important;
+        }
+
+        div[data-testid="stForm"] button:first-of-type:hover,
+        div[data-testid="stForm"] button[kind="primary"]:hover {
+            background-color: #ff2b2b !important;
+            border: 1px solid #ff2b2b !important;
+        }
+
+        /* Secondary buttons */
+        div[data-testid="stForm"] button:nth-of-type(2),
+        div[data-testid="stForm"] button[kind="secondary"] {
+            background-color: #f0f2f6 !important;
+            color: #262730 !important;
+            border: 1px solid #d4d4d4 !important;
+        }
+
+        div[data-testid="stForm"] button:nth-of-type(2):hover,
+        div[data-testid="stForm"] button[kind="secondary"]:hover {
+            background-color: #e0e2e6 !important;
+            border: 1px solid #c4c4c4 !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
     with st.form("missing_fields_form"):
         # Create inputs for missing fields - capture values to temporary variables

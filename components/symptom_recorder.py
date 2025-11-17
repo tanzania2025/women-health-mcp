@@ -112,6 +112,45 @@ def show_symptom_recorder(db_session: Session, client):
     # Add "or type" divider
     st.markdown('<div style="text-align: center; margin: 0.75rem 0 0.5rem 0; opacity: 0.7; font-size: 0.95rem;">or type your symptoms</div>', unsafe_allow_html=True)
 
+    # iOS Safari button fix
+    st.markdown("""
+        <style>
+        /* Fix for iOS Safari and general button rendering in symptom recorder */
+        div[data-testid="stForm"] button {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            font-size: 16px !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 0.5rem !important;
+            font-weight: 500 !important;
+        }
+
+        /* Primary submit button */
+        div[data-testid="stForm"] button[kind="primary"] {
+            background-color: #ff4b4b !important;
+            color: white !important;
+            border: 1px solid #ff4b4b !important;
+        }
+
+        div[data-testid="stForm"] button[kind="primary"]:hover {
+            background-color: #ff2b2b !important;
+            border: 1px solid #ff2b2b !important;
+        }
+
+        /* Secondary back button */
+        div[data-testid="stForm"] button[kind="secondary"] {
+            background-color: #f0f2f6 !important;
+            color: #262730 !important;
+            border: 1px solid #d4d4d4 !important;
+        }
+
+        div[data-testid="stForm"] button[kind="secondary"]:hover {
+            background-color: #e0e2e6 !important;
+            border: 1px solid #c4c4c4 !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     # Form for text input
     with st.form(key="symptom_voice_form", clear_on_submit=False):
         # Text input

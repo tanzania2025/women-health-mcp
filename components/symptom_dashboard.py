@@ -68,6 +68,43 @@ def show_symptom_dashboard(db_session: Session):
     """
     st.markdown("# 📋 Symptom Tracker")
 
+    # iOS Safari button fix for regular buttons
+    st.markdown("""
+        <style>
+        /* Fix for iOS Safari regular buttons */
+        .stButton > button {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            font-size: 16px !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 0.5rem !important;
+            font-weight: 500 !important;
+        }
+
+        .stButton > button[kind="primary"] {
+            background-color: #ff4b4b !important;
+            color: white !important;
+            border: 1px solid #ff4b4b !important;
+        }
+
+        .stButton > button[kind="primary"]:hover {
+            background-color: #ff2b2b !important;
+            border: 1px solid #ff2b2b !important;
+        }
+
+        .stButton > button[kind="secondary"] {
+            background-color: #f0f2f6 !important;
+            color: #262730 !important;
+            border: 1px solid #d4d4d4 !important;
+        }
+
+        .stButton > button[kind="secondary"]:hover {
+            background-color: #e0e2e6 !important;
+            border: 1px solid #c4c4c4 !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     # Initialize insights view state
     if 'show_insights_for' not in st.session_state:
         st.session_state.show_insights_for = None
