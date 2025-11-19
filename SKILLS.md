@@ -51,7 +51,7 @@ These are structured workflows that help you provide comprehensive, evidence-bas
    - `search_eshre_guidelines` (for fertility/IVF topics)
    - `search_nams_protocols` (for menopause topics)
    - `search_pubmed` (for latest research)
-   - `search_elsa_data` (if aging/population data relevant)
+   - `search_data_modules` (if aging/population data relevant)
 
 3. **Evidence synthesis checklist**:
    - □ Note guideline recommendations (ESHRE/NAMS)

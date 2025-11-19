@@ -39,7 +39,7 @@
 | get_documentation_links | servers/elsa_server.py | - | Get ELSA documentation links | Database | ✓ Server only |
 | compare_waves | servers/elsa_server.py | - | Compare ELSA waves | Database | ✓ Server only |
 | get_research_examples | servers/elsa_server.py | - | Get ELSA research examples | Database | ✓ Server only |
-| search_elsa_data | scripts/mcp_stdio_server.py | - | FastMCP wrapper for ELSA search | Database | ✓ Wrapper only |
+| search_data_modules | mcp_servers/database_server.py | - | Search ELSA data modules by topic or keyword | Database | ✓ Available |
 
 ## Tools by Target Server
 
@@ -55,9 +55,9 @@
 - compare_waves
 - get_research_examples
 
-**From scripts/mcp_stdio_server.py:**
-- list_elsa_waves (wrapper)
-- search_elsa_data (wrapper)
+**From mcp_servers/database_server.py (FastMCP):**
+- list_elsa_waves
+- search_data_modules
 
 ### API Server (PubMed, ESHRE, ASRM, NAMS)
 

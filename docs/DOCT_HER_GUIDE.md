@@ -116,7 +116,7 @@ Claude can automatically use any of these 14 tools:
 
 ### Research Data
 11. **list_elsa_waves** - List ELSA study waves
-12. **search_elsa_data** - Search ELSA longitudinal data
+12. **search_data_modules** - Search ELSA data modules by topic or keyword
 
 ### Healthcare Integration
 13. **create-fhir-resource** - Create FHIR-compliant healthcare resources
