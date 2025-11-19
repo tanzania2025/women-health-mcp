@@ -16,6 +16,3 @@ gatherUsageStats = false
 [ui]
 # Hide the hamburger menu (top right menu)
 hideTopBar = false
-
-# Hide the "Made with Streamlit" footer
-hideSidebarNav = false
