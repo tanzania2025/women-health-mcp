@@ -706,8 +706,15 @@ class MultiServerMCPClient:
             } for tool in tools.tools])
         return all_tools
 
-    async def process_query(self, query: str, status_container=None, tool_chain_container=None) -> str:
-        """Process a query using Claude and available MCP tools."""
+    async def process_query(self, query: str, conversation_history: list = None, status_container=None, tool_chain_container=None) -> str:
+        """Process a query using Claude and available MCP tools.
+
+        Args:
+            query: The current user query
+            conversation_history: List of previous messages in format [{"role": "user/assistant", "content": "..."}]
+            status_container: Streamlit container for status updates
+            tool_chain_container: Streamlit container for tool chain display
+        """
 
         if status_container:
             status_container.info("🔧 Loading MCP tools...")
@@ -790,8 +797,15 @@ Oftentimes women feel their symptoms/pain is overlooked and dismissed by doctors
 
 Remember: You're providing educational information, not medical advice. Always cite your sources (ESHRE guidelines, NAMS protocols, PubMed articles, ELSA data)."""
 
-        # Call Claude with tools
-        messages = [{"role": "user", "content": query}]
+        # Call Claude with tools - include conversation history if provided
+        if conversation_history:
+            # Use provided conversation history and add current query
+            messages = conversation_history.copy()
+            messages.append({"role": "user", "content": query})
+        else:
+            # First message in conversation
+            messages = [{"role": "user", "content": query}]
+
         tool_calls_made = []
         tool_summaries = {}  # Store result summaries for each tool by index
 
@@ -1067,8 +1081,19 @@ To enable AI-powered consultations, please:
         else:
             status_container.success("✅ Connected to legacy server")
 
+        # Build conversation history from session state (exclude the just-added user message)
+        # st.session_state.messages already includes the new user message, so we need all but the last one
+        conversation_history = []
+        if hasattr(st.session_state, 'messages') and len(st.session_state.messages) > 1:
+            # Get all messages except the last one (which is the current user input)
+            for msg in st.session_state.messages[:-1]:
+                conversation_history.append({
+                    "role": msg["role"],
+                    "content": msg["content"]
+                })
+
         # Process query - returns (response, tool_log)
-        result = await client.process_query(user_input, status_container, tool_chain_container)
+        result = await client.process_query(user_input, conversation_history, status_container, tool_chain_container)
 
         # Unpack result
         if isinstance(result, tuple):
